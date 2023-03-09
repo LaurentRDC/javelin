@@ -1,0 +1,54 @@
+cabal-version:      3.0
+name:               series
+version:            0.1.0.0
+synopsis:           Labeled one-dimensional arrays
+description:
+license:            MIT
+license-file:       LICENSE
+author:             Laurent René de Cotret
+maintainer:         laurent.decotret@outlook.com
+category:           Data
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+                 -Wcompat
+                 -Widentities
+                 -Wincomplete-uni-patterns
+                 -Wincomplete-record-updates
+                 -Wredundant-constraints
+                 -fhide-source-paths
+                 -Wmissing-export-lists
+                 -Wpartial-fields
+
+library
+    import:           warnings
+    hs-source-dirs:   src
+    default-language: GHC2021
+    exposed-modules:  Data.Series
+    other-modules:    Data.Series.Conversion
+                      Data.Series.Definition
+                      Data.Series.View
+    build-depends:    base >=4.15.0.0,
+                      containers,
+                      vector
+
+test-suite series-test
+    import:           warnings
+    default-language: GHC2021
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    other-modules:    Test.Data.Series
+                      Test.Data.Series.Conversion
+                      Test.Data.Series.View
+    build-depends:    base,
+                      containers,
+                      series,
+                      tasty,
+                      tasty-hunit,
+                      HUnit,
+                      tasty-hspec,
+                      vector
