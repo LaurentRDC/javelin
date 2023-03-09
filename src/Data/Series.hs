@@ -8,6 +8,7 @@ module Data.Series (
     toStrictMap,
     fromLazyMap,
     toLazyMap,
+    fromList,
     fromAscList,
 
     -- * Random access
@@ -17,6 +18,6 @@ module Data.Series (
     from, to
 ) where
 
-import Data.Series.Conversion (fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromAscList)
+import Data.Series.Conversion (fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, fromAscList)
 import Data.Series.Definition (Series(..))
 import Data.Series.View       ( at, iat, from, to )

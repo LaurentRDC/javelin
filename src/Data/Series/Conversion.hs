@@ -9,6 +9,8 @@ module Data.Series.Conversion (
     toStrictMap,
     fromLazyMap,
     toLazyMap,
+    -- * Convertion from list
+    fromList,
     -- * Conversion from an ordered list of key-value pairs.
     fromAscList,
 ) where
@@ -17,9 +19,17 @@ module Data.Series.Conversion (
 import qualified Data.Map.Lazy   as ML
 import           Data.Map.Strict ( Map )
 import qualified Data.Map.Strict as MS
+import qualified Data.Set        as Set
 import qualified Data.Vector     as Vector
 
 import           Data.Series.Definition ( Series(..) )
+
+
+-- | Construct a series from a list of key-value pairs. There is no
+-- condition on the order of pairs.
+fromList :: (Eq k, Ord k) => [(k, a)] -> Series k a
+fromList = fromLazyMap . ML.fromList  
+
 
 -- | Construct a series from a list of key-value pairs, where
 -- the keys are in ascending order. The precondition is not checked.
@@ -30,20 +40,20 @@ import           Data.Series.Definition ( Series(..) )
 fromAscList :: (Eq k, Ord k) => [(k, a)] -> Series k a
 fromAscList xs 
     = let (keys, values) = unzip xs
-       in MkSeries { index = MS.fromAscList $ zip keys [0..]
+       in MkSeries { index  = Set.fromAscList keys
                    , values = Vector.fromList values }
 
 
-toLazyMap :: Series k a -> Map k a
-toLazyMap (MkSeries ks vs) = ML.map (vs Vector.!) ks
+toLazyMap :: (Eq k, Ord k) => Series k a -> Map k a
+toLazyMap (MkSeries ks vs) = ML.fromAscList $ zip (Set.toList ks) (Vector.toList vs)
 
 
 fromLazyMap :: (Eq k, Ord k) => ML.Map k a -> Series k a
 fromLazyMap = fromAscList . ML.toAscList
 
 
-toStrictMap :: Series k a -> Map k a
-toStrictMap (MkSeries ks vs) = MS.map (vs Vector.!) ks
+toStrictMap :: (Eq k, Ord k) => Series k a -> Map k a
+toStrictMap (MkSeries ks vs) = MS.fromAscList $ zip (Set.toList ks) (Vector.toList vs)
 
 
 fromStrictMap :: (Eq k, Ord k) => MS.Map k a -> Series k a

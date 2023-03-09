@@ -12,7 +12,8 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files:
 
-common warnings
+common common
+    default-language: GHC2021
     ghc-options: -Wall
                  -Wcompat
                  -Widentities
@@ -24,20 +25,19 @@ common warnings
                  -Wpartial-fields
 
 library
-    import:           warnings
+    import:           common
     hs-source-dirs:   src
-    default-language: GHC2021
     exposed-modules:  Data.Series
     other-modules:    Data.Series.Conversion
                       Data.Series.Definition
                       Data.Series.View
     build-depends:    base >=4.15.0.0,
                       containers,
+                      deepseq,
                       vector
 
 test-suite series-test
-    import:           warnings
-    default-language: GHC2021
+    import:           common
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Main.hs
@@ -52,3 +52,28 @@ test-suite series-test
                       HUnit,
                       tasty-hspec,
                       vector
+
+
+benchmark time
+    import:           common
+    type:             exitcode-stdio-1.0
+    ghc-options:      -Wall -O2 -rtsopts
+    hs-source-dirs:   benchmark
+    main-is:          Main.hs
+    build-depends:    base,
+                      containers,
+                      unordered-containers,
+                      series,
+                      vector, 
+                      criterion, 
+                      deepseq, 
+                      random, 
+                      directory
+
+
+executable bench-report
+    import:           common
+    main-is:          bench-report.hs
+    hs-source-dirs:   scripts
+    build-depends:    base, 
+                      csv
