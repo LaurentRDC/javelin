@@ -27,10 +27,15 @@ data Lookup =
                    ([(Int, Int)] -> f Int)
                    (Int -> f Int ->  Maybe Int)
 
-
 data Sum =
   forall f. (NFData (f Int)) =>
             Sum String ([(Int, Int)] -> f Int) (f Int -> Int)
+
+data Mappend = 
+  forall f. (NFData (f Int), Monoid (f Int)) =>
+            Mappend String 
+                   ([(Int, Int)] -> f Int)
+
 
 
 main :: IO ()
@@ -80,6 +85,17 @@ main = do
            , Sum "Data.Vector" (Data.Vector.fromList . map fst) sum
            , Sum "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map fst) Data.Vector.Unboxed.sum
            ])
+    , bgroup
+      "Mappend Int (Randomized)"
+      ( mappendRandomized 
+          [ Mappend "Data.Map.Lazy" Data.Map.Lazy.fromList
+          , Mappend "Data.Map.Strict" Data.Map.Strict.fromList
+          , Mappend "Data.HashMap.Lazy" Data.HashMap.Lazy.fromList
+          , Mappend "Data.HashMap.Strict" Data.HashMap.Strict.fromList
+          , Mappend "Data.Series" Data.Series.fromList
+          , Mappend "Data.Vector" (Data.Vector.fromList . map fst)
+          , Mappend "Data.Vector.Unboxed" (Data.Vector.fromList . map fst)
+          ])
     ]
 
   where
@@ -111,4 +127,17 @@ main = do
            nf func elems)
       | i <- [10, 100, 1000, 10000, 100000, 1000000]
       , Sum title fromList func <- funcs
+      ]
+    mappendRandomized funcs =
+      [ env
+        (let list1 = take i (zip (randoms (mkStdGen 0) :: [Int]) [1 ..])
+             list2 = take i (zip (randoms (mkStdGen 0) :: [Int]) [1 ..])
+             !elems1 = force (fromList list1)
+             !elems2 = force (fromList list2)
+          in pure (elems1, elems2))
+        (\(~(elems1, elems2)) ->
+           bench (title ++ ":" ++ show i) $
+           nf mconcat [elems1, elems2])
+      | i <- [10, 100, 1000, 10000, 100000, 1000000]
+      , Mappend title fromList <- funcs
       ]

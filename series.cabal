@@ -43,6 +43,7 @@ test-suite series-test
     main-is:          Main.hs
     other-modules:    Test.Data.Series
                       Test.Data.Series.Conversion
+                      Test.Data.Series.Definition
                       Test.Data.Series.View
     build-depends:    base,
                       containers,

@@ -6,27 +6,69 @@ import           Control.DeepSeq ( NFData(rnf) )
 import           Data.Bifoldable ( Bifoldable(..) )
 import           Data.Foldable   ( Foldable(..) )
 import           Data.Set        ( Set )
+import qualified Data.Set        as Set
 import           Data.Vector     ( Vector )
 import qualified Data.Vector     as Vector
 
 
--- | A series is a contiguous array of values of type @a@,
+-- | A series is a labeled array of values of type @a@,
 -- indexed by keys of type @k@.
+--
+-- Like Maps and HashMaps, they support efficient:
+--      * random access by key (\(O(\log n)\));
+--      * slice by key (\(O(\log n)\)).
+--
+-- Like Vectors and Arrays, they support efficient:
+--      * random access by index (\(O(1)\));
+--      * slice by index (\(O(1)\));
+--      * numerical operations.
 data Series k a 
-    = MkSeries {
-        -- The reason the index is a set of keys is that we *want* keys to be ordered.
-        -- This allows for very fast slicing of the underlying values, because
-        -- if `k1 < k2`, then the values are also at indices `ix1 < ix2`.
-          index  :: !(Set k)
-        , values :: !(Vector a)
+    -- The reason the index is a set of keys is that we *want* keys to be ordered.
+    -- This allows for efficient slicing of the underlying values, because
+    -- if `k1 < k2`, then the values are also at indices `ix1 < ix2`.
+    = MkSeries { index  :: !(Set k)
+               , values :: !(Vector a)
                }
     deriving (Show)
 
+
+instance Ord k => Semigroup (Series k a) where
+
+    {-# INLINE (<>) #-}
+    (<>) :: Series k a -> Series k a -> Series k a
+    (MkSeries ks1 vs1) <> (MkSeries ks2 vs2)
+        = let allKeys = ks1 `Set.union` ks2
+              newValues = Vector.fromListN (Set.size allKeys) [ pick k | k <- Set.toAscList allKeys ]
+            in MkSeries allKeys newValues
+        where
+            pick :: k -> a
+            pick key
+                -- We know from how `pick` is used that `key` is either in ks1 or ks2 (or both).
+                -- Note that this function is left-biased: if there are duplicate keys,
+                -- the value from the left series is preferred.
+                | key `Set.member` ks1 = vs1 Vector.! (key `Set.findIndex` ks1)
+                | otherwise            = vs2 Vector.! (key `Set.findIndex` ks2)
+
+
+instance Ord k => Monoid (Series k a) where
+
+    {-# INLINE mempty #-}
+    mempty :: Series k a
+    mempty = MkSeries mempty mempty
+
+    {-# INLINE mappend #-}
+    mappend :: Series k a -> Series k a -> Series k a
+    mappend = (<>)
+
+
 instance (Eq k, Eq a) => Eq (Series k a) where
+    {-# INLINE (==) #-}
     (==) :: Series k a -> Series k a -> Bool
     (MkSeries ks1 vs1) == (MkSeries ks2 vs2) = (ks1 == ks2) && (vs1 == vs2)
 
+
 instance Functor (Series k) where
+    {-# INLINE fmap #-}
     fmap :: (a -> b) -> Series k a -> Series k b
     fmap f (MkSeries ks vs) = MkSeries ks (Vector.map f vs)
 
@@ -99,9 +141,11 @@ instance Foldable (Series k) where
     product :: Num a => Series k a -> a
     product = Vector.product . values
 
+
 instance Bifoldable Series where
     bifoldMap :: Monoid m => (k -> m) -> (a -> m) -> Series k a -> m
     bifoldMap fk fv (MkSeries ks vs) = foldMap fk ks <> foldMap fv vs
+
 
 instance (NFData k, NFData a) => NFData (Series k a) where
     rnf :: Series k a -> ()
