@@ -47,8 +47,10 @@ test-suite series-test
                       Test.Data.Series.View
     build-depends:    base,
                       containers,
+                      hedgehog,
                       series,
                       tasty,
+                      tasty-hedgehog,
                       tasty-hunit,
                       HUnit,
                       tasty-hspec,

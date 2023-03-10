@@ -9,8 +9,9 @@ module Data.Series.Conversion (
     toStrictMap,
     fromLazyMap,
     toLazyMap,
-    -- * Convertion from list
+    -- * Convertion to/from list
     fromList,
+    toList,
 ) where
 
 
@@ -26,7 +27,11 @@ import           Data.Series.Definition ( Series(..) )
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
 fromList :: (Eq k, Ord k) => [(k, a)] -> Series k a
-fromList = fromLazyMap . ML.fromList  
+fromList = fromLazyMap . ML.fromList
+
+
+toList :: Series k a -> [(k, a)]
+toList (MkSeries ks vs) = zip (Set.toAscList ks) (Vector.toList vs)
 
 
 toLazyMap :: (Eq k, Ord k) => Series k a -> Map k a
