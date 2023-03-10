@@ -1,5 +1,6 @@
 -- This script has been forked from:
 -- https://github.com/haskell-perf/sets/blob/master/Report.hs
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Main (main) where
 
 import Data.Function        ( on )

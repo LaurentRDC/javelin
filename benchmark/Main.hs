@@ -17,6 +17,7 @@ import qualified Data.Map.Lazy
 import qualified Data.Map.Strict
 import qualified Data.Series
 import qualified Data.Vector
+import qualified Data.Vector.Unboxed
 import           System.Directory ( doesFileExist, removeFile )
 import           System.Random    ( mkStdGen, Random(randoms) )
 
@@ -28,8 +29,8 @@ data Lookup =
 
 
 data Sum =
-  forall f. (NFData (f Int), Foldable f) =>
-            Sum String ([(Int, Int)] -> f Int)
+  forall f. (NFData (f Int)) =>
+            Sum String ([(Int, Int)] -> f Int) (f Int -> Int)
 
 
 main :: IO ()
@@ -63,17 +64,21 @@ main = do
                 "Data.Vector"
                 (Data.Vector.fromList . map fst)
                 (\ix -> Data.Vector.find (==ix))
-
+           , Lookup 
+                "Data.Vector.Unboxed"
+                (Data.Vector.Unboxed.fromList . map fst)
+                (\ix -> Data.Vector.Unboxed.find (==ix))
            ])
     , bgroup
         "Sum Int (Randomized)"
         (sumRandomized
-           [ Sum "Data.Map.Lazy"   Data.Map.Lazy.fromList
-           , Sum "Data.Map.Strict" Data.Map.Strict.fromList
-           , Sum "Data.HashMap.Lazy" Data.HashMap.Lazy.fromList
-           , Sum "Data.HashMap.Strict" Data.HashMap.Strict.fromList
-           , Sum "Data.Series" Data.Series.fromList
-           , Sum "Data.Vector" (Data.Vector.fromList . map fst)
+           [ Sum "Data.Map.Lazy"   Data.Map.Lazy.fromList sum
+           , Sum "Data.Map.Strict" Data.Map.Strict.fromList sum
+           , Sum "Data.HashMap.Lazy" Data.HashMap.Lazy.fromList sum
+           , Sum "Data.HashMap.Strict" Data.HashMap.Strict.fromList sum
+           , Sum "Data.Series" Data.Series.fromList sum
+           , Sum "Data.Vector" (Data.Vector.fromList . map fst) sum
+           , Sum "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map fst) Data.Vector.Unboxed.sum
            ])
     ]
 
@@ -103,7 +108,7 @@ main = do
           in pure (list, elems))
         (\(~(_, elems)) ->
            bench (title ++ ":" ++ show i) $
-           nf sum elems)
+           nf func elems)
       | i <- [10, 100, 1000, 10000, 100000, 1000000]
-      , Sum title fromList <- funcs
+      , Sum title fromList func <- funcs
       ]
