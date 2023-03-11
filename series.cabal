@@ -30,6 +30,7 @@ library
     exposed-modules:  Data.Series
     other-modules:    Data.Series.Conversion
                       Data.Series.Definition
+                      Data.Series.Numeric
                       Data.Series.View
     build-depends:    base >=4.15.0.0,
                       containers,
@@ -44,11 +45,14 @@ test-suite series-test
     other-modules:    Test.Data.Series
                       Test.Data.Series.Conversion
                       Test.Data.Series.Definition
+                      Test.Data.Series.Numeric
                       Test.Data.Series.View
     build-depends:    base,
                       containers,
                       hedgehog,
+                      ieee754,
                       series,
+                      statistics,
                       tasty,
                       tasty-hedgehog,
                       tasty-hunit,

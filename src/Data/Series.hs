@@ -18,9 +18,13 @@ module Data.Series (
     reindex,
 
     -- * Range access
-    from, to
+    from, to,
+
+    -- * Numerical aggregations
+    mean, variance, sampleVariance, std
 ) where
 
 import Data.Series.Conversion (fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList)
 import Data.Series.Definition ( Series(index) )
+import Data.Series.Numeric    ( mean, variance, sampleVariance, std )
 import Data.Series.View       ( at, iat, select, from, to, reindex)
