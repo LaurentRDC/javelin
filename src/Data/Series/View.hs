@@ -8,8 +8,10 @@ module Data.Series.View (
     -- * Random bulk access
     select,
 
-    -- * Reindexing
+    -- * Resizing
     reindex,
+    filter,
+    dropna,
 
     -- * Accessing ranges
     Range,
@@ -17,10 +19,13 @@ module Data.Series.View (
     to,
 ) where
 
+import           Data.Maybe             ( fromJust, isJust )
 import           Data.Series.Definition ( Series(..) )
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
+
+import           Prelude                hiding ( filter )
 
 
 -- | \(O(1)\). Extract a single value from a series, by index. 
@@ -105,3 +110,17 @@ reindex xs ss
     = let existingKeys = index xs `Set.intersection` ss
           newKeys      = ss `Set.difference` existingKeys
        in (Just <$> (xs `select` existingKeys)) <> MkSeries newKeys (Vector.replicate (Set.size newKeys) Nothing)
+
+
+-- | Filter elements. Only elements for which the predicate is @True@ are kept. 
+filter :: Ord k => (a -> Bool) -> Series k a -> Series k a
+filter predicate xs@(MkSeries ks vs) 
+    = let nothingIndices = Vector.findIndices predicate vs
+          keysToDrop = Set.fromList [Set.elemAt ix ks | ix <- Vector.toList nothingIndices]
+          keysToKeep = ks `Set.difference` keysToDrop
+       in xs `select` keysToKeep
+
+
+-- | Drop elements which are not available (NA). 
+dropna :: Ord k => Series k (Maybe a) -> Series k a
+dropna = fmap fromJust . filter isJust

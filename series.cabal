@@ -29,6 +29,8 @@ library
     hs-source-dirs:   src
     exposed-modules:  Data.Series
     other-modules:    Data.Series.Broadcast
+                      Data.Series.Broadcast.Drop
+                      Data.Series.Broadcast.Propagate
                       Data.Series.Conversion
                       Data.Series.Definition
                       Data.Series.Numeric

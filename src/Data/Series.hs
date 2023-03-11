@@ -36,8 +36,10 @@ module Data.Series (
 
 import Prelude                hiding ( zipWith )
 
-import Data.Series.Broadcast  ( zipWith, zipWithMatched, (+:), (-:), (*:), (/:), (+|), (-|), (*|), (/|) )
-import Data.Series.Conversion ( fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
-import Data.Series.Definition ( Series(index) )
-import Data.Series.Numeric    ( mean, variance, sampleVariance, std, meanAndVariance )
-import Data.Series.View       ( at, iat, select, from, to, reindex)
+import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
+import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|) )
+import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:) )
+import Data.Series.Conversion           ( fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
+import Data.Series.Definition           ( Series(index) )
+import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
+import Data.Series.View                 ( at, iat, select, from, to, reindex)
