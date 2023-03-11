@@ -1,0 +1,143 @@
+
+module Test.Data.Series.Broadcast ( tests ) where
+
+
+import           Control.Monad        ( forM_ )
+
+import           Data.Maybe           ( fromJust, isNothing )
+import           Data.Series          ( Series(index)
+                                      , (+:), (-:), (*:)
+                                      , (+|), (-|), (*|)
+                                      , fromStrictMap, fromList, zipWith, select, at )
+import qualified Data.Set             as Set
+
+import           Hedgehog             ( property, forAll, (===), assert )
+import qualified Hedgehog.Gen         as Gen
+import qualified Hedgehog.Range       as Range
+
+import           Prelude              hiding ( zipWith )
+
+import           Test.Tasty           ( testGroup, TestTree ) 
+import           Test.Tasty.Hedgehog  ( testProperty )
+import           Test.Tasty.HUnit     ( testCase, assertEqual )
+
+
+tests :: TestTree
+tests = testGroup "Data.Series.Broadcast" [ testZipWith
+                                          , testPropZipWithMatched
+                                          , testPropZipWith
+                                          , testPropPlusMaybe
+                                          , testPropMinusMaybe
+                                          , testPropMultMaybe
+                                          , testPropPlusMatched
+                                          , testPropMinusMatched
+                                          , testPropMultMatched
+                                          ]
+
+
+testZipWith :: TestTree
+testZipWith = testCase "zipWith" $ do
+    let (s1 :: Series Char Int) = fromList [('a', 1), ('b', 5)]
+        (s2 :: Series Char Int) = fromList [('x', 25), ('b', 10)]
+        expectation = fromList [('a', Nothing), ('b', Just 15),  ('x', Nothing)]
+    
+    assertEqual mempty expectation (zipWith (+) s1 s2)
+
+
+testPropZipWithMatched :: TestTree
+testPropZipWithMatched 
+    = testProperty "zipWith when keys all match" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        let xs = fromStrictMap m1
+        zipWith (+) xs xs === fmap (Just . (*2)) xs
+
+
+testPropZipWith :: TestTree
+testPropZipWith 
+    = testProperty "zipWith when keys all match" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        m2 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        let x1 = fromStrictMap m1
+            x2 = fromStrictMap m2
+            common  = index x1 `Set.intersection` index x2
+            symdiff = (index x1 `Set.union` index x2) `Set.difference` common
+            comb = zipWith (+) x1 x2
+
+        forM_ common $ \k -> do
+            let left  = fromJust $ x1 `at` k
+                right = fromJust $ x2 `at` k
+            fromJust (comb `at` k) === Just (left + right)
+        
+        assert $ all isNothing (comb `select` symdiff)
+
+
+testPropPlusMaybe :: TestTree
+testPropPlusMaybe
+    = testProperty "Broadcastable addition with holes (+:)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        c  <- forAll $ Gen.int (Range.linear 0 100)
+
+        let xs = fromStrictMap m1
+            expectation = fmap (+c) xs
+        expectation === (xs +: c)
+        expectation === (c +: xs)
+        fmap (Just . (*2)) xs === xs +: xs
+
+
+testPropMinusMaybe :: TestTree
+testPropMinusMaybe
+    = testProperty "Broadcastable subtraction with holes (-:)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        c  <- forAll $ Gen.int (Range.linear 0 100)
+
+        let xs = fromStrictMap m1
+        fmap (\x -> x - c) xs === (xs -: c)
+        fmap (c -) xs         === (c -: xs)
+        fmap (const (Just (0 :: Int))) xs === xs -: xs
+
+
+testPropMultMaybe :: TestTree
+testPropMultMaybe
+    = testProperty "Broadcastable multiplication with holes (*:)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        c  <- forAll $ Gen.int (Range.linear 0 100)
+
+        let xs = fromStrictMap m1
+        fmap (*c) xs === (xs *: c)
+        fmap (*c) xs === (c *: xs)
+
+
+testPropPlusMatched :: TestTree
+testPropPlusMatched
+    = testProperty "Broadcastable addition without holes (+|)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        c  <- forAll $ Gen.int (Range.linear 0 100)
+
+        let xs = fromStrictMap m1
+            expectation = fmap (+c) xs
+        expectation === (xs +| c)
+        expectation === (c +| xs)
+        fmap (*2) xs === xs +| xs
+
+
+testPropMinusMatched :: TestTree
+testPropMinusMatched
+    = testProperty "Broadcastable subtraction without holes (-|)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        c  <- forAll $ Gen.int (Range.linear 0 100)
+
+        let xs = fromStrictMap m1
+        fmap (\x -> x - c) xs === (xs -| c)
+        fmap (c -) xs         === (c -| xs)
+        fmap (const (0 :: Int)) xs === xs -| xs
+
+
+testPropMultMatched :: TestTree
+testPropMultMatched
+    = testProperty "Broadcastable multiplication without holes (*|)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        c  <- forAll $ Gen.int (Range.linear 0 100)
+
+        let xs = fromStrictMap m1
+        fmap (*c) xs === (xs *| c)
+        fmap (*c) xs === (c *| xs)

@@ -40,6 +40,8 @@ instance Ord k => Semigroup (Series k a) where
               newValues = pick <$> Vector.fromListN (Set.size allKeys) (Set.toAscList allKeys)
             in MkSeries allKeys newValues
         where
+            -- TODO: would it be faster to use Set.disjointUnion 
+            --       in order to pick from left and right?
             pick :: k -> a
             pick key = case findKeyIndex key of
                 Left  ix -> vs1 Vector.! ix
