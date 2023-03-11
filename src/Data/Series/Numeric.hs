@@ -1,5 +1,6 @@
 module Data.Series.Numeric ( 
     mean, variance, sampleVariance,
+    meanAndVariance,
     std, 
     -- * References
     -- $references
@@ -39,6 +40,14 @@ welford (MkSeries _ xs)
                                (0 :: Int, 0, 0)
                                xs
 {-# INLINE welford #-}
+
+
+-- | Compute the mean and variance of the values in a series in a single-pass.
+meanAndVariance :: (Real a, Real b, Floating b) => Series k a -> (b, b)
+meanAndVariance xs 
+    | null xs   = (0/0, 0/0) -- The mean computed by `welford` will be 0 if no elements.
+    | otherwise = let (count, m, meanSquared) = welford xs
+                   in (m, meanSquared / fromIntegral count)
 
 
 -- | Population variance.

@@ -1,7 +1,7 @@
 module Test.Data.Series.Numeric (tests) where
 
 import           Data.AEq             ( AEq((~==)))
-import           Data.Series          ( fromList, mean, variance, sampleVariance, std )
+import           Data.Series          ( fromList, mean, variance, sampleVariance, std, meanAndVariance )
 import qualified Data.Vector          as Vector          
 
 import           Hedgehog             ( MonadTest, property, forAll, (===), assert, diff )
@@ -20,6 +20,7 @@ tests = testGroup "Data.Series.Numeric" [ testPropMean
                                         , testPropVariance
                                         , testSampleVariance
                                         , testPropStdDev
+                                        , testPropMeanAndVariance
                                         ]
 
 -- | Fails the test if the two arguments provided are not equal to within `epsilon`.
@@ -80,3 +81,18 @@ testPropStdDev
         case length xs of
             0 -> assert $ isNaN d
             _ -> d `approx` Stats.fastStdDev (Vector.fromList ms)
+
+
+testPropMeanAndVariance :: TestTree
+testPropMeanAndVariance
+    = testProperty "population standard deviation" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500) 
+        let xs = fromList (zip [0::Int ..] ms)
+        length xs === length ms 
+        let (m :: Double, v) = meanAndVariance xs
+        -- IEEE 754 specifies that NaN != NaN...
+        case length xs of
+            0 -> assert $ isNaN m && isNaN v
+            _ -> do
+                m `approx` Stats.mean (Vector.fromList ms)
+                v `approx` Stats.fastVariance (Vector.fromList ms)
