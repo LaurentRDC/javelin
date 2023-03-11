@@ -10,11 +10,11 @@ import           Control.DeepSeq  ( NFData, force )
 import           Control.Monad    ( when )
 import           Criterion.Main   ( defaultMainWith, defaultConfig, bench, bgroup, env, nf )
 import           Criterion.Types  ( Config(csvFile) )
-import qualified Data.HashMap.Lazy
-import qualified Data.HashMap.Strict
 import           Data.List        ( foldl' )
 import qualified Data.Map.Lazy
 import qualified Data.Map.Strict
+import           Data.Set         ( Set )
+import qualified Data.Set         as Set 
 import qualified Data.Series
 import qualified Data.Vector
 import qualified Data.Vector.Unboxed
@@ -36,6 +36,13 @@ data Mappend =
             Mappend String 
                    ([(Int, Int)] -> f Int)
 
+data SliceByKeys =
+  forall f. (NFData (f Int), Monoid (f Int)) =>
+            SliceByKeys String 
+                   ([(Int, Int)] -> f Int)
+                   (Set Int -> f Int -> f Int)
+
+
 
 
 main :: IO ()
@@ -54,14 +61,6 @@ main = do
                Data.Map.Strict.fromList
                Data.Map.Strict.lookup
            , Lookup
-               "Data.HashMap.Lazy"
-               Data.HashMap.Lazy.fromList
-               Data.HashMap.Lazy.lookup
-           , Lookup
-               "Data.HashMap.Strict"
-               Data.HashMap.Strict.fromList
-               Data.HashMap.Strict.lookup
-           , Lookup
                "Data.Series"
                Data.Series.fromList
                (flip Data.Series.at)
@@ -79,8 +78,6 @@ main = do
         (sumRandomized
            [ Sum "Data.Map.Lazy"   Data.Map.Lazy.fromList sum
            , Sum "Data.Map.Strict" Data.Map.Strict.fromList sum
-           , Sum "Data.HashMap.Lazy" Data.HashMap.Lazy.fromList sum
-           , Sum "Data.HashMap.Strict" Data.HashMap.Strict.fromList sum
            , Sum "Data.Series" Data.Series.fromList sum
            , Sum "Data.Vector" (Data.Vector.fromList . map fst) sum
            , Sum "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map fst) Data.Vector.Unboxed.sum
@@ -90,11 +87,22 @@ main = do
       ( mappendRandomized 
           [ Mappend "Data.Map.Lazy" Data.Map.Lazy.fromList
           , Mappend "Data.Map.Strict" Data.Map.Strict.fromList
-          , Mappend "Data.HashMap.Lazy" Data.HashMap.Lazy.fromList
-          , Mappend "Data.HashMap.Strict" Data.HashMap.Strict.fromList
           , Mappend "Data.Series" Data.Series.fromList
           , Mappend "Data.Vector" (Data.Vector.fromList . map fst)
           , Mappend "Data.Vector.Unboxed" (Data.Vector.fromList . map fst)
+          ])
+    , bgroup
+      "Slice by keys (Randomized)"
+      ( sliceByKeyRandomized 
+          [ SliceByKeys "Data.Map.Lazy" 
+                        Data.Map.Lazy.fromList
+                        (flip Data.Map.Lazy.restrictKeys)
+          , SliceByKeys "Data.Map.Strict" 
+                        Data.Map.Strict.fromList
+                        (flip Data.Map.Strict.restrictKeys)
+          , SliceByKeys "Data.Series" 
+                        Data.Series.fromList
+                        (flip Data.Series.select)
           ])
     ]
 
@@ -140,4 +148,16 @@ main = do
            nf mconcat [elems1, elems2])
       | i <- [10, 100, 1000, 10000, 100000, 1000000]
       , Mappend title fromList <- funcs
+      ]
+    sliceByKeyRandomized funcs = 
+      [ env
+        (let list = take i (zip (randoms (mkStdGen 0) :: [Int]) [1 ..])
+             keys  = Set.fromList $ take (round ( fromIntegral i / 10)) (randoms (mkStdGen 0) :: [Int])
+             !elems = force (fromList list)
+          in pure (keys, elems))
+        (\(~(keys, elems)) ->
+           bench (title ++ ":" ++ show i) $
+           nf (slice keys) elems)
+      | i <- [10, 100, 1000, 10000, 100000, 1000000]
+      , SliceByKeys title fromList slice <- funcs
       ]

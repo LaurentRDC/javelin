@@ -28,7 +28,8 @@ library
     import:           common
     hs-source-dirs:   src
     exposed-modules:  Data.Series
-    other-modules:    Data.Series.Broadcast
+    other-modules:    Data.Series.Aggregation
+                      Data.Series.Broadcast
                       Data.Series.Broadcast.Drop
                       Data.Series.Broadcast.Propagate
                       Data.Series.Conversion
@@ -74,7 +75,6 @@ benchmark time
     main-is:          Main.hs
     build-depends:    base,
                       containers,
-                      unordered-containers,
                       series,
                       vector, 
                       criterion, 
