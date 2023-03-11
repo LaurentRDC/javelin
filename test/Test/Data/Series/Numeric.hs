@@ -1,18 +1,17 @@
 module Test.Data.Series.Numeric (tests) where
 
-import           Data.AEq             ( AEq((~==)))
 import           Data.Series          ( fromList, mean, variance, sampleVariance, std, meanAndVariance )
 import qualified Data.Vector          as Vector          
 
-import           Hedgehog             ( MonadTest, property, forAll, (===), assert, diff )
+import           Hedgehog             ( property, forAll, (===), assert )
 import qualified Hedgehog.Gen         as Gen
 import qualified Hedgehog.Range       as Range
-import           Hedgehog.Internal.Source ( HasCallStack, withFrozenCallStack ) 
 
 import qualified Statistics.Sample    as Stats
 
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.Hedgehog  ( testProperty )
+import           Test.Utils           ( approx )
 
 
 tests :: TestTree
@@ -22,12 +21,6 @@ tests = testGroup "Data.Series.Numeric" [ testPropMean
                                         , testPropStdDev
                                         , testPropMeanAndVariance
                                         ]
-
--- | Fails the test if the two arguments provided are not equal to within `epsilon`.
-approx :: (MonadTest m, AEq a, Show a, HasCallStack) => a -> a -> m ()
-approx x y =
-  withFrozenCallStack $
-    diff x (~==) y
 
 
 testPropMean :: TestTree

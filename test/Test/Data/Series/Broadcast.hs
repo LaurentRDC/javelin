@@ -6,8 +6,8 @@ import           Control.Monad        ( forM_ )
 
 import           Data.Maybe           ( fromJust, isNothing )
 import           Data.Series          ( Series(index)
-                                      , (+:), (-:), (*:)
-                                      , (+|), (-|), (*|)
+                                      , (+:), (-:), (*:), (/:)
+                                      , (+|), (-|), (*|), (/|)
                                       , fromStrictMap, fromList, zipWith, select, at )
 import qualified Data.Set             as Set
 
@@ -20,7 +20,7 @@ import           Prelude              hiding ( zipWith )
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.Hedgehog  ( testProperty )
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
-
+import           Test.Utils           ( approx )
 
 tests :: TestTree
 tests = testGroup "Data.Series.Broadcast" [ testZipWith
@@ -29,9 +29,11 @@ tests = testGroup "Data.Series.Broadcast" [ testZipWith
                                           , testPropPlusMaybe
                                           , testPropMinusMaybe
                                           , testPropMultMaybe
+                                          , testPropDivMaybe
                                           , testPropPlusMatched
                                           , testPropMinusMatched
                                           , testPropMultMatched
+                                          , testPropDivMatched
                                           ]
 
 
@@ -107,6 +109,20 @@ testPropMultMaybe
         fmap (*c) xs === (c *: xs)
 
 
+testPropDivMaybe :: TestTree
+testPropDivMaybe
+    = testProperty "Broadcastable division with holes (/:)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
+        c  <- forAll $ Gen.double (Range.linearFrac (-500) 500)
+
+        let xs = fromStrictMap m1
+        forM_ (index xs) $ \k -> do
+            fromJust (fmap (/c) xs `at` k) `approx` fromJust ( (xs /: c) `at` k)
+            fromJust (fmap (c/) xs `at` k) `approx` fromJust (  (c /: xs) `at` k)
+
+        fmap (const (Just (1 :: Double))) xs === xs /: xs
+
+
 testPropPlusMatched :: TestTree
 testPropPlusMatched
     = testProperty "Broadcastable addition without holes (+|)" $ property $ do
@@ -141,3 +157,17 @@ testPropMultMatched
         let xs = fromStrictMap m1
         fmap (*c) xs === (xs *| c)
         fmap (*c) xs === (c *| xs)
+
+
+testPropDivMatched :: TestTree
+testPropDivMatched
+    = testProperty "Broadcastable division without holes (/|)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
+        c  <- forAll $ Gen.double (Range.linearFrac (-500) 500)
+
+        let xs = fromStrictMap m1
+        forM_ (index xs) $ \k -> do
+            (fmap (/c) xs `at` k) `approx` ( (xs /| c) `at` k)
+            (fmap (c/) xs `at` k) `approx` ( (c /| xs) `at` k)
+
+        fmap (const (Just (1 :: Double))) xs === xs /: xs

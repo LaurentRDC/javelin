@@ -49,6 +49,7 @@ test-suite series-test
                       Test.Data.Series.Definition
                       Test.Data.Series.Numeric
                       Test.Data.Series.View
+                      Test.Utils
     build-depends:    base,
                       containers,
                       hedgehog,

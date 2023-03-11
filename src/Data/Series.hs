@@ -29,15 +29,15 @@ module Data.Series (
 
     -- * Broadcastable operations
     -- ** Broadcastable operations that may leave holes
-    (+:), (-:), (*:),
+    (+:), (-:), (*:), (/:),
     -- ** Broadcastable operations only on matched keys
-    (+|), (-|), (*|),
+    (+|), (-|), (*|), (/|),
 ) where
 
 import Prelude                hiding ( zipWith )
 
-import Data.Series.Broadcast  ( zipWith, zipWithMatched, (+:), (-:), (*:), (+|), (-|), (*|) )
-import Data.Series.Conversion (fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList)
+import Data.Series.Broadcast  ( zipWith, zipWithMatched, (+:), (-:), (*:), (/:), (+|), (-|), (*|), (/|) )
+import Data.Series.Conversion ( fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.Definition ( Series(index) )
 import Data.Series.Numeric    ( mean, variance, sampleVariance, std, meanAndVariance )
 import Data.Series.View       ( at, iat, select, from, to, reindex)
