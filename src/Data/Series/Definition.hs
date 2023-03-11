@@ -27,31 +27,35 @@ data Series k a
     -- This allows for efficient slicing of the underlying values, because
     -- if `k1 < k2`, then the values are also at indices `ix1 < ix2`.
     = MkSeries { index  :: !(Set k)
-               , values :: !(Vector a)
+               , values :: Vector a
                }
     deriving (Show)
 
 
 instance Ord k => Semigroup (Series k a) where
-
     {-# INLINE (<>) #-}
     (<>) :: Series k a -> Series k a -> Series k a
     (MkSeries ks1 vs1) <> (MkSeries ks2 vs2)
         = let allKeys = ks1 `Set.union` ks2
-              newValues = Vector.fromListN (Set.size allKeys) [ pick k | k <- Set.toAscList allKeys ]
+              newValues = pick <$> Vector.fromListN (Set.size allKeys) (Set.toAscList allKeys)
             in MkSeries allKeys newValues
         where
             pick :: k -> a
-            pick key
-                -- We know from how `pick` is used that `key` is either in ks1 or ks2 (or both).
-                -- Note that this function is left-biased: if there are duplicate keys,
-                -- the value from the left series is preferred.
-                | key `Set.member` ks1 = vs1 Vector.! (key `Set.findIndex` ks1)
-                | otherwise            = vs2 Vector.! (key `Set.findIndex` ks2)
+            pick key = case findKeyIndex key of
+                Left  ix -> vs1 Vector.! ix
+                Right ix -> vs2 Vector.! ix
+            
+            findKeyIndex :: k -> Either Int Int
+            findKeyIndex k 
+                = case k `Set.lookupIndex` ks1 of
+                    Just ix -> Left ix
+                    -- Not safe but we know `k` is either in `ks1` or `ks2`
+                    -- Note that this choice makes (<>) left-biased: if there are duplicate keys,
+                    -- the value from the left series is preferred.
+                    Nothing -> Right $ k `Set.findIndex` ks2
 
 
 instance Ord k => Monoid (Series k a) where
-
     {-# INLINE mempty #-}
     mempty :: Series k a
     mempty = MkSeries mempty mempty
@@ -76,7 +80,6 @@ instance Functor (Series k) where
 -- Inlining all Foldable methods brings performance to parity with `Data.Vector.Vector`.
 -- Otherwise, performance is ~2x slower for `sum`, for example.
 instance Foldable (Series k) where
-
     {-# INLINE fold #-}
     fold :: Monoid m => Series k m -> m
     fold = fold . values

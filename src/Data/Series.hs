@@ -1,7 +1,7 @@
 
 module Data.Series (
     -- * Definition
-    Series(index, values),
+    Series(index),
 
     -- * Building/converting @Series@
     fromStrictMap,
@@ -12,12 +12,15 @@ module Data.Series (
     toList,
 
     -- * Random access
-    at, iat,
+    at, iat, select,
+
+    -- * Index manipulation
+    reindex,
 
     -- * Range access
     from, to
 ) where
 
 import Data.Series.Conversion (fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList)
-import Data.Series.Definition (Series(..))
-import Data.Series.View       ( at, iat, from, to )
+import Data.Series.Definition ( Series(index) )
+import Data.Series.View       ( at, iat, select, from, to, reindex)
