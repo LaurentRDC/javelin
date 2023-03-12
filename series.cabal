@@ -47,6 +47,7 @@ test-suite series-test
     hs-source-dirs:   test
     main-is:          Main.hs
     other-modules:    Test.Data.Series
+                      Test.Data.Series.Aggregation
                       Test.Data.Series.Broadcast
                       Test.Data.Series.Conversion
                       Test.Data.Series.Definition

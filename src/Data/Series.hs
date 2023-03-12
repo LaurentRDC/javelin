@@ -23,6 +23,9 @@ module Data.Series (
     -- * Range access
     from, to,
 
+    -- * Grouping operations
+    groupBy, aggregateWith,
+
     -- * Numerical aggregations
     mean, variance, sampleVariance, std,
     meanAndVariance,
@@ -36,6 +39,7 @@ module Data.Series (
 
 import Prelude                hiding ( zipWith )
 
+import Data.Series.Aggregation          ( groupBy, aggregateWith )
 import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|) )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:) )
