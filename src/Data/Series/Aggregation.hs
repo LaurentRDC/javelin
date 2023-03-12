@@ -4,41 +4,40 @@ module Data.Series.Aggregation (
     aggregateWith,
 ) where
 
-import           Data.Bifunctor         ( second )
-
-import           Data.Map.Lazy          ( Map )
-import qualified Data.Map.Lazy          as Map
-
-import           Data.Series.Conversion ( fromLazyMap )
+import           Data.Map.Strict        ( Map )
+import qualified Data.Map.Strict        as Map
+import           Data.Series.Conversion ( fromStrictMap )
 import           Data.Series.Definition ( Series(..))
 import           Data.Series.View       ( select )
+import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 
 
--- Original implementation from `extra`'s Data.List.Extra
-groupOn :: Eq g => (k -> g) -> [k] -> [ (g, [k]) ]
-groupOn _ [] = []
-groupOn on (x:xs) = (fx, x:yes) : groupOn on no
-    where
-        fx = on x
-        (yes, no) = span (\y -> fx == on y) xs
+groupKeys :: (Ord g) => (k -> g) -> Set k -> Map g (Set k)
+{-# INLINE groupKeys #-}
+groupKeys f ks
+    | Set.null ks = mempty
+    -- We're accumulating lists because they append very quickly, and THEN convert to Set.
+    -- Note that because `ks` is a distinct list of ascending elements, we can
+    -- use `Set.fromDistinctDescList`. This is because of the order of (++)
+    | otherwise   = fmap Set.fromDistinctDescList 
+                  $ Map.fromListWith (++) $ [(f k, [k]) | k <- Set.toAscList ks]
 
 
-groupBy :: (Ord k, Ord g) => Series k a -> (k -> g) ->  GroupBy g k a
+groupBy :: (Ord k, Ord g) 
+        => Series k a -> (k -> g) ->  GroupBy g k a
+{-# INLINE groupBy #-}
 groupBy xs by
     = MkGroupBy $ fmap (select xs) groups
     where
-
-        groups = Map.fromList $ fmap (second Set.fromList) $ groupOn by $ Set.toAscList $ index xs
+        groups = fromStrictMap $ groupKeys by (index xs)
 
 
 newtype GroupBy g k a 
-    -- Note that we're using a lazy map so that groups may or may not
-    -- be consumed in their entirety. 
-    = MkGroupBy { groups :: Map g (Series k a) }
+    = MkGroupBy { groups :: Series g (Series k a) }
     deriving (Eq, Show)
 
 
-aggregateWith :: Ord g => GroupBy g k a -> (Series k a -> b) -> Series g b
-aggregateWith (MkGroupBy xs) agg 
-    = fromLazyMap (fmap agg xs)
+aggregateWith :: GroupBy g k a -> (Series k a -> b) -> Series g b
+{-# INLINE aggregateWith #-}
+aggregateWith = flip fmap . groups

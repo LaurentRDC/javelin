@@ -6,7 +6,7 @@ import qualified Data.Map.Strict      as MS
 import qualified Data.Map.Lazy        as ML
 import           Data.Series          ( Series, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 
-import           Hedgehog             ( property, forAll, (===) )
+import           Hedgehog             ( property, forAll, (===), tripping )
 import qualified Hedgehog.Gen         as Gen
 import qualified Hedgehog.Range       as Range
 
@@ -18,6 +18,7 @@ tests :: TestTree
 tests = testGroup "Data.Series.Conversion" [ testFromStrictMap
                                            , testToStrictMap
                                            , testPropRoundtripConversionWithStrictMap
+                                           , testPropRoundtripConversionWithLazyMap
                                            , testPropRoundtripConversionWithList
                                            , testFromLazyMap
                                            , testToLazyMap
@@ -46,9 +47,14 @@ testPropRoundtripConversionWithStrictMap :: TestTree
 testPropRoundtripConversionWithStrictMap 
     = testProperty "Roundtrip property with Data.Map.Strict" $ property $ do
         ms <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.alpha <*> Gen.alpha)
-        let xs = fromStrictMap ms
-        length xs === length ms 
-        toStrictMap xs === ms
+        tripping ms fromStrictMap (Just . toStrictMap)
+
+
+testPropRoundtripConversionWithLazyMap :: TestTree
+testPropRoundtripConversionWithLazyMap 
+    = testProperty "Roundtrip property with Data.Map.Lazy" $ property $ do
+        ms <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.alpha <*> Gen.alpha)
+        tripping (ML.fromDistinctAscList $ MS.toAscList ms) fromLazyMap (Just . toLazyMap)
 
 
 testPropRoundtripConversionWithList :: TestTree

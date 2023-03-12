@@ -1,0 +1,6 @@
+packages: *.cabal
+test-show-details: streaming
+
+library-profiling: True
+executable-profiling: True
+optimization: 2

@@ -27,26 +27,35 @@ import           Data.Series.Definition ( Series(..) )
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
 fromList :: (Eq k, Ord k) => [(k, a)] -> Series k a
-fromList = fromLazyMap . ML.fromList
+{-# INLINE fromList #-}
+fromList = fromStrictMap . MS.fromList
 
 
 toList :: Series k a -> [(k, a)]
+{-# INLINE toList #-}
 toList (MkSeries ks vs) = zip (Set.toAscList ks) (Vector.toList vs)
 
 
 toLazyMap :: (Eq k, Ord k) => Series k a -> Map k a
-toLazyMap (MkSeries ks vs) = ML.fromAscList $ zip (Set.toList ks) (Vector.toList vs)
+{-# INLINE toLazyMap #-}
+toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
 
 
 fromLazyMap :: (Eq k, Ord k) => ML.Map k a -> Series k a
-fromLazyMap = fromStrictMap . MS.fromList . ML.toList
+{-# INLINE fromLazyMap #-}
+fromLazyMap mp = let keys = ML.keysSet mp 
+                  in MkSeries { index  = keys 
+                              , values = Vector.fromListN (Set.size keys) $ ML.elems mp
+                              }
 
 
 toStrictMap :: (Eq k, Ord k) => Series k a -> Map k a
-toStrictMap (MkSeries ks vs) = MS.fromAscList $ zip (Set.toList ks) (Vector.toList vs)
+{-# INLINE toStrictMap #-}
+toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
 
 
 fromStrictMap :: (Eq k, Ord k) => MS.Map k a -> Series k a
+{-# INLINE fromStrictMap #-}
 fromStrictMap mp = MkSeries { index  = MS.keysSet mp
-                            , values = Vector.fromList $ MS.elems mp
+                            , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                             }
