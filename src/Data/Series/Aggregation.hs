@@ -6,8 +6,7 @@ module Data.Series.Aggregation (
 
 import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as Map
-import           Data.Series.Conversion ( fromStrictMap )
-import           Data.Series.Definition ( Series(..))
+import           Data.Series.Definition ( Series(..), fromStrictMap )
 import           Data.Series.View       ( select )
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set

@@ -18,7 +18,7 @@ module Data.Series (
     at, iat, select,
 
     -- * Index manipulation
-    reindex,
+    reindex, mapIndex,
 
     -- * Range access
     from, to,
@@ -43,7 +43,6 @@ import Data.Series.Aggregation          ( groupBy, aggregateWith )
 import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|) )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:) )
-import Data.Series.Conversion           ( fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
-import Data.Series.Definition           ( Series(index) )
+import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
-import Data.Series.View                 ( at, iat, select, from, to, reindex)
+import Data.Series.View                 ( at, iat, select, from, to, reindex, mapIndex)

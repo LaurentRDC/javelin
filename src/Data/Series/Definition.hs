@@ -1,14 +1,34 @@
+-- We ignore redundant constraint on `Ord k`.
+-- While this constraint is redundant in this module,
+-- `Series k a` where `k` is not an instance of `Ord` would be practically useless
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+{-# LANGUAGE TypeFamilies #-}
+
 module Data.Series.Definition ( 
     Series(..),
+
+    -- * Conversion to/from Maps
+    fromStrictMap,
+    toStrictMap,
+    fromLazyMap,
+    toLazyMap,
+    -- * Convertion to/from list
+    fromList,
+    toList,
 ) where
 
 import           Control.DeepSeq ( NFData(rnf) )
 import           Data.Bifoldable ( Bifoldable(..) )
-import           Data.Foldable   ( Foldable(..) )
+import           Data.Foldable   ( Foldable(fold, foldMap', foldr', foldl') )
+import qualified Data.Map.Lazy   as ML
+import           Data.Map.Strict ( Map )
+import qualified Data.Map.Strict as MS
 import           Data.Set        ( Set )
 import qualified Data.Set        as Set
 import           Data.Vector     ( Vector )
 import qualified Data.Vector     as Vector
+
+import qualified GHC.Exts        ( IsList(..) )
 
 
 -- | A series is a labeled array of values of type @a@,
@@ -30,6 +50,43 @@ data Series k a
                , values :: Vector a
                }
     deriving (Show)
+
+
+-- | Construct a series from a list of key-value pairs. There is no
+-- condition on the order of pairs.
+fromList :: (Eq k, Ord k) => [(k, a)] -> Series k a
+{-# INLINE fromList #-}
+fromList = fromStrictMap . MS.fromList
+
+
+toList :: Series k a -> [(k, a)]
+{-# INLINE toList #-}
+toList (MkSeries ks vs) = zip (Set.toAscList ks) (Vector.toList vs)
+
+
+toLazyMap :: (Eq k, Ord k) => Series k a -> Map k a
+{-# INLINE toLazyMap #-}
+toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
+
+
+fromLazyMap :: (Eq k, Ord k) => ML.Map k a -> Series k a
+{-# INLINE fromLazyMap #-}
+fromLazyMap mp = let keys = ML.keysSet mp 
+                  in MkSeries { index  = keys 
+                              , values = Vector.fromListN (Set.size keys) $ ML.elems mp
+                              }
+
+
+toStrictMap :: (Eq k, Ord k) => Series k a -> Map k a
+{-# INLINE toStrictMap #-}
+toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
+
+
+fromStrictMap :: (Eq k, Ord k) => MS.Map k a -> Series k a
+{-# INLINE fromStrictMap #-}
+fromStrictMap mp = MkSeries { index  = MS.keysSet mp
+                            , values = Vector.fromListN (MS.size mp) $ MS.elems mp
+                            }
 
 
 instance Ord k => Semigroup (Series k a) where
@@ -155,3 +212,13 @@ instance Bifoldable Series where
 instance (NFData k, NFData a) => NFData (Series k a) where
     rnf :: Series k a -> ()
     rnf (MkSeries ks vs) = rnf ks `seq` rnf vs
+
+
+instance Ord k => GHC.Exts.IsList (Series k a) where
+    type Item (Series k a) = (k, a)
+
+    fromList :: Ord k => [GHC.Exts.Item (Series k a)] -> Series k a
+    fromList = fromList
+    
+    toList :: Ord k => Series k a -> [GHC.Exts.Item (Series k a)]
+    toList = toList

@@ -1,4 +1,4 @@
-
+{-# LANGUAGE RecordWildCards #-}
 module Data.Series.View (
     -- * Accessing a single element
     (!),
@@ -12,6 +12,7 @@ module Data.Series.View (
     reindex,
     filter,
     dropna,
+    mapIndex,
 
     -- * Accessing ranges
     Range,
@@ -20,7 +21,8 @@ module Data.Series.View (
 ) where
 
 import           Data.Maybe             ( fromJust, isJust )
-import           Data.Series.Definition ( Series(..) )
+import qualified Data.Map.Strict        as Map
+import           Data.Series.Definition ( Series(..), fromStrictMap )
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
@@ -58,6 +60,7 @@ data Range k = MkRange k k
 
 -- | Find the keys which are in range
 keysInRange :: Ord k => Series k a -> Range k -> (k, k)
+{-# INLINE keysInRange #-}
 keysInRange (MkSeries ks _) (MkRange start stop)
     = let (_, afterStart) = Set.spanAntitone (< start) ks
           inRange         = Set.takeWhileAntitone (<= stop) afterStart
@@ -95,6 +98,7 @@ to k1 k2 = MkRange (min k1 k2) (max k1 k2)
 -- | Select all keys in @Set k@ in a series. Keys which are not
 -- in the series are ignored.
 select :: Ord k => Series k a -> Set k -> Series k a
+{-# INLINE select #-}
 select (MkSeries ks vs) ss 
     = let selectedKeys = ks `Set.intersection` ss
           newValues = pick <$> Vector.fromListN (Set.size selectedKeys) (Set.toAscList selectedKeys)
@@ -103,9 +107,25 @@ select (MkSeries ks vs) ss
             pick key = vs Vector.! Set.findIndex key ks
 
 
+-- | \(O(n \log n)\).
+-- Map each key in the index to another value. Note that the resulting series
+-- may have less elements, because each key must be unique.
+--
+-- In case new keys are conflicting, the first element is kept.
+mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
+{-# INLINE mapIndex #-}
+mapIndex MkSeries{..} f
+    -- Note that the order in which items are kept appears to be backwards;
+    -- See the examples for Data.Map.Strict.fromListWith
+    = let mapping   = Map.fromListWith (\_ x -> x) $ [(f k, k) | k <- Set.toAscList index]
+          newvalues = fmap (\k -> values Vector.! Set.findIndex k index) mapping
+       in fromStrictMap newvalues
+
+
 -- | Reindex a series with a new index.
 -- Contrary to @select@, all keys in @Set k@ will be present in the re-indexed series.
 reindex :: Ord k => Series k a -> Set k -> Series k (Maybe a)
+{-# INLINE reindex #-}
 reindex xs ss 
     = let existingKeys = index xs `Set.intersection` ss
           newKeys      = ss `Set.difference` existingKeys
@@ -114,6 +134,7 @@ reindex xs ss
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
 filter :: Ord k => (a -> Bool) -> Series k a -> Series k a
+{-# INLINE filter #-}
 filter predicate xs@(MkSeries ks vs) 
     = let nothingIndices = Vector.findIndices predicate vs
           keysToDrop = Set.fromList [Set.elemAt ix ks | ix <- Vector.toList nothingIndices]
@@ -123,4 +144,5 @@ filter predicate xs@(MkSeries ks vs)
 
 -- | Drop elements which are not available (NA). 
 dropna :: Ord k => Series k (Maybe a) -> Series k a
+{-# INLINE dropna #-}
 dropna = fmap fromJust . filter isJust
