@@ -14,14 +14,14 @@ module Data.Series (
     -- * Combining series
     zipWith, zipWithMatched,
 
-    -- * Random access
-    at, iat, select,
-
     -- * Index manipulation
     reindex, mapIndex,
 
+    -- * Random access
+    at, iat,
+
     -- * Range access
-    from, to,
+    to, select,
 
     -- * Grouping operations
     groupBy, aggregateWith,
@@ -45,4 +45,4 @@ import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|) )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:) )
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
-import Data.Series.View                 ( at, iat, select, from, to, reindex, mapIndex)
+import Data.Series.View                 ( at, iat, select, to, reindex, mapIndex)

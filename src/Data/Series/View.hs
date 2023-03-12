@@ -16,7 +16,6 @@ module Data.Series.View (
 
     -- * Accessing ranges
     Range,
-    from,
     to,
 ) where
 
@@ -51,60 +50,6 @@ at (MkSeries ks vs) k = do
 iat :: Series k a -> Int -> Maybe a
 iat (MkSeries _ vs) =  (Vector.!?) vs
 {-# INLINE iat #-}
-
-
--- | Datatype representing an inclusive range of keys.
--- The two bounds are expected to be sorted.
-data Range k = MkRange k k
-
-
--- | Find the keys which are in range
-keysInRange :: Ord k => Series k a -> Range k -> (k, k)
-{-# INLINE keysInRange #-}
-keysInRange (MkSeries ks _) (MkRange start stop)
-    = let (_, afterStart) = Set.spanAntitone (< start) ks
-          inRange         = Set.takeWhileAntitone (<= stop) afterStart
-       in (Set.findMin inRange, Set.findMax inRange)
-
-
--- | Initiate the slicing of a series by key. This function
--- is expected to be used in conjunction with @to@: 
-from :: Ord k => Series k a -> Range k -> Series k a
-from series range 
-    = let (kstart, kstop) = keysInRange series range 
-       in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
-    where
-        indexOf :: Ord k => Series k a -> k ->  Int
-        indexOf (MkSeries ks _) k = Set.findIndex k ks
-
-        -- | Yield a subseries based on indices. The end index is not included.
-        slice :: Int -- ^ Start index
-              -> Int -- ^ End index
-              -> Series k a 
-              -> Series k a
-        slice start stop (MkSeries ks vs) 
-            = let stop' = min (length vs) stop
-               in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
-                           , values = Vector.slice start (stop' - start) vs
-                           }
-
-
--- | Terminate the slicing of a series by key. This function
--- is expected to be used in conjunction with @from@: 
-to :: Ord k => k -> k -> Range k
-to k1 k2 = MkRange (min k1 k2) (max k1 k2)
-
-
--- | Select all keys in @Set k@ in a series. Keys which are not
--- in the series are ignored.
-select :: Ord k => Series k a -> Set k -> Series k a
-{-# INLINE select #-}
-select (MkSeries ks vs) ss 
-    = let selectedKeys = ks `Set.intersection` ss
-          newValues = pick <$> Vector.fromListN (Set.size selectedKeys) (Set.toAscList selectedKeys)
-        in MkSeries selectedKeys newValues
-        where
-            pick key = vs Vector.! Set.findIndex key ks
 
 
 -- | \(O(n \log n)\).
@@ -146,3 +91,61 @@ filter predicate xs@(MkSeries ks vs)
 dropna :: Ord k => Series k (Maybe a) -> Series k a
 {-# INLINE dropna #-}
 dropna = fmap fromJust . filter isJust
+
+
+-- | Datatype representing an inclusive range of keys.
+-- The two bounds are expected to be sorted.
+data Range k = MkRange k k
+
+
+-- | Find the keys which are in range
+keysInRange :: Ord k => Series k a -> Range k -> (k, k)
+{-# INLINE keysInRange #-}
+keysInRange (MkSeries ks _) (MkRange start stop)
+    = let (_, afterStart) = Set.spanAntitone (< start) ks
+          inRange         = Set.takeWhileAntitone (<= stop) afterStart
+       in (Set.findMin inRange, Set.findMax inRange)
+
+
+-- | Terminate the slicing of a series by key. This function
+-- is expected to be used in conjunction with @from@: 
+to :: Ord k => k -> k -> Range k
+to k1 k2 = MkRange (min k1 k2) (max k1 k2)
+
+
+class Selection s where
+    select :: Ord k => Series k a -> s k -> Series k a
+
+
+instance Selection Set where
+    -- | Select all keys in @Set k@ in a series. Keys which are not
+    -- in the series are ignored.
+    select :: Ord k => Series k a -> Set k -> Series k a
+    {-# INLINE select #-}
+    select (MkSeries ks vs) ss 
+        = let selectedKeys = ks `Set.intersection` ss
+              newValues = pick <$> Vector.fromListN (Set.size selectedKeys) (Set.toAscList selectedKeys)
+           in MkSeries selectedKeys newValues
+            where
+                pick key = vs Vector.! Set.findIndex key ks
+
+
+instance Selection Range where
+    select :: Ord k => Series k a -> Range k -> Series k a
+    {-# INLINE select #-}
+    select series range 
+        = let (kstart, kstop) = keysInRange series range 
+              indexOf xs k = Set.findIndex k (index xs)
+           in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
+        where
+            -- | Yield a subseries based on indices. The end index is not included.
+            slice :: Int -- ^ Start index
+                  -> Int -- ^ End index
+                  -> Series k a 
+                  -> Series k a
+            {-# INLINE slice #-}
+            slice start stop (MkSeries ks vs) 
+                = let stop' = min (length vs) stop
+                in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
+                            , values = Vector.slice start (stop' - start) vs
+                            }
