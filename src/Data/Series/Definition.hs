@@ -7,6 +7,9 @@
 module Data.Series.Definition ( 
     Series(..),
 
+    -- * Basic interface
+    headM, lastM, take,
+
     -- * Conversion to/from Maps
     fromStrictMap,
     toStrictMap,
@@ -27,6 +30,8 @@ import           Data.Set        ( Set )
 import qualified Data.Set        as Set
 import           Data.Vector     ( Vector )
 import qualified Data.Vector     as Vector
+
+import           Prelude         hiding ( take )
 
 import qualified GHC.Exts        ( IsList(..) )
 
@@ -87,6 +92,21 @@ fromStrictMap :: (Eq k, Ord k) => MS.Map k a -> Series k a
 fromStrictMap mp = MkSeries { index  = MS.keysSet mp
                             , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                             }
+
+
+headM :: Series k a -> Maybe a
+{-# INLINE headM #-}
+headM (MkSeries _ vs) = Vector.headM vs
+
+
+lastM :: Series k a -> Maybe a
+{-# INLINE lastM #-}
+lastM (MkSeries _ vs) = Vector.lastM vs
+
+
+take :: Int -> Series k a -> Series k a
+{-# INLINE take #-}
+take n (MkSeries ks vs) = MkSeries (Set.take n ks) (Vector.take n vs)
 
 
 instance Ord k => Semigroup (Series k a) where

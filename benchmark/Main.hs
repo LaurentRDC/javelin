@@ -152,7 +152,7 @@ main = do
     sliceByKeyRandomized funcs = 
       [ env
         (let list = take i (zip (randoms (mkStdGen 0) :: [Int]) [1 ..])
-             keys  = Set.fromList $ take (round ( fromIntegral i / 10)) (randoms (mkStdGen 0) :: [Int])
+             keys  = Set.fromList $ take (round ((fromIntegral i / 10) :: Double)) (randoms (mkStdGen 0) :: [Int])
              !elems = force (fromList list)
           in pure (keys, elems))
         (\(~(keys, elems)) ->

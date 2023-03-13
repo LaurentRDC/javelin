@@ -6,8 +6,8 @@ import           Control.Monad        ( forM_ )
 
 import           Data.Maybe           ( fromJust, isNothing )
 import           Data.Series          ( Series(index)
-                                      , (+:), (-:), (*:), (/:)
-                                      , (+|), (-|), (*|), (/|)
+                                      , (+:), (-:), (*:), (/:), (==:), (/=:)
+                                      , (+|), (-|), (*|), (/|), (==|), (/=|)
                                       , fromStrictMap, fromList, zipWith, select, at )
 import qualified Data.Set             as Set
 
@@ -30,10 +30,14 @@ tests = testGroup "Data.Series.Broadcast" [ testZipWith
                                           , testPropMinusMaybe
                                           , testPropMultMaybe
                                           , testPropDivMaybe
+                                          , testPropEqMaybe
+                                          , testPropNotEqMaybe
                                           , testPropPlusMatched
                                           , testPropMinusMatched
                                           , testPropMultMatched
                                           , testPropDivMatched
+                                          , testPropEqMatched
+                                          , testPropNotEqMatched
                                           ]
 
 
@@ -123,6 +127,22 @@ testPropDivMaybe
         fmap (const (Just (1 :: Double))) xs === xs /: xs
 
 
+testPropEqMaybe :: TestTree
+testPropEqMaybe
+    = testProperty "Broadcastable equality with holes (==:)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
+        let xs = fromStrictMap m1
+        (xs ==: xs) === fromList (map (, Just True) (Set.toAscList (index xs)))
+
+
+testPropNotEqMaybe :: TestTree
+testPropNotEqMaybe
+    = testProperty "Broadcastable non-equality with holes (/=:)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
+        let xs = fromStrictMap m1
+        (xs /=: fmap (+1) xs) === fromList (map (, Just True) (Set.toAscList (index xs)))
+
+
 testPropPlusMatched :: TestTree
 testPropPlusMatched
     = testProperty "Broadcastable addition without holes (+|)" $ property $ do
@@ -171,3 +191,19 @@ testPropDivMatched
             (fmap (c/) xs `at` k) `approx` ( (c /| xs) `at` k)
 
         fmap (const (Just (1 :: Double))) xs === xs /: xs
+
+
+testPropEqMatched :: TestTree
+testPropEqMatched
+    = testProperty "Broadcastable equality without holes (==|)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
+        let xs = fromStrictMap m1
+        (xs ==| xs) === fromList (map (, True) (Set.toAscList (index xs)))
+
+
+testPropNotEqMatched :: TestTree
+testPropNotEqMatched
+    = testProperty "Broadcastable non-equality without holes (/=|)" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
+        let xs = fromStrictMap m1
+        (xs /=| fmap (+1) xs) === fromList (map (, True) (Set.toAscList (index xs)))
