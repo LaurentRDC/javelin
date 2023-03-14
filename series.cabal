@@ -86,14 +86,14 @@ benchmark comparison-containers
 benchmark operations
     import:           common
     type:             exitcode-stdio-1.0
-    ghc-options:      -rtsopts -threaded -prof -fprof-auto "-with-rtsopts=-p"
+    ghc-options:      -rtsopts -threaded -O2
     hs-source-dirs:   benchmarks
     main-is:          Operations.hs
     build-depends:    base,
                       containers,
-                      series,
                       deepseq,
-                      tasty-bench,
+                      series,
+                      criterion
 
 
 executable bench-report

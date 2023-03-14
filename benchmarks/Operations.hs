@@ -1,6 +1,7 @@
 
-import Control.DeepSeq              ( rnf )
-import Control.Exception            ( evaluate )
+import           Control.DeepSeq    ( rnf )
+import           Control.Exception  ( evaluate )
+import           Criterion.Main     ( bench, whnf, defaultMain )
 
 import           Data.Foldable      ( Foldable(foldl') )
 import           Data.Set           ( Set )     
@@ -8,7 +9,6 @@ import qualified Data.Set           as Set
 import           Data.Series        ( Series )
 import qualified Data.Series        as Series
 
-import           Test.Tasty.Bench   ( bench, defaultMain, whnf )
 
 main :: IO ()
 main = do
