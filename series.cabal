@@ -10,7 +10,7 @@ maintainer:         laurent.decotret@outlook.com
 category:           Data
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
-extra-source-files:
+extra-source-files: test/data/*.csv
 
 common common
     default-language: GHC2021
@@ -33,11 +33,15 @@ library
                       Data.Series.Broadcast.Drop
                       Data.Series.Broadcast.Propagate
                       Data.Series.Definition
+                      Data.Series.IO
                       Data.Series.Numeric
                       Data.Series.View
     build-depends:    base >=4.15.0.0,
+                      bytestring,
+                      cassava,
                       containers,
                       deepseq,
+                      text,
                       vector
 
 test-suite series-test
@@ -50,6 +54,7 @@ test-suite series-test
                       Test.Data.Series.Broadcast
                       Test.Data.Series.Conversion
                       Test.Data.Series.Definition
+                      Test.Data.Series.IO
                       Test.Data.Series.Numeric
                       Test.Data.Series.View
                       Test.Utils
