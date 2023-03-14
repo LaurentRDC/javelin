@@ -8,6 +8,7 @@ import qualified Test.Data.Series.Definition
 import qualified Test.Data.Series.IO
 import qualified Test.Data.Series.Numeric
 import qualified Test.Data.Series.View
+import qualified Test.Data.Series.Windowing
 
 import           Test.Tasty ( defaultMain, testGroup )
 
@@ -20,4 +21,5 @@ main = defaultMain $ testGroup "Test suite" [ Test.Data.Series.tests
                                             , Test.Data.Series.IO.tests
                                             , Test.Data.Series.Numeric.tests
                                             , Test.Data.Series.View.tests
+                                            , Test.Data.Series.Windowing.tests
                                             ]

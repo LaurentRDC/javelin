@@ -24,7 +24,7 @@ module Data.Series (
     at, iat,
 
     -- * Range access
-    to, select,
+    Range, to, select, 
 
     -- * Grouping operations
     groupBy, aggregateWith,
@@ -32,6 +32,9 @@ module Data.Series (
     -- * Numerical aggregations
     mean, variance, sampleVariance, std,
     meanAndVariance,
+
+    -- * Windowing operations
+    windows, iwindows,
 
     -- * Broadcastable operations
     -- ** Broadcastable operations that may leave holes
@@ -49,4 +52,5 @@ import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile )
 import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
-import Data.Series.View                 ( at, iat, select, to, reindex, mapIndex)
+import Data.Series.View                 ( Range, at, iat, select, to, reindex, mapIndex)
+import Data.Series.Windowing            ( windows, iwindows )

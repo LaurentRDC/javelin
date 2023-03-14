@@ -5,8 +5,9 @@ module Data.Series.View (
     at,
     iat,
 
-    -- * Random bulk access
+    -- * Bulk access
     select,
+    slice,
 
     -- * Resizing
     reindex,
@@ -14,8 +15,8 @@ module Data.Series.View (
     dropna,
     mapIndex,
 
-    -- * Accessing ranges
-    Range,
+    -- * Creating and accessing ranges
+    Range(..),
     to,
 ) where
 
@@ -134,19 +135,20 @@ instance Selection Set where
 instance Selection Range where
     select :: Ord k => Series k a -> Range k -> Series k a
     {-# INLINE select #-}
-    select series range 
-        = let (kstart, kstop) = keysInRange series range 
+    select series rng 
+        = let (kstart, kstop) = keysInRange series rng 
               indexOf xs k = Set.findIndex k (index xs)
            in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
-        where
-            -- | Yield a subseries based on indices. The end index is not included.
-            slice :: Int -- ^ Start index
-                  -> Int -- ^ End index
-                  -> Series k a 
-                  -> Series k a
-            {-# INLINE slice #-}
-            slice start stop (MkSeries ks vs) 
-                = let stop' = min (length vs) stop
-                in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
-                            , values = Vector.unsafeSlice start (stop' - start) vs
-                            }
+
+
+-- | Yield a subseries based on indices. The end index is not included.
+slice :: Int -- ^ Start index
+      -> Int -- ^ End index
+      -> Series k a 
+      -> Series k a
+{-# INLINE slice #-}
+slice start stop (MkSeries ks vs) 
+    = let stop' = min (length vs) stop
+    in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
+                , values = Vector.unsafeSlice start (stop' - start) vs
+                }
