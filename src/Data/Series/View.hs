@@ -42,7 +42,7 @@ import           Prelude                hiding ( filter )
 at :: Ord k => Series k a -> k -> Maybe a
 at (MkSeries ks vs) k = do
     ix <- Set.lookupIndex k ks
-    pure $ (Vector.!) vs ix 
+    pure $ Vector.unsafeIndex vs ix 
 {-# INLINE at #-}
 
 
@@ -124,10 +124,11 @@ instance Selection Set where
     {-# INLINE select #-}
     select (MkSeries ks vs) ss 
         = let selectedKeys = ks `Set.intersection` ss
-              newValues = pick <$> Vector.fromListN (Set.size selectedKeys) (Set.toAscList selectedKeys)
+              newValues = Vector.map (Vector.unsafeIndex vs) 
+                        $ Vector.map (`Set.findIndex` ks) 
+                        $ Vector.fromListN (Set.size selectedKeys) 
+                                           (Set.toAscList selectedKeys)
            in MkSeries selectedKeys newValues
-            where
-                pick key = vs Vector.! Set.findIndex key ks
 
 
 instance Selection Range where
@@ -147,5 +148,5 @@ instance Selection Range where
             slice start stop (MkSeries ks vs) 
                 = let stop' = min (length vs) stop
                 in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
-                            , values = Vector.slice start (stop' - start) vs
+                            , values = Vector.unsafeSlice start (stop' - start) vs
                             }

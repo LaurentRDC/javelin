@@ -121,8 +121,8 @@ instance Ord k => Semigroup (Series k a) where
             --       in order to pick from left and right?
             pick :: k -> a
             pick key = case findKeyIndex key of
-                Left  ix -> vs1 Vector.! ix
-                Right ix -> vs2 Vector.! ix
+                Left  ix -> Vector.unsafeIndex vs1 ix
+                Right ix -> Vector.unsafeIndex vs2 ix
             
             findKeyIndex :: k -> Either Int Int
             findKeyIndex k 
