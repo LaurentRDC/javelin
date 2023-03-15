@@ -18,7 +18,7 @@ module Data.Series (
     zipWith, zipWithMatched,
 
     -- * Index manipulation
-    reindex, mapIndex,
+    reindex, mapIndex, dropna,
 
     -- * Random access
     at, iat,
@@ -52,5 +52,5 @@ import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile )
 import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
-import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex)
+import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex, dropna)
 import Data.Series.Windowing            ( windows, iwindows )
