@@ -12,7 +12,7 @@ module Data.Series (
     toList,
 
     -- * Reading @Series@ from files
-    ColumnName, readCSV, readCSVFromFile,
+    ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile,
 
     -- * Combining series
     zipWith, zipWithMatched,
@@ -50,7 +50,7 @@ import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|), (==|), (/=|), )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
-import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile )
+import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile )
 import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
 import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex)
 import Data.Series.Windowing            ( windows, iwindows )

@@ -1,13 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Data.Series.IO (tests) where
 
-import           Data.Series          ( Series, at, readCSVFromFile )
+import           Data.Series          ( Series, at, readCSVFromFile, columnsFromFile )
 
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
-tests = testGroup "Data.Series.IO" [ testReadCSVFromFile ]
+tests = testGroup "Data.Series.IO" [ testReadCSVFromFile
+                                   , testColumnsFromFile 
+                                   ]
 
 
 testReadCSVFromFile :: TestTree
@@ -26,3 +28,9 @@ testReadCSVFromFile = testCase "Read CSV data" $ do
     assertEqual mempty (Just (-74.006111)) (longitudes `at` "New York City") 
     assertEqual mempty (Just 121.5625) (longitudes `at` "Taipei") 
     assertEqual mempty (Just (-58.381667)) (longitudes `at` "Buenos Aires") 
+
+
+testColumnsFromFile :: TestTree
+testColumnsFromFile = testCase "Read columns in CSV file" $ do
+    columns <- either (error . show) id <$> columnsFromFile "test/data/lat-long-city.csv"
+    assertEqual mempty ["latitude", "longitude", "city"] columns

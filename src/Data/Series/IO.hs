@@ -1,7 +1,11 @@
+{-# LANGUAGE DerivingVia #-}
 module Data.Series.IO (
     ColumnName,
     readCSV,
     readCSVFromFile,
+
+    columns,
+    columnsFromFile,
 ) where
 
 
@@ -22,7 +26,7 @@ import qualified System.IO              as IO
 
 
 newtype ColumnName = MkColumnName BS.ByteString
-    deriving IsString
+    deriving (Eq, IsString, Show) via BS.ByteString
 
 
 readCSV :: (Ord k, FromField k, FromField a)
@@ -42,12 +46,28 @@ readCSV indexCol dataCol bytes = first pack $ do
     pure $ fromList rows
 
 
+fromFile :: FilePath
+         -> (BL.ByteString -> Either Text b)
+         -> IO (Either Text b)
+fromFile fp f
+    = IO.withFile fp IO.ReadMode $ \h -> do
+        IO.hSetBinaryMode h True
+        (BS.hGetContents h <&> BL.fromStrict) <&> f
+
+
 readCSVFromFile :: (Ord k, FromField k, FromField a)
                 => FilePath
                 -> ColumnName -- ^ Index column
                 -> ColumnName -- ^ Values volumn
                 -> IO (Either Text (Series k a))
-readCSVFromFile fp indexCol dataCol
-    = IO.withFile fp IO.ReadMode $ \h -> do
-        IO.hSetBinaryMode h True
-        (BS.hGetContents h <&> BL.fromStrict) <&> readCSV indexCol dataCol
+readCSVFromFile fp indexCol valuesCol = fromFile fp (readCSV indexCol valuesCol) 
+
+
+columns :: BL.ByteString -> Either Text [ColumnName]
+columns bytes = first pack $ do
+    (header, _ :: Vector CSV.NamedRecord) <- CSV.decodeByName bytes
+    pure $ MkColumnName <$> Vector.toList header
+
+
+columnsFromFile :: FilePath -> IO (Either Text [ColumnName])
+columnsFromFile fp = fromFile fp columns
