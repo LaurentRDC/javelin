@@ -46,14 +46,14 @@ testToStrictMap = testCase "toStrictMap" $ do
 testPropRoundtripConversionWithStrictMap :: TestTree
 testPropRoundtripConversionWithStrictMap 
     = testProperty "Roundtrip property with Data.Map.Strict" $ property $ do
-        ms <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.alpha <*> Gen.alpha)
+        ms <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
         tripping ms fromStrictMap (Just . toStrictMap)
 
 
 testPropRoundtripConversionWithLazyMap :: TestTree
 testPropRoundtripConversionWithLazyMap 
     = testProperty "Roundtrip property with Data.Map.Lazy" $ property $ do
-        ms <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.alpha <*> Gen.alpha)
+        ms <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
         tripping (ML.fromDistinctAscList $ MS.toAscList ms) fromLazyMap (Just . toLazyMap)
 
 

@@ -1,7 +1,7 @@
 module Test.Data.Series.View (tests) where
 
 import qualified Data.Map.Strict      as MS
-import           Data.Series          ( Series, fromStrictMap, fromList, to, select, reindex, mapIndex )
+import           Data.Series          ( Series, fromStrictMap, fromList, to, select, selectWhere, reindex, mapIndex )
 import qualified Data.Set             as Set
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 tests :: TestTree
 tests = testGroup "Data.Series.View" [ testSelectRange
                                      , testSelectSet 
+                                     , testSelectWhere
                                      , testReindex
                                      , testMapIndex
                                      ]
@@ -27,6 +28,15 @@ testSelectSet = testCase "select" $ do
     let (series :: Series Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
         subSeries = series `select` Set.fromList ['a', 'd', 'x']
         expectation = fromStrictMap $ MS.fromList [('a', 1), ('d', 4)]
+    
+    assertEqual mempty expectation subSeries
+
+
+testSelectWhere :: TestTree
+testSelectWhere = testCase "selectWhere" $ do
+    let (series :: Series Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
+        subSeries = series `selectWhere` fmap (>3) series 
+        expectation = fromStrictMap $ MS.fromList [('d', 4), ('e', 5)]
     
     assertEqual mempty expectation subSeries
 
