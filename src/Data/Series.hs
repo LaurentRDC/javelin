@@ -30,8 +30,11 @@ module Data.Series (
     groupBy, aggregateWith,
 
     -- * Numerical aggregations
-    mean, variance, sampleVariance, std,
-    meanAndVariance,
+    mean, nanmean,
+    var, nanvar, 
+    sampleVariance, nanSampleVariance,
+    meanAndVariance, nanMeanAndVariance,
+    std, nanstd,
 
     -- * Windowing operations
     windows, iwindows,
@@ -51,6 +54,6 @@ import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|), (==|), (/=|), 
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile )
-import Data.Series.Numeric              ( mean, variance, sampleVariance, std, meanAndVariance )
+import Data.Series.Numeric              ( mean, nanmean, var, nanvar, sampleVariance, nanSampleVariance, std, nanstd, meanAndVariance, nanMeanAndVariance )
 import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex, dropna)
 import Data.Series.Windowing            ( windows, iwindows )
