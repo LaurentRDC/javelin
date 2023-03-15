@@ -52,7 +52,7 @@ data Series k a
     -- The reason the index is a set of keys is that we *want* keys to be ordered.
     -- This allows for efficient slicing of the underlying values, because
     -- if `k1 < k2`, then the values are also at indices `ix1 < ix2`.
-    = MkSeries { index  :: !(Set k)
+    = MkSeries { index  :: Set k
                , values :: Vector a
                }
 
