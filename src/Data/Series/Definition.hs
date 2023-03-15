@@ -23,6 +23,7 @@ module Data.Series.Definition (
 import           Control.DeepSeq ( NFData(rnf) )
 import           Data.Bifoldable ( Bifoldable(..) )
 import           Data.Foldable   ( Foldable(fold, foldMap', foldr', foldl') )
+import qualified Data.List       as List
 import qualified Data.Map.Lazy   as ML
 import           Data.Map.Strict ( Map )
 import qualified Data.Map.Strict as MS
@@ -54,8 +55,6 @@ data Series k a
     = MkSeries { index  :: !(Set k)
                , values :: Vector a
                }
-    deriving (Show)
-
 
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
@@ -242,3 +241,35 @@ instance Ord k => GHC.Exts.IsList (Series k a) where
     
     toList :: Ord k => Series k a -> [GHC.Exts.Item (Series k a)]
     toList = toList
+
+instance (Show k, Show a) => Show (Series k a) where
+    show :: Series k a -> String
+    show xs 
+        = formatGrid $ if length xs > 6
+            then mconcat [ [ (show k, show v) | (k, v) <- List.take 3 $ toList xs]
+                         , [ ("...", "...") ]
+                         , [ (show k, show v) | (k, v) <- List.drop (length xs - 3) $ toList xs]
+                         ] 
+            else [ (show k, show v) | (k, v) <- toList xs ]
+
+        where
+            -- | Format a grid represented by a list of rows, where every row is a list of items
+            -- All columns will have a fixed width
+            formatGrid :: [ (String, String) ] -- List of rows
+                       -> String
+            formatGrid rows = mconcat $ List.intersperse "\n" 
+                                      $ [ pad indexWidth k <> " | " <> pad valuesWidth v 
+                                        | (k, v) <- rows'
+                                        ] 
+                where
+                    rows' = [ ("index", "values") ] <> [ ("-----", "------")] <> rows
+                    (indexCol, valuesCol) = unzip rows'
+                    width col = maximum (length <$> col)
+                    indexWidth = width indexCol
+                    valuesWidth = width valuesCol
+
+                    -- | Pad a string to a minimum of @n@ characters wide.
+                    pad :: Int -> String -> String 
+                    pad n s
+                        | n <= length s = s
+                        | otherwise     = replicate (n - length s) ' ' <> s

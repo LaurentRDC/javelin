@@ -14,6 +14,7 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 tests :: TestTree
 tests = testGroup "Data.Series.Definition" [ testMappend
                                            , testPropMappendLikeMap
+                                           , testPropShow
                                            ]
 
 
@@ -33,3 +34,15 @@ testPropMappendLikeMap
         m2 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.int (Range.linear 500 1500) <*> Gen.alpha)
 
         fromStrictMap (m1 <> m2) === fromStrictMap m1 <> fromStrictMap m2
+
+
+testPropShow :: TestTree
+testPropShow
+    = testProperty "Show is never too long" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.int (Range.linear 0 1000)   <*> Gen.alpha)
+
+        let xs = fromStrictMap m1
+            ls = lines $ show xs
+        if length xs > 6
+            then length ls === 2 + 6 + 1
+            else length ls === 2 + length xs
