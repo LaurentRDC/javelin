@@ -18,6 +18,7 @@
 -- Authors importing this module are expected to track development
 -- closely.
 
-module Data.Series.Internal ( Series(..) ) where
+module Data.Series.Internal ( ColumnName(..), Series(..) ) where
 
-import Data.Series.Definition( Series(..) )
+import Data.Series.Definition   ( Series(..) )
+import Data.Series.IO           ( ColumnName(..) )

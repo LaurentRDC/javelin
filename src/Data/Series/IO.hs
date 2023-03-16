@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Data.Series.IO (
-    ColumnName,
+    ColumnName(..),
     readCSV,
     readCSVFromFile,
 
