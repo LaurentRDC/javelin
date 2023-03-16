@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Data.Series.IO (tests) where
 
-import           Data.Series          ( Series, at, readCSVFromFile, columnsFromFile )
+import           Data.Map.Strict      ( Map )
+import qualified Data.Map.Strict      as Map
+import           Data.Series          ( Series, ColumnName, at, fromList, readCSVFromFile, columnsFromFile, readJSONFromFile )
 
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
@@ -9,6 +11,7 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 tests :: TestTree
 tests = testGroup "Data.Series.IO" [ testReadCSVFromFile
                                    , testColumnsFromFile 
+                                   , testReadJSONFromFile
                                    ]
 
 
@@ -34,3 +37,20 @@ testColumnsFromFile :: TestTree
 testColumnsFromFile = testCase "Read columns in CSV file" $ do
     columns <- either (error . show) id <$> columnsFromFile "test/data/lat-long-city.csv"
     assertEqual mempty ["latitude", "longitude", "city"] columns
+
+
+testReadJSONFromFile :: TestTree
+testReadJSONFromFile = testCase "Read JSON data" $ do
+    (mp :: Map ColumnName (Series String Int)) <- either (error . show) id <$> readJSONFromFile "test/data/columns.json"
+
+    let expectation = Map.fromList [ ("a", fromList [ ("hello", 1)
+                                                    , ("world", 2)
+                                                    ]
+                                     )
+                                   , ("b", fromList [ ("hello", 3)
+                                                    , ("world", 4)
+                                                    ]
+                                     ) 
+                                   ]
+
+    assertEqual mempty expectation mp

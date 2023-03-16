@@ -13,6 +13,7 @@ module Data.Series (
 
     -- * Reading @Series@ from files
     ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile,
+    readJSON, readJSONFromFile,
 
     -- * Combining series
     zipWith, zipWithMatched,
@@ -53,7 +54,7 @@ import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|), (==|), (/=|), )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
-import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile )
+import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile, readJSON, readJSONFromFile )
 import Data.Series.Numeric              ( mean, nanmean, var, nanvar, sampleVariance, nanSampleVariance, std, nanstd, meanAndVariance, nanMeanAndVariance )
 import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex, dropna)
 import Data.Series.Windowing            ( windows, iwindows )
