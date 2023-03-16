@@ -29,6 +29,7 @@ library
     import:           common
     hs-source-dirs:   src
     exposed-modules:  Data.Series
+                      Data.Series.Internal
     other-modules:    Data.Series.Aggregation
                       Data.Series.Broadcast
                       Data.Series.Broadcast.Drop
