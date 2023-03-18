@@ -177,7 +177,9 @@ instance Selection Set where
     {-# INLINE select #-}
     select (MkSeries ks vs) ss 
         = let selectedKeys = ks `Set.intersection` ss
-            -- TODO: use Vector.backpermute!
+            -- Surprisingly, using `Vector.backpermute` does not
+            -- perform as well as `Vector.map (Vector.unsafeIndex vs)`
+            -- for large Series
               newValues = Vector.map (Vector.unsafeIndex vs) 
                         $ Vector.map (`Set.findIndex` ks) 
                         $ Vector.fromListN (Set.size selectedKeys) 
