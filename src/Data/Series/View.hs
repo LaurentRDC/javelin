@@ -15,6 +15,7 @@ module Data.Series.View (
     filter,
     dropna,
     mapIndex,
+    dropIndex,
 
     -- * Creating and accessing ranges
     Range(..),
@@ -128,6 +129,27 @@ reindex xs ss
     = let existingKeys = index xs `Set.intersection` ss
           newKeys      = ss `Set.difference` existingKeys
        in (Just <$> (xs `select` existingKeys)) <> MkSeries newKeys (Vector.replicate (Set.size newKeys) Nothing)
+
+
+-- | Drop the index of a series by replacing it with an @Int@-based index. Values will
+-- be indexed from 0.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+--
+-- >>> dropIndex xs
+-- index | values
+-- ----- | ------
+--     0 |      4
+--     1 |      2
+--     2 |      1
+dropIndex :: Series k a -> Series Int a
+dropIndex (MkSeries ks vs) = MkSeries (Set.fromDistinctAscList [0..Set.size ks - 1]) vs
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
@@ -254,5 +276,5 @@ slice :: Int -- ^ Start index
 slice start stop (MkSeries ks vs) 
     = let stop' = min (length vs) stop
     in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
-                , values = Vector.unsafeSlice start (stop' - start) vs
+                , values = Vector.slice start (stop' - start) vs
                 }
