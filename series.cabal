@@ -22,7 +22,6 @@ common common
                  -Wincomplete-record-updates
                  -Wredundant-constraints
                  -fhide-source-paths
-                 -Wmissing-export-lists
                  -Wpartial-fields
 
 library

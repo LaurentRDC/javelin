@@ -30,6 +30,9 @@ import qualified Data.Vector            as Vector
 
 import           Prelude                hiding ( filter )
 
+-- $setup
+-- >>> import qualified Data.Series as Series
+--
 
 -- | \(O(1)\). Extract a single value from a series, by index. 
 -- An exception is thrown if the index is out-of-bounds.
@@ -41,6 +44,12 @@ import           Prelude                hiding ( filter )
 
 
 -- | \(O(\log n)\). Extract a single value from a series, by key.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs `at` "Paris"
+-- Just 1
+-- >>> xs `at` "Sydney"
+-- Nothing
 at :: Ord k => Series k a -> k -> Maybe a
 at (MkSeries ks vs) k = do
     ix <- Set.lookupIndex k ks
@@ -49,6 +58,19 @@ at (MkSeries ks vs) k = do
 
 
 -- | \(O(1)\). Extract a single value from a series, by index.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+--
+-- >>> xs `iat` 0
+-- Just 4
+-- >>> xs `iat` 3
+-- Nothing
 iat :: Series k a -> Int -> Maybe a
 iat (MkSeries _ vs) =  (Vector.!?) vs
 {-# INLINE iat #-}
@@ -143,6 +165,32 @@ instance Selection Range where
            in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
 
 
+-- | Select a sub-series from a series matching a condition.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+--
+-- >>> xs `selectWhere` (fmap (>1) xs)
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--
+-- @selectWhere@ can be used in combinations with broadcasting operators to
+-- make selections more readable:
+--
+-- >>> import Data.Series ( (/=|) )
+-- >>> let threshold = 1 :: Int
+-- >>> xs `selectWhere` (xs /=| threshold)
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
 selectWhere :: Ord k => Series k a -> Series k Bool -> Series k a
 selectWhere xs ys = xs `select` keysWhereTrue
     where
@@ -152,6 +200,21 @@ selectWhere xs ys = xs `select` keysWhereTrue
 
 
 -- | Yield a subseries based on indices. The end index is not included.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+--
+-- >>> slice 0 2 xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+
 slice :: Int -- ^ Start index
       -> Int -- ^ End index, which is not included
       -> Series k a 
