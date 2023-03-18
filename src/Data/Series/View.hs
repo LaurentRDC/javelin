@@ -126,6 +126,7 @@ instance Selection Set where
     {-# INLINE select #-}
     select (MkSeries ks vs) ss 
         = let selectedKeys = ks `Set.intersection` ss
+            -- TODO: use Vector.backpermute!
               newValues = Vector.map (Vector.unsafeIndex vs) 
                         $ Vector.map (`Set.findIndex` ks) 
                         $ Vector.fromListN (Set.size selectedKeys) 
@@ -152,7 +153,7 @@ selectWhere xs ys = xs `select` keysWhereTrue
 
 -- | Yield a subseries based on indices. The end index is not included.
 slice :: Int -- ^ Start index
-      -> Int -- ^ End index
+      -> Int -- ^ End index, which is not included
       -> Series k a 
       -> Series k a
 {-# INLINE slice #-}

@@ -38,7 +38,7 @@ module Data.Series (
     std, nanstd,
 
     -- * Windowing operations
-    windows, iwindows,
+    windows, iwindows, expanding, irolling,
 
     -- * Broadcastable operations
     -- ** Broadcastable operations that may leave holes
@@ -57,4 +57,4 @@ import Data.Series.Definition           ( Series(index), fromStrictMap, toStrict
 import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile, readJSON, readJSONFromFile )
 import Data.Series.Numeric              ( mean, nanmean, var, nanvar, sampleVariance, nanSampleVariance, std, nanstd, meanAndVariance, nanMeanAndVariance )
 import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex, dropna)
-import Data.Series.Windowing            ( windows, iwindows )
+import Data.Series.Windowing            ( windows, iwindows, expanding, irolling )

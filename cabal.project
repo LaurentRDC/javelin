@@ -1,2 +1,4 @@
 packages: *.cabal
 test-show-details: streaming
+tests: True
+benchmarks: True
