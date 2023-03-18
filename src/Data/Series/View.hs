@@ -32,7 +32,7 @@ import           Prelude                hiding ( filter )
 
 -- $setup
 -- >>> import qualified Data.Series as Series
---
+-- >>> import qualified Data.Set as Set
 
 -- | \(O(1)\). Extract a single value from a series, by index. 
 -- An exception is thrown if the index is out-of-bounds.
@@ -81,6 +81,20 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 -- may have less elements, because each key must be unique.
 --
 -- In case new keys are conflicting, the first element is kept.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+--
+-- >>> xs `mapIndex` head
+-- index | values
+-- ----- | ------
+--   'L' |      4
+--   'P' |      1
 mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex MkSeries{..} f
@@ -93,6 +107,21 @@ mapIndex MkSeries{..} f
 
 -- | Reindex a series with a new index.
 -- Contrary to @select@, all keys in @Set k@ will be present in the re-indexed series.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- 
+-- >>> xs `reindex` Set.fromList ["Paris", "Lisbon", "Taipei"]
+--    index |  values
+--    ----- |  ------
+-- "Lisbon" |  Just 4
+--  "Paris" |  Just 1
+-- "Taipei" | Nothing
 reindex :: Ord k => Series k a -> Set k -> Series k (Maybe a)
 {-# INLINE reindex #-}
 reindex xs ss 
