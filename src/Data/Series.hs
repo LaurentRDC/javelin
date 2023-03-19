@@ -25,10 +25,10 @@ module Data.Series (
     at, iat,
 
     -- * Range access
-    Range, to, select, selectWhere,
+    Range, Selection, to, select, selectWhere,
 
     -- * Grouping operations
-    groupBy, aggregateWith,
+    GroupBy, groupBy, aggregateWith,
 
     -- * Numerical aggregations
     mean, nanmean,
@@ -49,12 +49,12 @@ module Data.Series (
 
 import Prelude                hiding ( zipWith )
 
-import Data.Series.Aggregation          ( groupBy, aggregateWith )
+import Data.Series.Aggregation          ( GroupBy, groupBy, aggregateWith )
 import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|), (==|), (/=|), )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile, readJSON, readJSONFromFile )
 import Data.Series.Numeric              ( mean, nanmean, var, nanvar, sampleVariance, nanSampleVariance, std, nanstd, meanAndVariance, nanMeanAndVariance )
-import Data.Series.View                 ( Range, at, iat, select, selectWhere, to, reindex, mapIndex, dropna, dropIndex )
+import Data.Series.View                 ( Range, Selection, at, iat, select, selectWhere, to, reindex, mapIndex, dropna, dropIndex )
 import Data.Series.Windowing            ( windows, iwindows, expanding, irolling )

@@ -36,18 +36,25 @@ import           Prelude         hiding ( take )
 
 import qualified GHC.Exts        ( IsList(..) )
 
+-- $setup
+-- >>> import qualified Data.Series as Series
+-- >>> import qualified Data.Set as Set
+
 
 -- | A series is a labeled array of values of type @a@,
 -- indexed by keys of type @k@.
 --
--- Like Maps and HashMaps, they support efficient:
---      * random access by key (\(O(\log n)\));
---      * slice by key (\(O(\log n)\)).
+-- Like @Data.Map@ and @Data.HashMap@, they support efficient:
 --
--- Like Vectors and Arrays, they support efficient:
---      * random access by index (\(O(1)\));
---      * slice by index (\(O(1)\));
+--      * random access by key ( \(O(\log n)\) );
+--      * slice by key ( \(O(\log n)\) ).
+--
+-- Like @Data.Vector.Vector@, they support efficient:
+--
+--      * random access by index ( \(O(1)\) );
+--      * slice by index ( \(O(1)\) );
 --      * numerical operations.
+--
 data Series k a 
     -- The reason the index is a set of keys is that we *want* keys to be ordered.
     -- This allows for efficient slicing of the underlying values, because
@@ -58,21 +65,42 @@ data Series k a
 
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
+--
+-- >>> let xs = fromList [('b', 0::Int), ('a', 5), ('d', 1) ]
+-- >>> xs
+-- index | values
+-- ----- | ------
+--   'a' |      5
+--   'b' |      0
+--   'd' |      1
 fromList :: (Eq k, Ord k) => [(k, a)] -> Series k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
 
 
+-- | Construct a list from key-value pairs. The elements are in order sorted by key:
+--
+-- >>> let xs = Series.fromList [ ('b', 0::Int), ('a', 5), ('d', 1) ]
+-- >>> xs
+-- index | values
+-- ----- | ------
+--   'a' |      5
+--   'b' |      0
+--   'd' |      1
+-- >>> toList xs
+-- [('a',5),('b',0),('d',1)]
 toList :: Series k a -> [(k, a)]
 {-# INLINE toList #-}
 toList (MkSeries ks vs) = zip (Set.toAscList ks) (Vector.toList vs)
 
 
+-- | Convert a series into a lazy @Map@.
 toLazyMap :: (Eq k, Ord k) => Series k a -> Map k a
 {-# INLINE toLazyMap #-}
 toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
 
 
+-- | Construct a series from a lazy @Map@.
 fromLazyMap :: (Eq k, Ord k) => ML.Map k a -> Series k a
 {-# INLINE fromLazyMap #-}
 fromLazyMap mp = let keys = ML.keysSet mp 
@@ -81,11 +109,13 @@ fromLazyMap mp = let keys = ML.keysSet mp
                               }
 
 
+-- | Convert a series into a strict @Map@.
 toStrictMap :: (Eq k, Ord k) => Series k a -> Map k a
 {-# INLINE toStrictMap #-}
 toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
 
 
+-- | Construct a series from a strict @Map@.
 fromStrictMap :: (Eq k, Ord k) => MS.Map k a -> Series k a
 {-# INLINE fromStrictMap #-}
 fromStrictMap mp = MkSeries { index  = MS.keysSet mp

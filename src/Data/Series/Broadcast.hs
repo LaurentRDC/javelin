@@ -8,10 +8,25 @@ import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
 import           Prelude                hiding ( zipWith, (<*), (*>), (<*>) ) 
 
+-- $setup
+-- >>> import qualified Data.Series as Series
+-- >>> import qualified Data.Set as Set
 
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. For keys present only in the left or right series, 
 -- the value @Nothing@ is returned.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWith (+) xs ys
+--   index |  values
+--   ----- |  ------
+-- "alpha" | Just 10
+--  "beta" | Just 12
+-- "delta" | Nothing
+-- "gamma" | Nothing
+--
+-- To only combine elements where keys are in both series, see @zipWithMatched@
 zipWith :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k (Maybe c)
 zipWith f left right
     = let matched = zipWithMatched f left right
@@ -25,6 +40,16 @@ zipWith f left right
 
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. Keys present only in the left or right series are dropped.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWithMatched (+) xs ys
+--   index | values
+--   ----- | ------
+-- "alpha" |     10
+--  "beta" |     12
+--
+-- To combine elements where keys are in either series, see @zipWith@
 zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 zipWithMatched f left right
     = let matchedKeys   = index left `Set.intersection` index right

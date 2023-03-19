@@ -9,6 +9,7 @@ module Data.Series.View (
     select,
     slice,
     selectWhere,
+    Selection,
 
     -- * Resizing
     reindex,
@@ -71,7 +72,6 @@ at (MkSeries ks vs) k = do
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
---
 -- >>> xs `iat` 0
 -- Just 4
 -- >>> xs `iat` 3
@@ -94,7 +94,6 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
---
 -- >>> xs `mapIndex` head
 -- index | values
 -- ----- | ------
@@ -120,7 +119,6 @@ mapIndex MkSeries{..} f
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- 
 -- >>> xs `reindex` Set.fromList ["Paris", "Lisbon", "Taipei"]
 --    index |  values
 --    ----- |  ------
@@ -145,7 +143,6 @@ reindex xs ss
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
---
 -- >>> dropIndex xs
 -- index | values
 -- ----- | ------
@@ -166,7 +163,6 @@ dropIndex (MkSeries ks vs) = MkSeries (Set.fromDistinctAscList [0..Set.size ks -
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
---
 -- >>> filter (>2) xs
 --    index | values
 --    ----- | ------
@@ -190,7 +186,6 @@ filter predicate xs@(MkSeries ks vs)
 --  "London" |  Just 2
 --   "Paris" |  Just 1
 -- "Toronto" | Nothing
---
 -- >>> dropna ys
 --    index | values
 --    ----- | ------
@@ -202,9 +197,18 @@ dropna :: Ord k => Series k (Maybe a) -> Series k a
 dropna = fmap fromJust . filter isJust
 
 
--- | Datatype representing an inclusive range of keys.
--- The two bounds are expected to be sorted.
+-- | Datatype representing an /inclusive/ range of keys.
+-- The canonical way to construct a @Range@ is to use @to@:
+--
+-- >>> 'a' `to` 'z'
+-- Range (from 'a' to 'z')
+--
+-- A @Range@ can be used to efficiently select a sub-series with @select@.
 data Range k = MkRange k k
+
+instance Show k => Show (Range k) where
+    show :: Range k -> String
+    show (MkRange start stop) = mconcat ["Range (from ", show start, " to ", show stop, ")"]
 
 
 -- | Find the keys which are in range
@@ -229,6 +233,14 @@ to :: Ord k => k -> k -> Range k
 to k1 k2 = MkRange (min k1 k2) (max k1 k2)
 
 
+-- | Class for datatypes which can be used to select sub-series using @select@.
+--
+-- There are two use-cases for @select@:
+--
+--  * Bulk random-access (selecting from a @Set@ of keys);
+--  * Bulk ordered access (selecting from a @Range@ of keys).
+--
+-- See the documentation for @select@.
 class Selection s where
     -- | Select a subseries. There are two main ways to do this.
     --
@@ -297,7 +309,6 @@ instance Selection Range where
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
---
 -- >>> xs `selectWhere` (fmap (>1) xs)
 --    index | values
 --    ----- | ------
@@ -331,7 +342,6 @@ selectWhere xs ys = xs `select` keysWhereTrue
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
---
 -- >>> slice 0 2 xs
 --    index | values
 --    ----- | ------

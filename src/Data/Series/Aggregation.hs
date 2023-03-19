@@ -10,9 +10,36 @@ import           Data.Series.Definition ( Series(..), fromStrictMap )
 import           Data.Series.View       ( select )
 import qualified Data.Set               as Set
 
+infixl 9 `groupBy`
+infixr 0 `aggregateWith`
 
+-- $setup
+-- >>> import qualified Data.Series as Series
+-- >>> import qualified Data.Set as Set
+
+-- | Group values in a @Series@ by some function (@k -> g@).
+--
+-- This function is expected to be used in conjunction with @aggregateWith@:
+-- 
+-- >>> type Date = (Int, String)
+-- >>> month :: (Date -> String) = snd
+-- >>> :{ 
+--     let (xs :: Series Date Int) 
+--              = Series.fromList [ ((2020, "January"),  0)
+--                                , ((2021, "January"), -5)
+--                                , ((2020, "June")   , 20)
+--                                , ((2021, "June")   , 25) 
+--                                ]
+--      in xs `groupBy` month `aggregateWith` minimum
+-- :}
+--     index | values
+--     ----- | ------
+-- "January" |     -5
+--    "June" |     20
 groupBy :: (Ord k, Ord g) 
-        => Series k a -> (k -> g) ->  GroupBy g k a
+        => Series k a       -- ^ Input series
+        -> (k -> g)         -- ^ Grouping function
+        -> GroupBy g k a    -- ^ Grouped series
 {-# INLINE groupBy #-}
 groupBy xs by = MkGroupBy $ select xs <$> groupedKeys
     where
@@ -21,11 +48,18 @@ groupBy xs by = MkGroupBy $ select xs <$> groupedKeys
             | otherwise = Map.fromListWith (<>) $ [(by k, Set.singleton k) | k <- Set.toAscList (index xs)]
 
 
+-- | Data type representing groups of @Series k a@, indexed by keys of type @g@.
+-- See the documentation for @groupBy@.
 newtype GroupBy g k a 
     = MkGroupBy { groups :: Map g (Series k a) }
-    deriving (Eq, Show)
+    deriving (Eq)
 
 
-aggregateWith :: Ord g => GroupBy g k a -> (Series k a -> b) -> Series g b
+-- | Aggregate grouped series. This function is expected to be used in conjunction
+-- with @groupBy@.
+aggregateWith :: Ord g 
+              => GroupBy g k a      -- ^ Grouped series
+              -> (Series k a -> b)  -- ^ Aggregation function
+              -> Series g b         -- ^ Aggregated series
 {-# INLINE aggregateWith #-}
 aggregateWith gps agg = fromStrictMap $ fmap agg (groups gps) 
