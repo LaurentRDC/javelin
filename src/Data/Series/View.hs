@@ -35,6 +35,10 @@ import           Prelude                hiding ( filter )
 -- >>> import qualified Data.Series as Series
 -- >>> import qualified Data.Set as Set
 
+infixr 9 `to` -- Ensure that @to@ binds strongest
+infixl 0 `select` 
+
+
 -- | \(O(1)\). Extract a single value from a series, by index. 
 -- An exception is thrown if the index is out-of-bounds.
 --
@@ -153,16 +157,46 @@ dropIndex (MkSeries ks vs) = MkSeries (Set.fromDistinctAscList [0..Set.size ks -
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
+-- Notice that the filtering is done on the values, not on the keys
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+--
+-- >>> filter (>2) xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
 filter :: Ord k => (a -> Bool) -> Series k a -> Series k a
 {-# INLINE filter #-}
 filter predicate xs@(MkSeries ks vs) 
-    = let nothingIndices = Vector.findIndices predicate vs
-          keysToDrop = Set.fromList [Set.elemAt ix ks | ix <- Vector.toList nothingIndices]
-          keysToKeep = ks `Set.difference` keysToDrop
+    = let indicesToKeep = Vector.findIndices predicate vs
+          keysToKeep = Set.fromList [Set.elemAt ix ks | ix <- Vector.toList indicesToKeep]
        in xs `select` keysToKeep
 
 
 -- | Drop elements which are not available (NA). 
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> let ys = xs `reindex` Set.fromList ["Paris", "London", "Lisbon", "Toronto"]
+-- >>> ys
+--     index |  values
+--     ----- |  ------
+--  "Lisbon" |  Just 4
+--  "London" |  Just 2
+--   "Paris" |  Just 1
+-- "Toronto" | Nothing
+--
+-- >>> dropna ys
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
 dropna :: Ord k => Series k (Maybe a) -> Series k a
 {-# INLINE dropna #-}
 dropna = fmap fromJust . filter isJust
@@ -182,13 +216,49 @@ keysInRange (MkSeries ks _) (MkRange start stop)
        in (Set.findMin inRange, Set.findMax inRange)
 
 
--- | Terminate the slicing of a series by key. This function
--- is expected to be used in conjunction with @from@: 
+-- | Create a @Range@ which can be used for slicing. This function
+-- is expected to be used in conjunction with @select@: 
+--
+-- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
+-- >>> xs `select` 'b' `to` 'c'
+-- index | values
+-- ----- | ------
+--   'b' |     20
+--   'c' |     30
 to :: Ord k => k -> k -> Range k
 to k1 k2 = MkRange (min k1 k2) (max k1 k2)
 
 
 class Selection s where
+    -- | Select a subseries. There are two main ways to do this.
+    --
+    -- The first way to do this is to select a sub-series based on keys:
+    --
+    -- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
+    -- >>> xs `select` Set.fromList ['a', 'd']
+    -- index | values
+    -- ----- | ------
+    --   'a' |     10
+    --   'd' |     40
+    --
+    -- The second way to select a sub-series is to select all keys in a range:
+    --
+    -- >>> xs `select` 'b' `to` 'c'
+    -- index | values
+    -- ----- | ------
+    --   'b' |     20
+    --   'c' |     30
+    --
+    -- Note that with @select@, you'll always get a sub-series; if you ask for a key which is not
+    -- in the series, it'll be ignored:
+    --
+    -- >>> xs `select` Set.fromList ['a', 'd', 'e']
+    -- index | values
+    -- ----- | ------
+    --   'a' |     10
+    --   'd' |     40
+    --
+    -- See @reindex@ if you want to ensure that all keys are present.
     select :: Ord k => Series k a -> s k -> Series k a
 
 
@@ -267,7 +337,6 @@ selectWhere xs ys = xs `select` keysWhereTrue
 --    ----- | ------
 -- "Lisbon" |      4
 -- "London" |      2
-
 slice :: Int -- ^ Start index
       -> Int -- ^ End index, which is not included
       -> Series k a 
