@@ -1,4 +1,4 @@
-
+{-# LANGUAGE TypeFamilies #-}
 module Data.Series.Index (
     Index,
 
@@ -21,6 +21,10 @@ module Data.Series.Index (
     size,
     take,
     drop,
+
+    -- * Mapping
+    map,
+    mapMonotonic,
     
     -- * Indexing
     findIndex,
@@ -31,11 +35,33 @@ module Data.Series.Index (
 import           Control.DeepSeq    (NFData)
 import           Data.Set           ( Set )
 import qualified Data.Set           as Set
-import           Prelude            hiding ( null, take, drop )
+import           GHC.Exts           ( IsList )
+import qualified GHC.Exts           as IsList
+import           Prelude            hiding ( null, take, drop, map )
 
 
+-- | Representation of the index of a series.
+-- An index is a sequence of sorted elements. All elements are unique, much like a `Set`.
+--
+-- You can construct an `Index` from a set (`fromSet`) or from a list (`fromList`). You can 
+-- also make use of the @OverloadedLists@ extension:
+-- >>> :set -XOverloadedLists
+-- >>> let (ix :: Index Int) = [1, 2, 3]
+-- >>> ix
+-- Index [1,2,3]
+--
+-- Since keys in an `Index` are always sorted and unique, `Index` is not a `Functor`. To map a function
+-- over an `Index`, use `map`.
 newtype Index k = MkIndex (Set k)
     deriving (Eq, Ord, Semigroup, Monoid, Foldable, NFData)
+
+
+instance Ord k => IsList (Index k) where
+    type Item (Index k) = k
+    fromList :: [k] -> Index k
+    fromList = fromList
+    toList :: Index k -> [IsList.Item (Index k)]
+    toList = toAscList
 
 
 instance Show k => Show (Index k) where
@@ -133,7 +159,7 @@ size (MkIndex ix) = Set.size ix
 -- | \(O(\log n)\). Take @n@ elements from the index, in ascending order.
 -- Taking more than the number of elements in the index is a no-op:
 --
--- >>> take 10 $ fromList [1,2,3]
+-- >>> take 10 $ fromList [1::Int,2,3]
 -- Index [1,2,3]
 take :: Int -> Index k -> Index k
 take n (MkIndex ix) = MkIndex (Set.take n ix) 
@@ -142,6 +168,29 @@ take n (MkIndex ix) = MkIndex (Set.take n ix)
 -- | \(O(\log n)\). Drop @n@ elements from the index, in ascending order.
 drop :: Int -> Index k -> Index k
 drop n (MkIndex ix) = MkIndex (Set.drop n ix) 
+
+
+-- | \(O(n \log n)\) Map a function over keys in the index.
+-- Note that since keys in an `Index` are unique, the length of the resulting
+-- index may not be the same as the input:
+--
+-- >>> map (\x -> if even x then 0::Int else 1) $ fromList [0::Int,1,2,3,4]
+-- Index [0,1]
+--
+-- If the mapping is monotonic, see `mapMonotonic`, which has better performance
+-- characteristics.
+map :: Ord g => (k -> g) -> Index k -> Index g
+map f (MkIndex ix) = MkIndex $ Set.map f ix
+
+
+-- | \(O(n)\) Map a monotonic function over keys in the index. /Monotonic/ means that if @a < b@, then @f a < f b@.
+-- Using `mapMonononic` can be much faster than using `map` for a large `Index`.
+-- Note that the precondiction that the function be monotonic is not checked.
+--
+-- >>> mapMonotonic (+1) $ fromList [0::Int,1,2,3,4,5]
+-- Index [1,2,3,4,5,6]
+mapMonotonic :: (k -> g) -> Index k -> Index g
+mapMonotonic f (MkIndex ix) = MkIndex $ Set.mapMonotonic f ix
 
 
 -- | \(O(\log n)\). Returns the integer /index/ of a key. This function raises an exception

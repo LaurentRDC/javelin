@@ -143,7 +143,7 @@ instance Ord k => Semigroup (Series k a) where
     {-# INLINE (<>) #-}
     (<>) :: Series k a -> Series k a -> Series k a
     (MkSeries ks1 vs1) <> (MkSeries ks2 vs2)
-        = let allKeys = ks1 `Index.union` ks2
+        = let allKeys = ks1 <> ks2
               newValues = pick <$> Vector.fromListN (Index.size allKeys) (Index.toAscList allKeys)
             in MkSeries allKeys newValues
         where

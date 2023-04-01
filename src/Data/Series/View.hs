@@ -35,7 +35,7 @@ import           Prelude                hiding ( filter )
 
 -- $setup
 -- >>> import qualified Data.Series as Series
--- >>> import qualified Data.Set as Set
+-- >>> import qualified Data.Series.Index as Index 
 
 infixr 9 `to` -- Ensure that @to@ binds strongest
 infixl 0 `select` 
@@ -120,7 +120,7 @@ mapIndex MkSeries{..} f
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `reindex` Set.fromList ["Paris", "Lisbon", "Taipei"]
+-- >>> xs `reindex` Index.fromList ["Paris", "Lisbon", "Taipei"]
 --    index |  values
 --    ----- |  ------
 -- "Lisbon" |  Just 4
@@ -179,7 +179,7 @@ filter predicate xs@(MkSeries ks vs)
 -- | Drop elements which are not available (NA). 
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
--- >>> let ys = xs `reindex` Set.fromList ["Paris", "London", "Lisbon", "Toronto"]
+-- >>> let ys = xs `reindex` Index.fromList ["Paris", "London", "Lisbon", "Toronto"]
 -- >>> ys
 --     index |  values
 --     ----- |  ------
@@ -248,7 +248,7 @@ class Selection s where
     -- The first way to do this is to select a sub-series based on keys:
     --
     -- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
-    -- >>> xs `select` Set.fromList ['a', 'd']
+    -- >>> xs `select` Index.fromList ['a', 'd']
     -- index | values
     -- ----- | ------
     --   'a' |     10
@@ -265,7 +265,7 @@ class Selection s where
     -- Note that with @select@, you'll always get a sub-series; if you ask for a key which is not
     -- in the series, it'll be ignored:
     --
-    -- >>> xs `select` Set.fromList ['a', 'd', 'e']
+    -- >>> xs `select` Index.fromList ['a', 'd', 'e']
     -- index | values
     -- ----- | ------
     --   'a' |     10
@@ -276,7 +276,7 @@ class Selection s where
 
 
 instance Selection Index where
-    -- | Select all keys in @Set k@ in a series. Keys which are not
+    -- | Select all keys in `Index` from a series. Keys which are not
     -- in the series are ignored.
     select :: Ord k => Series k a -> Index k -> Series k a
     {-# INLINE select #-}
@@ -330,7 +330,7 @@ selectWhere :: Ord k => Series k a -> Series k Bool -> Series k a
 selectWhere xs ys = xs `select` (Index.fromSet keysWhereTrue)
     where
         (MkSeries _ cond) = ys `select` index xs
-        whereValuesAreTrue = Set.fromAscList $ Vector.toList (Vector.findIndices id cond)
+        whereValuesAreTrue = Set.fromDistinctAscList $ Vector.toList (Vector.findIndices id cond)
         keysWhereTrue = Set.mapMonotonic (`Index.elemAt` index xs) whereValuesAreTrue
 
 
