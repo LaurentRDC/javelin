@@ -16,6 +16,7 @@ import qualified Data.Map.Strict
 import           Data.Set         ( Set )
 import qualified Data.Set         as Set 
 import qualified Data.Series
+import qualified Data.Series.Index as Index
 import qualified Data.Vector
 import qualified Data.Vector.Unboxed
 import           System.Directory ( doesFileExist, removeFile )
@@ -102,7 +103,7 @@ main = do
                         (flip Data.Map.Strict.restrictKeys)
           , SliceByKeys "Data.Series" 
                         Data.Series.fromList
-                        (flip Data.Series.select)
+                        (\ks xs -> xs `Data.Series.select` Index.fromSet ks)
           ])
     ]
 

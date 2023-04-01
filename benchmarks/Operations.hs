@@ -8,13 +8,14 @@ import           Data.Set           ( Set )
 import qualified Data.Set           as Set
 import           Data.Series        ( Series )
 import qualified Data.Series        as Series
+import qualified Data.Series.Index  as Index
 
 
 main :: IO ()
 main = do
     let srs        = Series.fromList $ zip [0..] [1::Int .. 2^(12::Int)]
-        elems      = Series.index srs
-        small      = Set.fromDistinctAscList  [1::Int ..  2^(8::Int)]
+        elems      = Index.toSet $ Series.index srs
+        small      = Set.fromAscList  [1::Int ..  2^(8::Int)]
         elems_even = Set.fromDistinctAscList  [2::Int, 4..2^(12::Int)]
         elems_odd  = Set.fromDistinctAscList  [1::Int, 3..2^(12::Int)]
     evaluate $ rnf [elems, small, elems_even, elems_odd]

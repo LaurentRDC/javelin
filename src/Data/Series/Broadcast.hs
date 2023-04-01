@@ -3,8 +3,8 @@ module Data.Series.Broadcast (
 ) where
 
 import           Data.Series.Definition ( Series(MkSeries, index) )
+import qualified Data.Series.Index      as Index
 import           Data.Series.View       ( select )
-import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
 import           Prelude                hiding ( zipWith, (<*), (*>), (<*>) ) 
 
@@ -31,9 +31,9 @@ zipWith :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k (Maybe
 zipWith f left right
     = let matched = zipWithMatched f left right
           matchedKeys   = index matched
-          allKeys       = index left `Set.union` index right
-          unmatchedKeys = allKeys `Set.difference` matchedKeys
-          unmatched     = MkSeries unmatchedKeys (Vector.replicate (Set.size unmatchedKeys) Nothing)
+          allKeys       = index left `Index.union` index right
+          unmatchedKeys = allKeys `Index.difference` matchedKeys
+          unmatched     = MkSeries unmatchedKeys (Vector.replicate (Index.size unmatchedKeys) Nothing)
        in (Just <$> matched) <> unmatched
 {-# INLINE zipWith #-}
 
@@ -52,7 +52,7 @@ zipWith f left right
 -- To combine elements where keys are in either series, see @zipWith@
 zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 zipWithMatched f left right
-    = let matchedKeys   = index left `Set.intersection` index right
+    = let matchedKeys   = index left `Index.intersection` index right
 
           (MkSeries _ xs) = left  `select` matchedKeys
           (MkSeries _ ys) = right `select` matchedKeys

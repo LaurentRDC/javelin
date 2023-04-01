@@ -4,11 +4,11 @@ module Data.Series.Aggregation (
     aggregateWith,
 ) where
 
+import qualified Data.Series.Index      as Index
 import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as Map
 import           Data.Series.Definition ( Series(..), fromStrictMap )
 import           Data.Series.View       ( select )
-import qualified Data.Set               as Set
 
 infixl 9 `groupBy`
 infixr 0 `aggregateWith`
@@ -44,8 +44,8 @@ groupBy :: (Ord k, Ord g)
 groupBy xs by = MkGroupBy $ select xs <$> groupedKeys
     where
         groupedKeys
-            | Set.null (index xs) = mempty
-            | otherwise = Map.fromListWith (<>) $ [(by k, Set.singleton k) | k <- Set.toAscList (index xs)]
+            | Index.null (index xs) = mempty
+            | otherwise = Map.fromListWith (<>) $ [(by k, Index.singleton k) | k <- Index.toAscList (index xs)]
 
 
 -- | Data type representing groups of @Series k a@, indexed by keys of type @g@.

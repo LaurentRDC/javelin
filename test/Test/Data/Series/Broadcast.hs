@@ -9,7 +9,7 @@ import           Data.Series          ( Series(index)
                                       , (+:), (-:), (*:), (/:), (==:), (/=:)
                                       , (+|), (-|), (*|), (/|), (==|), (/=|)
                                       , fromStrictMap, fromList, zipWith, select, at )
-import qualified Data.Set             as Set
+import qualified Data.Series.Index    as Index 
 
 import           Hedgehog             ( property, forAll, (===), assert )
 import qualified Hedgehog.Gen         as Gen
@@ -65,8 +65,8 @@ testPropZipWith
         m2 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
         let x1 = fromStrictMap m1
             x2 = fromStrictMap m2
-            common  = index x1 `Set.intersection` index x2
-            symdiff = (index x1 `Set.union` index x2) `Set.difference` common
+            common  = index x1 `Index.intersection` index x2
+            symdiff = (index x1 `Index.union` index x2) `Index.difference` common
             comb = zipWith (+) x1 x2
 
         forM_ common $ \k -> do
@@ -132,7 +132,7 @@ testPropEqMaybe
     = testProperty "Broadcastable equality with holes (==:)" $ property $ do
         m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
         let xs = fromStrictMap m1
-        (xs ==: xs) === fromList (map (, Just True) (Set.toAscList (index xs)))
+        (xs ==: xs) === fromList (map (, Just True) (Index.toAscList (index xs)))
 
 
 testPropNotEqMaybe :: TestTree
@@ -140,7 +140,7 @@ testPropNotEqMaybe
     = testProperty "Broadcastable non-equality with holes (/=:)" $ property $ do
         m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
         let xs = fromStrictMap m1
-        (xs /=: fmap (+1) xs) === fromList (map (, Just True) (Set.toAscList (index xs)))
+        (xs /=: fmap (+1) xs) === fromList (map (, Just True) (Index.toAscList (index xs)))
 
 
 testPropPlusMatched :: TestTree
@@ -198,7 +198,7 @@ testPropEqMatched
     = testProperty "Broadcastable equality without holes (==|)" $ property $ do
         m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
         let xs = fromStrictMap m1
-        (xs ==| xs) === fromList (map (, True) (Set.toAscList (index xs)))
+        (xs ==| xs) === fromList (map (, True) (Index.toAscList (index xs)))
 
 
 testPropNotEqMatched :: TestTree
@@ -206,4 +206,4 @@ testPropNotEqMatched
     = testProperty "Broadcastable non-equality without holes (/=|)" $ property $ do
         m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.double (Range.linearFrac (-500) 500))
         let xs = fromStrictMap m1
-        (xs /=| fmap (+1) xs) === fromList (map (, True) (Set.toAscList (index xs)))
+        (xs /=| fmap (+1) xs) === fromList (map (, True) (Index.toAscList (index xs)))

@@ -23,10 +23,11 @@ module Data.Series.View (
     to,
 ) where
 
+import           Data.Series.Index      ( Index )
+import qualified Data.Series.Index      as Index
 import           Data.Maybe             ( fromJust, isJust )
 import qualified Data.Map.Strict        as Map
 import           Data.Series.Definition ( Series(..), fromStrictMap )
-import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
 
@@ -58,7 +59,7 @@ infixl 0 `select`
 -- Nothing
 at :: Ord k => Series k a -> k -> Maybe a
 at (MkSeries ks vs) k = do
-    ix <- Set.lookupIndex k ks
+    ix <- Index.lookupIndex k ks
     pure $ Vector.unsafeIndex vs ix 
 {-# INLINE at #-}
 
@@ -104,8 +105,8 @@ mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 mapIndex MkSeries{..} f
     -- Note that the order in which items are kept appears to be backwards;
     -- See the examples for Data.Map.Strict.fromListWith
-    = let mapping   = Map.fromListWith (\_ x -> x) $ [(f k, k) | k <- Set.toAscList index]
-          newvalues = fmap (\k -> values Vector.! Set.findIndex k index) mapping
+    = let mapping   = Map.fromListWith (\_ x -> x) $ [(f k, k) | k <- Index.toAscList index]
+          newvalues = fmap (\k -> values Vector.! Index.findIndex k index) mapping
        in fromStrictMap newvalues
 
 
@@ -125,12 +126,12 @@ mapIndex MkSeries{..} f
 -- "Lisbon" |  Just 4
 --  "Paris" |  Just 1
 -- "Taipei" | Nothing
-reindex :: Ord k => Series k a -> Set k -> Series k (Maybe a)
+reindex :: Ord k => Series k a -> Index k -> Series k (Maybe a)
 {-# INLINE reindex #-}
 reindex xs ss 
-    = let existingKeys = index xs `Set.intersection` ss
-          newKeys      = ss `Set.difference` existingKeys
-       in (Just <$> (xs `select` existingKeys)) <> MkSeries newKeys (Vector.replicate (Set.size newKeys) Nothing)
+    = let existingKeys = index xs `Index.intersection` ss
+          newKeys      = ss `Index.difference` existingKeys
+       in (Just <$> (xs `select` existingKeys)) <> MkSeries newKeys (Vector.replicate (Index.size newKeys) Nothing)
 
 
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
@@ -150,7 +151,7 @@ reindex xs ss
 --     1 |      2
 --     2 |      1
 dropIndex :: Series k a -> Series Int a
-dropIndex (MkSeries ks vs) = MkSeries (Set.fromDistinctAscList [0..Set.size ks - 1]) vs
+dropIndex (MkSeries ks vs) = MkSeries (Index.fromAscList [0..Index.size ks - 1]) vs
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
@@ -171,7 +172,7 @@ filter :: Ord k => (a -> Bool) -> Series k a -> Series k a
 {-# INLINE filter #-}
 filter predicate xs@(MkSeries ks vs) 
     = let indicesToKeep = Vector.findIndices predicate vs
-          keysToKeep = Set.fromList [Set.elemAt ix ks | ix <- Vector.toList indicesToKeep]
+          keysToKeep = Index.fromList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
        in xs `select` keysToKeep
 
 
@@ -215,7 +216,7 @@ instance Show k => Show (Range k) where
 keysInRange :: Ord k => Series k a -> Range k -> (k, k)
 {-# INLINE keysInRange #-}
 keysInRange (MkSeries ks _) (MkRange start stop)
-    = let (_, afterStart) = Set.spanAntitone (< start) ks
+    = let (_, afterStart) = Set.spanAntitone (< start) $ Index.toSet ks
           inRange         = Set.takeWhileAntitone (<= stop) afterStart
        in (Set.findMin inRange, Set.findMax inRange)
 
@@ -274,20 +275,20 @@ class Selection s where
     select :: Ord k => Series k a -> s k -> Series k a
 
 
-instance Selection Set where
+instance Selection Index where
     -- | Select all keys in @Set k@ in a series. Keys which are not
     -- in the series are ignored.
-    select :: Ord k => Series k a -> Set k -> Series k a
+    select :: Ord k => Series k a -> Index k -> Series k a
     {-# INLINE select #-}
     select (MkSeries ks vs) ss 
-        = let selectedKeys = ks `Set.intersection` ss
+        = let selectedKeys = ks `Index.intersection` ss
             -- Surprisingly, using `Vector.backpermute` does not
             -- perform as well as `Vector.map (Vector.unsafeIndex vs)`
             -- for large Series
               newValues = Vector.map (Vector.unsafeIndex vs) 
-                        $ Vector.map (`Set.findIndex` ks) 
-                        $ Vector.fromListN (Set.size selectedKeys) 
-                                           (Set.toAscList selectedKeys)
+                        $ Vector.map (`Index.findIndex` ks) 
+                        $ Vector.fromListN (Index.size selectedKeys) 
+                                           (Index.toAscList selectedKeys)
            in MkSeries selectedKeys newValues
 
 
@@ -296,7 +297,7 @@ instance Selection Range where
     {-# INLINE select #-}
     select series rng 
         = let (kstart, kstop) = keysInRange series rng 
-              indexOf xs k = Set.findIndex k (index xs)
+              indexOf xs k = Index.findIndex k (index xs)
            in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
 
 
@@ -326,11 +327,11 @@ instance Selection Range where
 -- "Lisbon" |      4
 -- "London" |      2
 selectWhere :: Ord k => Series k a -> Series k Bool -> Series k a
-selectWhere xs ys = xs `select` keysWhereTrue
+selectWhere xs ys = xs `select` (Index.fromSet keysWhereTrue)
     where
         (MkSeries _ cond) = ys `select` index xs
         whereValuesAreTrue = Set.fromAscList $ Vector.toList (Vector.findIndices id cond)
-        keysWhereTrue = Set.mapMonotonic (`Set.elemAt` index xs) whereValuesAreTrue
+        keysWhereTrue = Set.mapMonotonic (`Index.elemAt` index xs) whereValuesAreTrue
 
 
 -- | Yield a subseries based on indices. The end index is not included.
@@ -354,6 +355,6 @@ slice :: Int -- ^ Start index
 {-# INLINE slice #-}
 slice start stop (MkSeries ks vs) 
     = let stop' = min (length vs) stop
-    in MkSeries { index  = Set.take (stop' - start) $ Set.drop start ks
+    in MkSeries { index  = Index.take (stop' - start) $ Index.drop start ks
                 , values = Vector.slice start (stop' - start) vs
                 }

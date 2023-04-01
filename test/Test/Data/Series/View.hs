@@ -2,7 +2,7 @@ module Test.Data.Series.View (tests) where
 
 import qualified Data.Map.Strict      as MS
 import           Data.Series          ( Series, fromStrictMap, fromList, to, select, selectWhere, reindex, mapIndex )
-import qualified Data.Set             as Set
+import qualified Data.Series.Index    as Index
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
@@ -26,7 +26,7 @@ testSelectRange = testCase "from ... to ..." $ do
 testSelectSet :: TestTree
 testSelectSet = testCase "select" $ do
     let (series :: Series Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
-        subSeries = series `select` Set.fromList ['a', 'd', 'x']
+        subSeries = series `select` Index.fromList ['a', 'd', 'x']
         expectation = fromStrictMap $ MS.fromList [('a', 1), ('d', 4)]
     
     assertEqual mempty expectation subSeries
@@ -44,7 +44,7 @@ testSelectWhere = testCase "selectWhere" $ do
 testReindex :: TestTree
 testReindex = testCase "reindex" $ do
     let (series :: Series Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
-        subSeries = series `reindex` Set.fromList ['a', 'd', 'x']
+        subSeries = series `reindex` Index.fromList ['a', 'd', 'x']
         expectation = fromStrictMap $ MS.fromList [('a', Just 1), ('d', Just 4), ('x', Nothing)]
     
     assertEqual mempty expectation subSeries

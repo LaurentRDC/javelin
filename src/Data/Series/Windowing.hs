@@ -6,7 +6,7 @@ module Data.Series.Windowing (
 ) where
 
 
-import qualified Data.Set               as Set               
+import qualified Data.Series.Index      as Index
 import           Data.Series.Definition ( Series(..) )
 import           Data.Series.View       ( Range(..), select, slice )
 import qualified Data.Vector            as Vector
@@ -16,7 +16,7 @@ windows :: Ord k
         => (k -> Range k) 
         -> Series k a 
         -> [Series k a]
-windows gen xs = [ xs `select` gen key | key <- Set.toAscList (index xs) ]
+windows gen xs = [ xs `select` gen key | key <- Index.toAscList (index xs) ]
 {-# INLINE windows #-}
 
 

@@ -28,6 +28,7 @@ library
     import:           common
     hs-source-dirs:   src
     exposed-modules:  Data.Series
+                      Data.Series.Index
                       Data.Series.Internal
     other-modules:    Data.Series.Aggregation
                       Data.Series.Broadcast
@@ -57,6 +58,7 @@ test-suite series-test
                       Test.Data.Series.Broadcast
                       Test.Data.Series.Conversion
                       Test.Data.Series.Definition
+                      Test.Data.Series.Index
                       Test.Data.Series.IO
                       Test.Data.Series.Numeric
                       Test.Data.Series.View

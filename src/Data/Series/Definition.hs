@@ -27,7 +27,8 @@ import qualified Data.List       as List
 import qualified Data.Map.Lazy   as ML
 import           Data.Map.Strict ( Map )
 import qualified Data.Map.Strict as MS
-import           Data.Set        ( Set )
+import           Data.Series.Index ( Index )
+import qualified Data.Series.Index as Index
 import qualified Data.Set        as Set
 import           Data.Vector     ( Vector )
 import qualified Data.Vector     as Vector
@@ -59,7 +60,7 @@ data Series k a
     -- The reason the index is a set of keys is that we *want* keys to be ordered.
     -- This allows for efficient slicing of the underlying values, because
     -- if `k1 < k2`, then the values are also at indices `ix1 < ix2`.
-    = MkSeries { index  :: Set k
+    = MkSeries { index  :: Index k
                , values :: Vector a
                }
 
@@ -91,20 +92,20 @@ fromList = fromStrictMap . MS.fromList
 -- [('a',5),('b',0),('d',1)]
 toList :: Series k a -> [(k, a)]
 {-# INLINE toList #-}
-toList (MkSeries ks vs) = zip (Set.toAscList ks) (Vector.toList vs)
+toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Convert a series into a lazy @Map@.
 toLazyMap :: (Eq k, Ord k) => Series k a -> Map k a
 {-# INLINE toLazyMap #-}
-toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
+toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Construct a series from a lazy @Map@.
 fromLazyMap :: (Eq k, Ord k) => ML.Map k a -> Series k a
 {-# INLINE fromLazyMap #-}
 fromLazyMap mp = let keys = ML.keysSet mp 
-                  in MkSeries { index  = keys 
+                  in MkSeries { index  = Index.fromSet keys 
                               , values = Vector.fromListN (Set.size keys) $ ML.elems mp
                               }
 
@@ -112,13 +113,13 @@ fromLazyMap mp = let keys = ML.keysSet mp
 -- | Convert a series into a strict @Map@.
 toStrictMap :: (Eq k, Ord k) => Series k a -> Map k a
 {-# INLINE toStrictMap #-}
-toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Set.toAscList ks) (Vector.toList vs)
+toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Construct a series from a strict @Map@.
 fromStrictMap :: (Eq k, Ord k) => MS.Map k a -> Series k a
 {-# INLINE fromStrictMap #-}
-fromStrictMap mp = MkSeries { index  = MS.keysSet mp
+fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
                             , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                             }
 
@@ -135,15 +136,15 @@ lastM (MkSeries _ vs) = Vector.lastM vs
 
 take :: Int -> Series k a -> Series k a
 {-# INLINE take #-}
-take n (MkSeries ks vs) = MkSeries (Set.take n ks) (Vector.take n vs)
+take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
 
 
 instance Ord k => Semigroup (Series k a) where
     {-# INLINE (<>) #-}
     (<>) :: Series k a -> Series k a -> Series k a
     (MkSeries ks1 vs1) <> (MkSeries ks2 vs2)
-        = let allKeys = ks1 `Set.union` ks2
-              newValues = pick <$> Vector.fromListN (Set.size allKeys) (Set.toAscList allKeys)
+        = let allKeys = ks1 `Index.union` ks2
+              newValues = pick <$> Vector.fromListN (Index.size allKeys) (Index.toAscList allKeys)
             in MkSeries allKeys newValues
         where
             -- TODO: would it be faster to use Set.disjointUnion 
@@ -155,12 +156,12 @@ instance Ord k => Semigroup (Series k a) where
             
             findKeyIndex :: k -> Either Int Int
             findKeyIndex k 
-                = case k `Set.lookupIndex` ks1 of
+                = case k `Index.lookupIndex` ks1 of
                     Just ix -> Left ix
                     -- Not safe but we know `k` is either in `ks1` or `ks2`
                     -- Note that this choice makes (<>) left-biased: if there are duplicate keys,
                     -- the value from the left series is preferred.
-                    Nothing -> Right $ k `Set.findIndex` ks2
+                    Nothing -> Right $ k `Index.findIndex` ks2
 
 
 instance Ord k => Monoid (Series k a) where
