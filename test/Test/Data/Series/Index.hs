@@ -5,7 +5,7 @@ module Test.Data.Series.Index (tests) where
 import qualified Data.Series.Index    as Index
 import qualified Data.Set             as Set
 
-import           Hedgehog             ( property, forAll, tripping, assert )
+import           Hedgehog             ( property, forAll, tripping, assert, (===) )
 import qualified Hedgehog.Gen         as Gen
 import qualified Hedgehog.Range       as Range
 
@@ -19,6 +19,7 @@ tests = testGroup "Data.Series.Index" [ testPropFromToSet
                                       , testPropFromToList
                                       , testPropFromToAscList
                                       , testPropMemberNotMember
+                                      , testPropFilter
                                       ]
 
 
@@ -48,4 +49,14 @@ testPropMemberNotMember = testProperty "elements are either a member or not a me
     k  <- forAll $ Gen.int (Range.linear (-100) 100)
 
     let ix = Index.fromList ms
-    assert $ (k `Index.member` ix) /= (k `Index.notMember` ix) 
+    assert $ (k `Index.member` ix) /= (k `Index.notMember` ix)
+
+
+testPropFilter :: TestTree
+testPropFilter = testProperty "filter works just like for Sets" $ property $ do
+    ms <- forAll $ Gen.list (Range.linear 0 50) (Gen.int (Range.linear (-100) 100))
+
+    let ss = Set.fromList ms
+        ix = Index.fromSet ss
+    
+    (Index.fromSet (Set.filter even ss)) === (Index.filter even ix)

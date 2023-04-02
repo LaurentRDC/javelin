@@ -2,3 +2,10 @@ packages: *.cabal
 test-show-details: streaming
 tests: True
 benchmarks: True
+
+-- For GHC 9.6
+source-repository-package
+  type:     git
+  location: https://github.com/hedgehogqa/haskell-hedgehog
+  tag:      a4ceeeadda9353e194f0cf58b020ae8511809445
+  subdir:   hedgehog

@@ -1,4 +1,55 @@
 {-# LANGUAGE TypeFamilies #-}
+
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  $header
+-- Copyright   :  (c) Laurent P. René de Cotret
+-- License     :  MIT-style
+-- Maintainer  :  Laurent P. René de Cotret
+-- Portability :  portable
+--
+-- This module contains the definition of `Index`, a sequence of /unique/ and /sorted/
+-- keys which can be used to efficient index a `Series`.
+--
+-- = Construction
+--
+-- Constructing an `Index` can be done from the usual list using `fromList`. Note that 
+-- the `Index` length could be smaller than the input list, due to the requirement that
+-- an `Index` be a sequence of unique keys.  A better way to construct an `Index` is 
+-- to use a `Set` (`fromSet`)
+--
+-- For quick inline definitions of an `Index`, you can also make use of the @OverloadedLists@ extension:
+-- 
+-- >>> :set -XOverloadedLists
+-- >>> let (ix :: Index Int) = [1,2,3,4,5,5,5]
+-- >>> ix
+-- Index [1,2,3,4,5] 
+--
+-- = Set operations
+-- 
+-- Just like a `Set`, `Index` supports efficient `member`, `notMember`, `union`, `intersection`, and `difference` operations.
+-- Like `Set`, the `Semigroup` and `Monoid` instance of `Index` are defined using the `union` operation:
+--
+-- >>> fromList ['a', 'b', 'c'] <> fromList ['b', 'c', 'd']
+-- Index "abcd"
+--
+-- = Mapping
+--
+-- Because of the restriction that all keys be unique, an `Index` is not a true `Functor`; you can't use
+-- `fmap` to map elements of an index. Instead, you can use the general-purpose function `map`. If you want
+-- to map elements of an `Index` with a monotonic function (i.e. a function which will not re-order elements and won't
+-- create duplicate elements), you can use the `mapMonotonic` function which operates faster.
+--
+-- = Indexing
+--
+-- One of the key operations for `Series` is to find the integer index of an element in an `Index`. For this purpose, you
+-- can use `lookupIndex`:
+--
+-- >>> lookupIndex 'b' $ fromList ['a', 'b', 'c']
+-- Just 1
+-- >>> lookupIndex 'd' $ fromList ['a', 'b', 'c']
+-- Nothing
+
 module Data.Series.Index (
     Index,
 
@@ -22,9 +73,10 @@ module Data.Series.Index (
     take,
     drop,
 
-    -- * Mapping
+    -- * Mapping and filtering
     map,
     mapMonotonic,
+    filter,
     
     -- * Indexing
     findIndex,
@@ -36,8 +88,8 @@ import           Control.DeepSeq    (NFData)
 import           Data.Set           ( Set )
 import qualified Data.Set           as Set
 import           GHC.Exts           ( IsList )
-import qualified GHC.Exts           as IsList
-import           Prelude            hiding ( null, take, drop, map )
+import qualified GHC.Exts           as Exts
+import           Prelude            hiding ( null, take, drop, map, filter )
 
 
 -- | Representation of the index of a series.
@@ -45,6 +97,7 @@ import           Prelude            hiding ( null, take, drop, map )
 --
 -- You can construct an `Index` from a set (`fromSet`) or from a list (`fromList`). You can 
 -- also make use of the @OverloadedLists@ extension:
+--
 -- >>> :set -XOverloadedLists
 -- >>> let (ix :: Index Int) = [1, 2, 3]
 -- >>> ix
@@ -60,7 +113,7 @@ instance Ord k => IsList (Index k) where
     type Item (Index k) = k
     fromList :: [k] -> Index k
     fromList = fromList
-    toList :: Index k -> [IsList.Item (Index k)]
+    toList :: Index k -> [Exts.Item (Index k)]
     toList = toAscList
 
 
@@ -191,6 +244,14 @@ map f (MkIndex ix) = MkIndex $ Set.map f ix
 -- Index [1,2,3,4,5,6]
 mapMonotonic :: (k -> g) -> Index k -> Index g
 mapMonotonic f (MkIndex ix) = MkIndex $ Set.mapMonotonic f ix
+
+
+-- | \(O(n)\) Filter elements satisfying a predicate.
+--
+-- >>> filter even $ fromList [1::Int,2,3,4,5]
+-- Index [2,4]
+filter :: (k -> Bool) -> Index k -> Index k
+filter p (MkIndex ix) = MkIndex $ Set.filter p ix
 
 
 -- | \(O(\log n)\). Returns the integer /index/ of a key. This function raises an exception
