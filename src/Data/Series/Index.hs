@@ -58,9 +58,11 @@ module Data.Series.Index (
     fromSet,
     fromList,
     fromAscList,
+    fromVector,
+    fromAscVector,
     toSet,
-    toList,
     toAscList,
+    toAscVector,
 
     -- * Set-like operations
     null,
@@ -87,6 +89,8 @@ module Data.Series.Index (
 import           Control.DeepSeq    (NFData)
 import           Data.Set           ( Set )
 import qualified Data.Set           as Set
+import           Data.Vector        ( Vector )
+import qualified Data.Vector        as Vector
 import           GHC.Exts           ( IsList )
 import qualified GHC.Exts           as Exts
 import           Prelude            hiding ( null, take, drop, map, filter )
@@ -153,19 +157,45 @@ fromAscList :: Eq k => [k] -> Index k
 fromAscList = MkIndex . Set.fromAscList
 
 
+-- | \(O(n \log n)\) Build an `Index` from a `Vector`. Note that since an `Index` is
+-- composed of unique elements, the length of the index may not be
+-- the same as the length of the input vector:
+--
+-- >>> import Data.Vector as Vector
+-- >>> fromVector $ Vector.fromList ['c', 'a', 'b', 'b']
+-- Index "abc"
+--
+-- If the `Vector` is already sorted, `fromAscVector` is generally faster.
+fromVector :: Ord k => Vector k -> Index k
+fromVector = fromList . Vector.toList
+
+
+-- | \(O(n \log n)\) Build an `Index` from a `Vector` of elements in ascending order. The precondition
+-- that elements already be sorted is not checked. 
+--
+-- Note that since an `Index` is composed of unique elements, 
+-- the length of the index may not be the same as the length of the input vector:
+--
+-- >>> import Data.Vector as Vector
+-- >>> fromAscVector $ Vector.fromList ['a', 'b', 'b', 'c']
+-- Index "abc"
+fromAscVector :: Ord k => Vector k -> Index k
+fromAscVector = fromAscList . Vector.toList
+
+
 -- | \(O(1)\) Convert an `Index` to a `Set`.
 toSet :: Index k -> Set k
 toSet (MkIndex s) = s
 
 
--- | \(O(n)\) Convert an `Index` to a list. Elements will be produced in ascending order. Alias for `toAscList`.
-toList :: Index k -> [k]
-toList = toAscList
-
-
 -- | \(O(n)\) Convert an `Index` to a list. Elements will be produced in ascending order.
 toAscList :: Index k -> [k]
 toAscList (MkIndex s) = Set.toAscList s
+
+
+-- | \(O(n)\) Convert an `Index` to a list. Elements will be produced in ascending order.
+toAscVector :: Index k -> Vector k
+toAscVector ix = Vector.fromListN (size ix) $ toAscList ix
 
 
 -- | \(O(1)\) Returns @True@ for an empty `Index`, and @False@ otherwise.

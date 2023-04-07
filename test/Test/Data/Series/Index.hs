@@ -4,6 +4,7 @@ module Test.Data.Series.Index (tests) where
 
 import qualified Data.Series.Index    as Index
 import qualified Data.Set             as Set
+import qualified Data.Vector          as Vector
 
 import           Hedgehog             ( property, forAll, tripping, assert, (===) )
 import qualified Hedgehog.Gen         as Gen
@@ -18,6 +19,8 @@ tests :: TestTree
 tests = testGroup "Data.Series.Index" [ testPropFromToSet
                                       , testPropFromToList
                                       , testPropFromToAscList
+                                      , testPropFromToVector
+                                      , testPropFromToAscVector
                                       , testPropMemberNotMember
                                       , testPropFilter
                                       ]
@@ -30,17 +33,31 @@ testPropFromToSet = testProperty "fromSet / toSet" $ property $ do
 
 
 testPropFromToList :: TestTree
-testPropFromToList = testProperty "fromList / toList" $ property $ do
+testPropFromToList = testProperty "fromList / toAscList" $ property $ do
     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
-    let noDups = Set.toList $ Set.fromList ms
-    tripping noDups Index.fromList (Just . Index.toList)
+    let index = Index.fromList ms
+    tripping index (reverse . Index.toAscList) (Just . Index.fromList)
 
 
 testPropFromToAscList :: TestTree
 testPropFromToAscList = testProperty "fromAscList / toAscList" $ property $ do
     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
-    let noDups = Set.toAscList $ Set.fromList ms
-    tripping noDups Index.fromAscList (Just . Index.toAscList)
+    let index = Index.fromList ms
+    tripping index Index.toAscList (Just . Index.fromAscList)
+
+
+testPropFromToVector :: TestTree
+testPropFromToVector = testProperty "fromVector / toAscVector" $ property $ do
+    ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+    let index = Index.fromList ms
+    tripping index (Vector.reverse . Index.toAscVector) (Just . Index.fromVector)
+
+
+testPropFromToAscVector :: TestTree
+testPropFromToAscVector = testProperty "fromAscVector / toAscVector" $ property $ do
+    ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+    let index = Index.fromList ms
+    tripping index Index.toAscVector (Just . Index.fromAscVector)
 
 
 testPropMemberNotMember :: TestTree
