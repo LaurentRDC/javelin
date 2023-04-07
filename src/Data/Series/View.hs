@@ -28,6 +28,7 @@ import qualified Data.Series.Index      as Index
 import           Data.Maybe             ( fromJust, isJust )
 import qualified Data.Map.Strict        as Map
 import           Data.Series.Definition ( Series(..), fromStrictMap )
+import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
 
@@ -38,7 +39,7 @@ import           Prelude                hiding ( filter )
 -- >>> import qualified Data.Series.Index as Index 
 
 infixr 9 `to` -- Ensure that @to@ binds strongest
-infixl 0 `select` 
+infixl 1 `select` 
 
 
 -- | \(O(1)\). Extract a single value from a series, by index. 
@@ -292,6 +293,65 @@ instance Selection Index where
            in MkSeries selectedKeys newValues
 
 
+-- | Selecting a sub-series from a `Set` is a convenience
+-- function. Internally, the `Set` is converted to an index first.
+--
+-- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
+-- >>> xs
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'b' |     20
+--   'c' |     30
+--   'd' |     40
+-- >>> let keys = Set.fromList ['a', 'd', 'e']
+-- >>> xs `select` keys
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'd' |     40
+instance Selection Set where
+    select :: Ord k => Series k a -> Set k -> Series k a
+    select xs = select xs . Index.fromSet
+
+
+-- | Selecting a sub-series from a list is a convenience
+-- function. Internally, the list is converted to an index first.
+--
+-- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
+-- >>> xs
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'b' |     20
+--   'c' |     30
+--   'd' |     40
+-- >>> xs `select` ['a', 'd', 'e']
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'd' |     40
+instance Selection [] where
+    select :: Ord k => Series k a -> [k] -> Series k a
+    select xs = select xs . Index.fromList
+
+
+-- | Selecting a sub-series based on a @Range@ is most performant.
+-- Constructing a @Range@ is most convenient using the `to` function like so:
+-- 
+-- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
+-- >>> xs
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'b' |     20
+--   'c' |     30
+--   'd' |     40
+-- >>> xs `select` 'b' `to` 'c'
+-- index | values
+-- ----- | ------
+--   'b' |     20
+--   'c' |     30
 instance Selection Range where
     select :: Ord k => Series k a -> Range k -> Series k a
     {-# INLINE select #-}

@@ -71,6 +71,7 @@ module Data.Series.Index (
     union,
     intersection,
     difference,
+    symmetricDifference,
     size,
     take,
     drop,
@@ -232,6 +233,19 @@ intersection (MkIndex ix) (MkIndex jx) = MkIndex $ ix `Set.intersection` jx
 -- Index "a"
 difference :: Ord k => Index k -> Index k -> Index k
 difference (MkIndex ix) (MkIndex jx) = MkIndex $ Set.difference ix jx
+
+
+-- | \(O(n+m)\). The symmetric difference of two `Index`.
+-- The first element of the tuple is an `Index` containing all elements which
+-- are only found in the left `Index`, while the second element of the tuple is an `Index` containing
+-- all elements which are only found in the right `Index`:
+--
+-- >>> left = fromList ['a', 'b', 'c']
+-- >>> right = fromList ['c', 'd', 'e']
+-- >>> left `symmetricDifference` right
+-- (Index "ab",Index "de")
+symmetricDifference :: Ord k => Index k -> Index k -> (Index k, Index k)
+symmetricDifference left right = (left `difference` right, right `difference` left)
 
 
 -- | \(O(1)\) Returns the number of keys in the index.

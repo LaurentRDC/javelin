@@ -8,7 +8,9 @@ import           Data.Maybe           ( fromJust, isNothing )
 import           Data.Series          ( Series(index)
                                       , (+:), (-:), (*:), (/:), (==:), (/=:)
                                       , (+|), (-|), (*|), (/|), (==|), (/=|)
-                                      , fromStrictMap, fromList, zipWith, select, at )
+                                      , fromStrictMap, fromList, zipWith, select, at
+                                      )
+import qualified Data.Series          as Series
 import qualified Data.Series.Index    as Index 
 
 import           Hedgehog             ( property, forAll, (===), assert )
@@ -26,6 +28,7 @@ tests :: TestTree
 tests = testGroup "Data.Series.Broadcast" [ testZipWith
                                           , testPropZipWithMatched
                                           , testPropZipWith
+                                          , testPropZipWithStrategyDropStrategy
                                           , testPropPlusMaybe
                                           , testPropMinusMaybe
                                           , testPropMultMaybe
@@ -75,6 +78,20 @@ testPropZipWith
             fromJust (comb `at` k) === Just (left + right)
         
         assert $ all isNothing (comb `select` symdiff)
+
+
+testPropZipWithStrategyDropStrategy :: TestTree
+testPropZipWithStrategyDropStrategy 
+    = testProperty "zipWithStrategy f dropStrategy dropStrategy is equivalent to zipWithMatched" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        m2 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
+
+        let xs = fromStrictMap m1
+            ys = fromStrictMap m2
+
+            expectation = Series.zipWithMatched (+) xs ys
+        
+        expectation === Series.zipWithStrategy (+) Series.dropStrategy Series.dropStrategy xs ys
 
 
 testPropPlusMaybe :: TestTree

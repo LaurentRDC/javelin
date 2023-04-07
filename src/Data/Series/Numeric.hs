@@ -42,7 +42,7 @@ nanmean = zeroIfEmpty $ \xs -> nansum xs / fromIntegral (length xs)
 
 
 -- | Online Welford algorithm, which computes the mean and variance in a single pass.
-
+--
 -- Returns:
 --  * The number of elements in the series;
 --  * The average of the series;

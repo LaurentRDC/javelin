@@ -15,8 +15,12 @@ module Data.Series (
     ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile,
     readJSON, readJSONFromFile,
 
+    -- * Mapping
+    map, mapWithKey,
+
     -- * Combining series
-    zipWith, zipWithMatched,
+    zipWith, zipWithMatched, 
+    ZipStrategy, dropStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
     reindex, mapIndex, dropna, dropIndex,
@@ -47,13 +51,13 @@ module Data.Series (
     (+|), (-|), (*|), (/|), (==|), (/=|),
 ) where
 
-import Prelude                hiding ( zipWith )
+import Prelude                          hiding ( map, zipWith )
 
 import Data.Series.Aggregation          ( GroupBy, groupBy, aggregateWith )
-import Data.Series.Broadcast            ( zipWith, zipWithMatched,  )
+import Data.Series.Broadcast            ( zipWith, zipWithMatched, zipWithStrategy, ZipStrategy, dropStrategy, constStrategy  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|), (==|), (/=|), )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
-import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
+import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey )
 import Data.Series.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile, readJSON, readJSONFromFile )
 import Data.Series.Numeric              ( mean, nanmean, var, nanvar, sampleVariance, nanSampleVariance, std, nanstd, meanAndVariance, nanMeanAndVariance )
 import Data.Series.View                 ( Range, Selection, at, iat, select, selectWhere, to, reindex, mapIndex, dropna, dropIndex )

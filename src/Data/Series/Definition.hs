@@ -8,7 +8,7 @@ module Data.Series.Definition (
     Series(..),
 
     -- * Basic interface
-    headM, lastM, take,
+    headM, lastM, take, map, mapWithKey,
 
     -- * Conversion to/from Maps
     fromStrictMap,
@@ -20,22 +20,22 @@ module Data.Series.Definition (
     toList,
 ) where
 
-import           Control.DeepSeq ( NFData(rnf) )
-import           Data.Bifoldable ( Bifoldable(..) )
-import           Data.Foldable   ( Foldable(fold, foldMap', foldr', foldl') )
-import qualified Data.List       as List
-import qualified Data.Map.Lazy   as ML
-import           Data.Map.Strict ( Map )
-import qualified Data.Map.Strict as MS
-import           Data.Series.Index ( Index )
-import qualified Data.Series.Index as Index
-import qualified Data.Set        as Set
-import           Data.Vector     ( Vector )
-import qualified Data.Vector     as Vector
+import           Control.DeepSeq    ( NFData(rnf) )
+import           Data.Bifoldable    ( Bifoldable(..) )
+import           Data.Foldable      ( Foldable(fold, foldMap', foldr', foldl') )
+import qualified Data.List          as List
+import qualified Data.Map.Lazy      as ML
+import           Data.Map.Strict    ( Map )
+import qualified Data.Map.Strict    as MS
+import           Data.Series.Index  ( Index )
+import qualified Data.Series.Index  as Index
+import qualified Data.Set           as Set
+import           Data.Vector        ( Vector )
+import qualified Data.Vector        as Vector
 
-import           Prelude         hiding ( take )
+import           Prelude            hiding ( take, map )
 
-import qualified GHC.Exts        ( IsList(..) )
+import qualified GHC.Exts           ( IsList(..) )
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -137,6 +137,18 @@ lastM (MkSeries _ vs) = Vector.lastM vs
 take :: Int -> Series k a -> Series k a
 {-# INLINE take #-}
 take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
+
+
+-- | Map every element of a `Series`.
+map :: (a -> b) -> Series k a -> Series k b
+map f (MkSeries ix xs) = MkSeries ix $ Vector.map f xs
+
+
+-- | Map every element of a `Series`, possibly using the key as well.
+mapWithKey :: (k -> a -> b) -> Series k a -> Series k b
+mapWithKey f (MkSeries ix xs) 
+    = let vs = Vector.zipWith f (Index.toAscVector ix) xs
+       in MkSeries ix vs
 
 
 instance Ord k => Semigroup (Series k a) where
