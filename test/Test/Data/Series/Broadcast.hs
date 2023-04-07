@@ -28,7 +28,7 @@ tests :: TestTree
 tests = testGroup "Data.Series.Broadcast" [ testZipWith
                                           , testPropZipWithMatched
                                           , testPropZipWith
-                                          , testPropZipWithStrategyDropStrategy
+                                          , testPropZipWithStrategySkipStrategy
                                           , testPropPlusMaybe
                                           , testPropMinusMaybe
                                           , testPropMultMaybe
@@ -80,9 +80,9 @@ testPropZipWith
         assert $ all isNothing (comb `select` symdiff)
 
 
-testPropZipWithStrategyDropStrategy :: TestTree
-testPropZipWithStrategyDropStrategy 
-    = testProperty "zipWithStrategy f dropStrategy dropStrategy is equivalent to zipWithMatched" $ property $ do
+testPropZipWithStrategySkipStrategy :: TestTree
+testPropZipWithStrategySkipStrategy 
+    = testProperty "zipWithStrategy f skipStrategy skipStrategy is equivalent to zipWithMatched" $ property $ do
         m1 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
         m2 <- forAll $ Gen.map (Range.linear 0 100) ((,) <$> Gen.text (Range.singleton 2) Gen.alpha <*> Gen.int (Range.linear 0 1000))
 
@@ -91,7 +91,7 @@ testPropZipWithStrategyDropStrategy
 
             expectation = Series.zipWithMatched (+) xs ys
         
-        expectation === Series.zipWithStrategy (+) Series.dropStrategy Series.dropStrategy xs ys
+        expectation === Series.zipWithStrategy (+) Series.skipStrategy Series.skipStrategy xs ys
 
 
 testPropPlusMaybe :: TestTree

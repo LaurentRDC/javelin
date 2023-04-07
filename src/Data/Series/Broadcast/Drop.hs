@@ -1,5 +1,5 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module Data.Series.Broadcast.Drop ( 
     (+|), (-|), (*|), (/|), (==|), (/=|)
@@ -11,6 +11,7 @@ import Data.Series.Broadcast  ( zipWithMatched )
 
 infixl 6 +|, -|
 infixl 7 *|, /| 
+infix 4 ==|, /=|
 
 
 class BroadcastNumMatched a b c | a b -> c where

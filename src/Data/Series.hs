@@ -20,7 +20,7 @@ module Data.Series (
 
     -- * Combining series
     zipWith, zipWithMatched, 
-    ZipStrategy, dropStrategy, constStrategy, zipWithStrategy,
+    ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
     reindex, mapIndex, dropna, dropIndex,
@@ -54,7 +54,7 @@ module Data.Series (
 import Prelude                          hiding ( map, zipWith )
 
 import Data.Series.Aggregation          ( GroupBy, groupBy, aggregateWith )
-import Data.Series.Broadcast            ( zipWith, zipWithMatched, zipWithStrategy, ZipStrategy, dropStrategy, constStrategy  )
+import Data.Series.Broadcast            ( zipWith, zipWithMatched, zipWithStrategy, ZipStrategy, skipStrategy, constStrategy  )
 import Data.Series.Broadcast.Drop       ( (+|), (-|), (*|), (/|), (==|), (/=|), )
 import Data.Series.Broadcast.Propagate  ( (+:), (-:), (*:), (/:), (==:), (/=:),)
 import Data.Series.Definition           ( Series(index), fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey )
