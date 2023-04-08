@@ -57,7 +57,7 @@ testPropFromToAscVector :: TestTree
 testPropFromToAscVector = testProperty "fromAscVector / toAscVector" $ property $ do
     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
     let index = Index.fromList ms
-    tripping index Index.toAscVector (Just . Index.fromAscVector)
+    tripping index (Index.toAscVector :: Index.Index (Char, Char) -> Vector.Vector (Char, Char)) (Just . Index.fromAscVector)
 
 
 testPropMemberNotMember :: TestTree

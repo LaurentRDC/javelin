@@ -91,14 +91,14 @@ module Data.Series.Index (
     delete,
 ) where
 
-import           Control.DeepSeq    (NFData)
-import           Data.Set           ( Set )
-import qualified Data.Set           as Set
-import           Data.Vector        ( Vector )
-import qualified Data.Vector        as Vector
-import           GHC.Exts           ( IsList )
-import qualified GHC.Exts           as Exts
-import           Prelude            hiding ( null, take, drop, map, filter )
+import           Control.DeepSeq        ( NFData )
+import           Data.Set               ( Set )
+import qualified Data.Set               as Set
+import           Data.Vector.Generic    ( Vector )
+import qualified Data.Vector.Generic    as Vector
+import           GHC.Exts               ( IsList )
+import qualified GHC.Exts               as Exts
+import           Prelude                hiding ( null, take, drop, map, filter )
 
 
 -- | Representation of the index of a series.
@@ -171,7 +171,7 @@ fromAscList = MkIndex . Set.fromAscList
 -- Index "abc"
 --
 -- If the `Vector` is already sorted, `fromAscVector` is generally faster.
-fromVector :: Ord k => Vector k -> Index k
+fromVector :: (Vector v k, Ord k) => v k -> Index k
 fromVector = fromList . Vector.toList
 
 
@@ -184,7 +184,7 @@ fromVector = fromList . Vector.toList
 -- >>> import Data.Vector as Vector
 -- >>> fromAscVector $ Vector.fromList ['a', 'b', 'b', 'c']
 -- Index "abc"
-fromAscVector :: Ord k => Vector k -> Index k
+fromAscVector :: (Vector v k, Ord k) => v k -> Index k
 fromAscVector = fromAscList . Vector.toList
 
 
@@ -199,7 +199,7 @@ toAscList (MkIndex s) = Set.toAscList s
 
 
 -- | \(O(n)\) Convert an `Index` to a list. Elements will be produced in ascending order.
-toAscVector :: Index k -> Vector k
+toAscVector :: Vector v k => Index k -> v k
 toAscVector ix = Vector.fromListN (size ix) $ toAscList ix
 
 
