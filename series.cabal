@@ -28,17 +28,18 @@ library
     import:           common
     hs-source-dirs:   src
     exposed-modules:  Data.Series
+                      Data.Series.Generic
+                      Data.Series.Generic.Internal
                       Data.Series.Index
-                      Data.Series.Internal
-    other-modules:    Data.Series.Aggregation
-                      Data.Series.Broadcast
-                      Data.Series.Broadcast.Drop
-                      Data.Series.Broadcast.Propagate
-                      Data.Series.Definition
-                      Data.Series.IO
-                      Data.Series.Numeric
-                      Data.Series.View
-                      Data.Series.Windowing
+    other-modules:    Data.Series.Generic.Aggregation
+                      Data.Series.Generic.Broadcast
+                      Data.Series.Generic.Broadcast.Drop
+                      Data.Series.Generic.Broadcast.Propagate
+                      Data.Series.Generic.Definition
+                      Data.Series.Generic.IO
+                      Data.Series.Generic.Numeric
+                      Data.Series.Generic.View
+                      Data.Series.Generic.Windowing
     build-depends:    aeson >= 2.0 && < 2.2,
                       base  >=4.15.0.0,
                       bytestring,
@@ -54,15 +55,14 @@ test-suite series-test
     hs-source-dirs:   test
     main-is:          Main.hs
     other-modules:    Test.Data.Series
-                      Test.Data.Series.Aggregation
-                      Test.Data.Series.Broadcast
-                      Test.Data.Series.Conversion
-                      Test.Data.Series.Definition
                       Test.Data.Series.Index
-                      Test.Data.Series.IO
-                      Test.Data.Series.Numeric
-                      Test.Data.Series.View
-                      Test.Data.Series.Windowing
+                      Test.Data.Series.Generic.Aggregation
+                      Test.Data.Series.Generic.Broadcast
+                      Test.Data.Series.Generic.Definition
+                      Test.Data.Series.Generic.IO
+                      Test.Data.Series.Generic.Numeric
+                      Test.Data.Series.Generic.View
+                      Test.Data.Series.Generic.Windowing
                       Test.Utils
     build-depends:    base,
                       containers,

@@ -100,6 +100,9 @@ import           GHC.Exts               ( IsList )
 import qualified GHC.Exts               as Exts
 import           Prelude                hiding ( null, take, drop, map, filter )
 
+-- $setup
+-- >>> import Data.Series.Index
+-- >>> import qualified Data.Vector as Vector
 
 -- | Representation of the index of a series.
 -- An index is a sequence of sorted elements. All elements are unique, much like a `Set`.
@@ -166,8 +169,8 @@ fromAscList = MkIndex . Set.fromAscList
 -- composed of unique elements, the length of the index may not be
 -- the same as the length of the input vector:
 --
--- >>> import Data.Vector as Vector
--- >>> fromVector $ Vector.fromList ['c', 'a', 'b', 'b']
+-- >>> import Data.Vector as V
+-- >>> fromVector $ V.fromList ['c', 'a', 'b', 'b']
 -- Index "abc"
 --
 -- If the `Vector` is already sorted, `fromAscVector` is generally faster.
@@ -181,8 +184,8 @@ fromVector = fromList . Vector.toList
 -- Note that since an `Index` is composed of unique elements, 
 -- the length of the index may not be the same as the length of the input vector:
 --
--- >>> import Data.Vector as Vector
--- >>> fromAscVector $ Vector.fromList ['a', 'b', 'b', 'c']
+-- >>> import Data.Vector as V
+-- >>> fromAscVector $ V.fromList ['a', 'b', 'b', 'c']
 -- Index "abc"
 fromAscVector :: (Vector v k, Ord k) => v k -> Index k
 fromAscVector = fromAscList . Vector.toList

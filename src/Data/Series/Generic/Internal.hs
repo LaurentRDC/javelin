@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Series.Internal
+-- Module      :  Data.Series.Generic.Internal
 -- Copyright   :  (c) Laurent P. René de Cotret 2002
 -- License     :  MIT
 -- Maintainer  :  laurent.decotret@outlook.com
@@ -18,7 +18,7 @@
 -- Authors importing this module are expected to track development
 -- closely.
 
-module Data.Series.Internal ( ColumnName(..), Series(..) ) where
+module Data.Series.Generic.Internal ( ColumnName(..), Series(..) ) where
 
-import Data.Series.Definition   ( Series(..) )
-import Data.Series.IO           ( ColumnName(..) )
+import Data.Series.Generic.Definition   ( Series(..) )
+import Data.Series.Generic.IO           ( ColumnName(..) )
