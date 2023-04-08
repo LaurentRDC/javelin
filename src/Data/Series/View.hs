@@ -15,7 +15,6 @@ module Data.Series.View (
     reindex,
     filter,
     dropna,
-    mapIndex,
     dropIndex,
 
     -- * Creating and accessing ranges
@@ -26,8 +25,7 @@ module Data.Series.View (
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import           Data.Maybe             ( fromJust, isJust )
-import qualified Data.Map.Strict        as Map
-import           Data.Series.Definition ( Series(..), fromStrictMap )
+import           Data.Series.Definition ( Series(..) )
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Vector
@@ -81,34 +79,6 @@ at (MkSeries ks vs) k = do
 iat :: Series k a -> Int -> Maybe a
 iat (MkSeries _ vs) =  (Vector.!?) vs
 {-# INLINE iat #-}
-
-
--- | \(O(n \log n)\).
--- Map each key in the index to another value. Note that the resulting series
--- may have less elements, because each key must be unique.
---
--- In case new keys are conflicting, the first element is kept.
---
--- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
--- >>> xs
---    index | values
---    ----- | ------
--- "Lisbon" |      4
--- "London" |      2
---  "Paris" |      1
--- >>> xs `mapIndex` head
--- index | values
--- ----- | ------
---   'L' |      4
---   'P' |      1
-mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
-{-# INLINE mapIndex #-}
-mapIndex MkSeries{..} f
-    -- Note that the order in which items are kept appears to be backwards;
-    -- See the examples for Data.Map.Strict.fromListWith
-    = let mapping   = Map.fromListWith (\_ x -> x) $ [(f k, k) | k <- Index.toAscList index]
-          newvalues = fmap (\k -> values Vector.! Index.findIndex k index) mapping
-       in fromStrictMap newvalues
 
 
 -- | Reindex a series with a new index.

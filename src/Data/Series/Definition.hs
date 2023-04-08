@@ -8,7 +8,7 @@ module Data.Series.Definition (
     Series(..),
 
     -- * Basic interface
-    headM, lastM, take, map, mapWithKey,
+    headM, lastM, take, map, mapWithKey, mapIndex,
 
     -- * Conversion to/from Maps
     fromStrictMap,
@@ -139,16 +139,47 @@ take :: Int -> Series k a -> Series k a
 take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
 
 
--- | Map every element of a `Series`.
+-- | \(O(n)\) Map every element of a `Series`.
 map :: (a -> b) -> Series k a -> Series k b
+{-# INLINE map #-}
 map f (MkSeries ix xs) = MkSeries ix $ Vector.map f xs
 
 
--- | Map every element of a `Series`, possibly using the key as well.
+-- | \(O(n)\) Map every element of a `Series`, possibly using the key as well.
 mapWithKey :: (k -> a -> b) -> Series k a -> Series k b
+{-# INLINE mapWithKey #-}
 mapWithKey f (MkSeries ix xs) 
     = let vs = Vector.zipWith f (Index.toAscVector ix) xs
        in MkSeries ix vs
+
+
+
+-- | \(O(n \log n)\).
+-- Map each key in the index to another value. Note that the resulting series
+-- may have less elements, because each key must be unique.
+--
+-- In case new keys are conflicting, the first element is kept.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> xs `mapIndex` head
+-- index | values
+-- ----- | ------
+--   'L' |      4
+--   'P' |      1
+mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
+{-# INLINE mapIndex #-}
+mapIndex (MkSeries index values) f
+    -- Note that the order in which items are kept appears to be backwards;
+    -- See the examples for Data.Map.Strict.fromListWith
+    = let mapping   = MS.fromListWith (\_ x -> x) $ [(f k, k) | k <- Index.toAscList index]
+          newvalues = fmap (\k -> values Vector.! Index.findIndex k index) mapping
+       in fromStrictMap newvalues
 
 
 instance Ord k => Semigroup (Series k a) where

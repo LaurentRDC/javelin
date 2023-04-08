@@ -85,6 +85,10 @@ module Data.Series.Index (
     findIndex,
     lookupIndex,
     elemAt,
+
+    -- * Insertion and deletion
+    insert,
+    delete,
 ) where
 
 import           Control.DeepSeq    (NFData)
@@ -321,3 +325,15 @@ lookupIndex e (MkIndex ix) = Set.lookupIndex e ix
 -- an exception if the integer index is out-of-bounds.
 elemAt :: Int -> Index k -> k
 elemAt n (MkIndex ix) = Set.elemAt n ix
+
+
+-- | \(O(\log n)\). Insert a key in an `Index`. If the key is already 
+-- present, the `Index` will not change.
+insert :: Ord k => k -> Index k -> Index k
+insert k (MkIndex ix) = MkIndex $ k `Set.insert` ix
+
+
+-- | \(O(\log n)\). Delete a key from an `Index`, if this key is present
+-- in the index.
+delete :: Ord k => k -> Index k -> Index k
+delete k (MkIndex ix) = MkIndex $ k `Set.delete` ix
