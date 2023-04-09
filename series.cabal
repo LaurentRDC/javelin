@@ -31,6 +31,7 @@ library
                       Data.Series.Generic
                       Data.Series.Generic.Internal
                       Data.Series.Index
+                      Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Broadcast
                       Data.Series.Generic.Definition

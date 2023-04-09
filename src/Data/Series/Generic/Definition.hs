@@ -7,6 +7,8 @@
 module Data.Series.Generic.Definition ( 
     Series(..),
 
+    convert,
+
     -- * Basic interface
     headM, lastM, take, map, mapWithKey, mapIndex,
     foldMap, bifoldMap, sum, length, null,
@@ -61,6 +63,11 @@ data Series v k a
     = MkSeries { index  :: Index k
                , values :: v a
                }
+
+-- | \(O(n)\) Convert between two types of `Series`.
+convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
+convert (MkSeries ix vs) = MkSeries ix $ Vector.convert vs 
+
 
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
@@ -135,7 +142,6 @@ mapWithKey f (MkSeries ix xs)
     -- on the index type, i.e. we don't want the constraint Vector v k
     = let vs = Boxed.zipWith f (Index.toAscVector ix) (Vector.convert xs)
        in MkSeries ix (Vector.convert vs)
-
 
 
 -- | \(O(n \log n)\).
