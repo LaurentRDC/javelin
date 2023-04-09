@@ -33,8 +33,6 @@ library
                       Data.Series.Index
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Broadcast
-                      Data.Series.Generic.Broadcast.Drop
-                      Data.Series.Generic.Broadcast.Propagate
                       Data.Series.Generic.Definition
                       Data.Series.Generic.IO
                       Data.Series.Generic.Numeric

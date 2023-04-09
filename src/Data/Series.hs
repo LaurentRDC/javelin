@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Series
@@ -33,9 +32,12 @@ module Data.Series (
     Series, index, values,
 
     -- * Building/converting `Series`
-    fromStrictMap, toStrictMap,
-    fromLazyMap, toLazyMap,
+    -- ** Lists
     fromList, toList,
+    -- ** Strict Maps
+    fromStrictMap, toStrictMap,
+    -- ** Lazy Maps
+    fromLazyMap, toLazyMap,
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter,
@@ -48,7 +50,10 @@ module Data.Series (
     reindex, dropna, dropIndex,
 
     -- * Accessors
-    Range, Selection, to, select, selectWhere, at, iat, 
+    -- ** Bulk access
+    select, selectWhere, Range, to, Selection, 
+    -- ** Single-element access
+    at, iat, 
 
     -- * Grouping operations
     GroupBy, groupBy, aggregateWith,
@@ -58,7 +63,7 @@ import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
-                                     ( Range, Selection, to, select )
+                                     ( Range, Selection, to )
 import qualified Data.Series.Generic as G
 import           Data.Vector         ( Vector )
 
@@ -68,6 +73,7 @@ import           Prelude             hiding (map, zipWith, filter)
 -- >>> import qualified Data.Series as Series
 -- >>> import qualified Data.Series.Index as Index
 
+infixl 1 `select` 
 
 -- | A series is a labeled array of values of type @a@,
 -- indexed by keys of type @k@.
@@ -198,7 +204,7 @@ mapIndex = G.mapIndex
 -- "delta" | Nothing
 -- "gamma" | Nothing
 --
--- To only combine elements where keys are in both series, see @zipWithMatched@
+-- To only combine elements where keys are in both series, see `zipWithMatched`.
 zipWith :: (Ord k) 
         => (a -> b -> c) -> Series k a -> Series k b -> Series k (Maybe c)
 zipWith = G.zipWith 
@@ -216,7 +222,7 @@ zipWith = G.zipWith
 -- "alpha" |     10
 --  "beta" |     12
 --
--- To combine elements where keys are in either series, see @zipWith@
+-- To combine elements where keys are in either series, see `zipWith`.
 zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
@@ -289,7 +295,7 @@ zipWithStrategy :: (Ord k)
 zipWithStrategy = G.zipWithStrategy
 
 -- | Reindex a series with a new index.
--- Contrary to @select@, all keys in @Set k@ will be present in the re-indexed series.
+-- Contrary to @select@, all keys in the `Index` will be present in the re-indexed series.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
 -- >>> xs
@@ -309,7 +315,7 @@ reindex :: Ord k => Series k a -> Index k -> Series k (Maybe a)
 reindex = G.reindex 
 
 
--- | Drop the index of a series by replacing it with an @Int@-based index. Values will
+-- | Drop the index of a series by replacing it with an `Int`-based index. Values will
 -- be indexed from 0.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
@@ -371,6 +377,40 @@ dropna :: Ord k => Series k (Maybe a) -> Series k a
 dropna = G.dropna
 
 
+-- | Select a subseries. There are a few ways to do this.
+--
+-- The first way to do this is to select a sub-series based on random keys. For example,
+-- selecting a subseries from an `Index`:
+--
+-- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
+-- >>> xs `select` Index.fromList ['a', 'd']
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'd' |     40
+--
+-- The second way to select a sub-series is to select all keys in a range:
+--
+-- >>> xs `select` 'b' `to` 'c'
+-- index | values
+-- ----- | ------
+--   'b' |     20
+--   'c' |     30
+--
+-- Note that with `select`, you'll always get a sub-series; if you ask for a key which is not
+-- in the series, it'll be ignored:
+--
+-- >>> xs `select` Index.fromList ['a', 'd', 'e']
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'd' |     40
+--
+-- See `reindex` if you want to ensure that all keys are present.
+select :: (Selection s, Ord k) => Series k a -> s k -> Series k a
+select = G.select
+
+
 -- | Select a sub-series from a series matching a condition.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
@@ -381,17 +421,6 @@ dropna = G.dropna
 -- "London" |      2
 --  "Paris" |      1
 -- >>> xs `selectWhere` (fmap (>1) xs)
---    index | values
---    ----- | ------
--- "Lisbon" |      4
--- "London" |      2
---
--- @selectWhere@ can be used in combinations with broadcasting operators to
--- make selections more readable:
---
--- >>> import Data.Series ( (/=|) )
--- >>> let threshold = 1 :: Int
--- >>> xs `selectWhere` (xs /=| threshold)
 --    index | values
 --    ----- | ------
 -- "Lisbon" |      4
@@ -434,9 +463,9 @@ iat = G.iat
 -- See the documentation for @groupBy@.
 type GroupBy = G.GroupBy Vector
 
--- | Group values in a @Series@ by some function (@k -> g@).
+-- | Group values in a `Series` by some function (@k -> g@).
 --
--- This function is expected to be used in conjunction with @aggregateWith@:
+-- This function is expected to be used in conjunction with `aggregateWith`:
 -- 
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
@@ -462,7 +491,7 @@ groupBy = G.groupBy
 
 
 -- | Aggregate grouped series. This function is expected to be used in conjunction
--- with @groupBy@.
+-- with `groupBy`.
 aggregateWith :: (Ord g) 
               => GroupBy g k a      -- ^ Grouped series
               -> (Series k a -> b)  -- ^ Aggregation function

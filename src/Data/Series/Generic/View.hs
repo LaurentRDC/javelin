@@ -67,7 +67,7 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 
 
 -- | Reindex a series with a new index.
--- Contrary to @select@, all keys in @Set k@ will be present in the re-indexed series.
+-- Contrary to `select`, all keys in @Set k@ will be present in the re-indexed series.
 reindex :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
 {-# INLINE reindex #-}
@@ -107,7 +107,7 @@ dropna = G.map fromJust . filter isJust
 -- >>> 'a' `to` 'z'
 -- Range (from 'a' to 'z')
 --
--- A @Range@ can be used to efficiently select a sub-series with @select@.
+-- A @Range@ can be used to efficiently select a sub-series with `select`.
 data Range k = MkRange k k
 
 instance Show k => Show (Range k) where
@@ -125,19 +125,19 @@ keysInRange (MkSeries ks _) (MkRange start stop)
 
 
 -- | Create a @Range@ which can be used for slicing. This function
--- is expected to be used in conjunction with @select@: 
+-- is expected to be used in conjunction with `select`: 
 to :: Ord k => k -> k -> Range k
 to k1 k2 = MkRange (min k1 k2) (max k1 k2)
 
 
--- | Class for datatypes which can be used to select sub-series using @select@.
+-- | Class for datatypes which can be used to select sub-series using `select`.
 --
--- There are two use-cases for @select@:
+-- There are two use-cases for `select`:
 --
 --  * Bulk random-access (selecting from a @Set@ of keys);
 --  * Bulk ordered access (selecting from a @Range@ of keys).
 --
--- See the documentation for @select@.
+-- See the documentation for `select`.
 class Selection s where
     -- | Select a subseries. There are two main ways to do this.
     --
@@ -158,7 +158,7 @@ class Selection s where
     --   'b' |     20
     --   'c' |     30
     --
-    -- Note that with @select@, you'll always get a sub-series; if you ask for a key which is not
+    -- Note that with `select`, you'll always get a sub-series; if you ask for a key which is not
     -- in the series, it'll be ignored:
     --
     -- >>> xs `select` Index.fromList ['a', 'd', 'e']
