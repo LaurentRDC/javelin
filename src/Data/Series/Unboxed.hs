@@ -74,7 +74,7 @@ module Data.Series.Unboxed (
     -- ** General folds
     foldMap, foldMap', 
     -- ** Specialized folds
-    all, any, and, or, sum, product
+    all, any, and, or, sum, product, maximum, minimum
 ) where
 
 import qualified Data.Map.Lazy       as ML
@@ -86,10 +86,12 @@ import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
 
-import           Prelude             hiding (map, zipWith, filter, foldMap, all, any, and, or, sum, product)
+import           Prelude             hiding ( map, zipWith, filter, foldMap, all, any, and, or
+                                            , sum, product, maximum, minimum 
+                                            )
 
 -- $setup
--- >>> import qualified Data.Series as Series
+-- >>> import qualified Data.Series.Unboxed as Series
 -- >>> import qualified Data.Series.Index as Index
 
 infixl 1 `select` 
@@ -309,7 +311,7 @@ select = G.select
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `selectWhere` (fmap (>1) xs)
+-- >>> xs `selectWhere` (Series.map (>1) xs)
 --    index | values
 --    ----- | ------
 -- "Lisbon" |      4
@@ -365,7 +367,7 @@ type GroupBy = G.GroupBy Vector
 --                                , ((2020, "June")   , 20)
 --                                , ((2021, "June")   , 25) 
 --                                ]
---      in xs `groupBy` month `aggregateWith` minimum
+--      in xs `groupBy` month `aggregateWith` Series.minimum
 -- :}
 --     index | values
 --     ----- | ------
@@ -434,3 +436,15 @@ sum = Vector.sum . values
 product :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE product #-}
 product = Vector.product . values
+
+-- | /O(n)/ Yield the maximum element of the series. The series may not be
+-- empty. In case of a tie, the first occurrence wins.
+maximum :: (Unbox a, Ord a) => Series k a -> a
+{-# INLINE maximum #-}
+maximum = Vector.maximum . values
+
+-- | /O(n)/ Yield the minimum element of the series. The series may not be
+-- empty. In case of a tie, the first occurrence wins.
+minimum :: (Unbox a, Ord a) => Series k a -> a
+{-# INLINE minimum #-}
+minimum = Vector.minimum . values
