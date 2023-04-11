@@ -44,6 +44,13 @@ module Data.Series (
     -- ** Conversion between `Series` types
     G.convert,
 
+    -- * IO operations
+    G.ColumnName, columns, columnsFromFile,
+    -- ** From CSV
+    readCSV, readCSVFromFile,
+    -- ** From JSON
+    readJSON, readJSONFromFile,
+
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter,
 
@@ -64,6 +71,9 @@ module Data.Series (
     GroupBy, groupBy, aggregateWith,
 ) where
 
+import           Data.Aeson          ( FromJSON, FromJSONKey )
+import qualified Data.ByteString.Lazy as BL
+import           Data.Csv            ( FromField )
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
@@ -503,3 +513,39 @@ aggregateWith :: (Ord g)
               -> Series g b         -- ^ Aggregated series
 {-# INLINE aggregateWith #-}
 aggregateWith = G.aggregateWith
+
+
+readCSV :: (Ord k, FromField k, FromField a)
+        => G.ColumnName -- ^ Index column
+        -> G.ColumnName -- ^ Values volumn
+        -> BL.ByteString
+        -> Either String (Series k a)
+readCSV = G.readCSV
+
+
+readCSVFromFile :: (Ord k, FromField k, FromField a)
+                => FilePath
+                -> G.ColumnName -- ^ Index column
+                -> G.ColumnName -- ^ Values column
+                -> IO (Either String (Series k a))
+readCSVFromFile = G.readCSVFromFile 
+
+
+columns :: BL.ByteString -> Either String [G.ColumnName]
+columns = G.columns
+
+
+columnsFromFile :: FilePath -> IO (Either String [G.ColumnName])
+columnsFromFile = G.columnsFromFile
+
+
+readJSON :: (Ord k, FromJSONKey k, FromJSON a) 
+         => BL.ByteString 
+         -> Either String (MS.Map G.ColumnName (Series k a))
+readJSON = G.readJSON
+
+
+readJSONFromFile :: (Ord k, FromJSONKey k, FromJSON a) 
+                 => FilePath 
+                 -> IO (Either String (MS.Map G.ColumnName (Series k a)))
+readJSONFromFile = G.readJSONFromFile

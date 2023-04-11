@@ -52,6 +52,13 @@ module Data.Series.Unboxed (
     -- ** Conversion between `Series` types
     G.convert,
 
+    -- * IO operations
+    G.ColumnName, columns, columnsFromFile,
+    -- ** From CSV
+    readCSV, readCSVFromFile,
+    -- ** From JSON
+    readJSON, readJSONFromFile,
+
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter,
 
@@ -77,6 +84,9 @@ module Data.Series.Unboxed (
     all, any, and, or, sum, product, maximum, minimum
 ) where
 
+import           Data.Aeson          ( FromJSON, FromJSONKey )
+import qualified Data.ByteString.Lazy as BL
+import           Data.Csv            ( FromField )
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
@@ -448,3 +458,39 @@ maximum = Vector.maximum . values
 minimum :: (Unbox a, Ord a) => Series k a -> a
 {-# INLINE minimum #-}
 minimum = Vector.minimum . values
+
+
+readCSV :: (Unbox a, Ord k, FromField k, FromField a)
+        => G.ColumnName -- ^ Index column
+        -> G.ColumnName -- ^ Values volumn
+        -> BL.ByteString
+        -> Either String (Series k a)
+readCSV = G.readCSV
+
+
+readCSVFromFile :: (Unbox a, Ord k, FromField k, FromField a)
+                => FilePath
+                -> G.ColumnName -- ^ Index column
+                -> G.ColumnName -- ^ Values column
+                -> IO (Either String (Series k a))
+readCSVFromFile = G.readCSVFromFile 
+
+
+columns :: BL.ByteString -> Either String [G.ColumnName]
+columns = G.columns
+
+
+columnsFromFile :: FilePath -> IO (Either String [G.ColumnName])
+columnsFromFile = G.columnsFromFile
+
+
+readJSON :: (Unbox a, Ord k, FromJSONKey k, FromJSON a) 
+         => BL.ByteString 
+         -> Either String (MS.Map G.ColumnName (Series k a))
+readJSON = G.readJSON
+
+
+readJSONFromFile :: (Unbox a, Ord k, FromJSONKey k, FromJSON a) 
+                 => FilePath 
+                 -> IO (Either String (MS.Map G.ColumnName (Series k a)))
+readJSONFromFile = G.readJSONFromFile
