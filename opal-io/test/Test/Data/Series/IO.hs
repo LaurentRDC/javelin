@@ -12,10 +12,10 @@ import           Test.Tasty           ( testGroup, TestTree )
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
-tests = testGroup "Data.Series.Generic.IO" [ testReadCSVFromFile
-                                           , testColumnsFromFile 
-                                           , testReadJSONFromFile
-                                           ]
+tests = testGroup "Data.Series.IO" [ testReadCSVFromFile
+                                   , testColumnsFromFile 
+                                   , testReadJSONFromFile
+                                   ]
 
 
 testReadCSVFromFile :: TestTree
