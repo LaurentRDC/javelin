@@ -53,8 +53,10 @@
 module Data.Series.Index (
     Index,
 
-    -- * Conversion
+    -- * Creation and Conversion
     singleton,
+    unfoldr,
+    range,
     fromSet,
     fromList,
     fromAscList,
@@ -92,6 +94,9 @@ module Data.Series.Index (
 ) where
 
 import           Control.DeepSeq        ( NFData )
+import           Control.Monad          ( guard )
+import           Data.Functor           ( ($>) )
+import qualified Data.List              as List
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import           Data.Vector.Generic    ( Vector )
@@ -137,6 +142,33 @@ instance Show k => Show (Index k) where
 -- | \(O(1)\)  Create a singleton `Index`.
 singleton :: k -> Index k
 singleton = MkIndex . Set.singleton 
+
+
+-- | \(O(n \log n)\) Create an `Index` from a seed value. 
+-- Note that the order in which elements are generated does not matter; elements are stored
+-- in order. See the example below.
+--
+-- >>> unfoldr (\x -> if x < 1 then Nothing else Just (x, x-1)) (7 :: Int)
+-- Index [1,2,3,4,5,6,7]
+unfoldr :: Ord a => (b -> Maybe (a, b)) -> b -> Index a
+unfoldr f = fromList . List.unfoldr f
+
+
+-- | \(O(n \log n)\) Create an `Index` as a range of values. @range f start end@ will generate 
+-- an `Index` with values @[start, f start, f (f start), ... ]@ such that the largest element
+-- less or equal to @end@ is included. See examples below.
+--
+-- >>> range (+3) (1 :: Int) 10
+-- Index [1,4,7,10]
+-- >>> range (+3) (1 :: Int) 11
+-- Index [1,4,7,10]
+range :: Ord a 
+      => (a -> a) -- ^ Function to generate the next element in the index
+      -> a        -- ^ Starting value of the `Index`
+      -> a        -- ^ Ending value of the `Index`, which may or may not be contained
+      -> Index a
+range next start end 
+    = unfoldr (\x -> guard (x <= end) $> (x, next x)) start
 
 
 -- | \(O(1)\) Build an `Index` from a `Set`.

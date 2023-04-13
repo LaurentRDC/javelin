@@ -1,7 +1,6 @@
 
 module Test.Data.Series.Index (tests) where
 
-
 import qualified Data.Series.Index    as Index
 import qualified Data.Set             as Set
 import qualified Data.Vector          as Vector
@@ -16,7 +15,8 @@ import           Test.Tasty.Hedgehog  ( testProperty )
 
 
 tests :: TestTree
-tests = testGroup "Data.Series.Index" [ testPropFromToSet
+tests = testGroup "Data.Series.Index" [ testPropRange
+                                      , testPropFromToSet
                                       , testPropFromToList
                                       , testPropFromToAscList
                                       , testPropFromToVector
@@ -24,6 +24,22 @@ tests = testGroup "Data.Series.Index" [ testPropFromToSet
                                       , testPropMemberNotMember
                                       , testPropFilter
                                       ]
+
+
+testPropRange :: TestTree
+testPropRange = testProperty "range always includes the start, and all elements less than/equal to end" $ property $ do
+    start <- forAll $ Gen.int (Range.linear 0 50)
+    end   <- forAll $ Gen.int (Range.linear 51 100)
+    step  <- forAll $ Gen.int (Range.linear 1 5)
+
+    let ix = Index.range (+step) start end 
+
+    assert $ start `Index.member` ix
+    assert $ maximum ix <= end
+
+    if ((end - start) `mod` step == 0)
+        then assert (end `Index.member` ix)
+        else assert (end `Index.notMember` ix)
 
 
 testPropFromToSet :: TestTree
