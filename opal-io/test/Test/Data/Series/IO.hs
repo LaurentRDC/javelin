@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Test.Data.Series.Generic.IO (tests) where
+module Test.Data.Series.IO (tests) where
 
 import           Data.Map.Strict      ( Map )
 import qualified Data.Map.Strict      as Map
-import           Data.Series.Generic  ( Series, ColumnName, at, fromList, readCSVFromFile, columnsFromFile, readJSONFromFile )
+import           Data.Series.Generic  ( Series, at, fromList)
 import qualified Data.Series.Generic  as Series
+import           Data.Series.IO       ( ColumnName, readCSVFromFile, columnsFromFile, readJSONFromFile )
 import           Data.Vector          ( Vector )
 
 import           Test.Tasty           ( testGroup, TestTree ) 

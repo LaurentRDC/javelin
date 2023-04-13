@@ -1,14 +1,15 @@
 
 # Data.Series User Guide
 
-This is a short user guide on how to get started using `Data.Series`. The following document shows examples running in a Haskell interpreter (e.g. GHCi)
+This is a short user guide on how to get started using `opal`. The following document shows examples running in a Haskell interpreter (e.g. GHCi)
 
-Let's start by setting up our environment:
+This guide is assuming that you have `opal` and `opal-io` installed. Let's start by setting up our environment:
 
 ``` haskell
 > :set -XOverloadedStrings
 > import           Data.Series ( Series )
 > import qualified Data.Series as Series
+> import qualified Data.Series.IO as IO
 ```
 
 ## Constructing `Series`
@@ -56,7 +57,7 @@ index | values
 Most data you might be interested in will be stored in data files, for example comma-separated values (CSV) files:
 
 ```haskell
-> (aapl_close :: Series String Double) <- either error id <$> readCSVFromFile "docs/data/AAPL.csv" "date" "close"
+> (aapl_close :: Series String Double) <- either error id <$> IO.readCSVFromFile "docs/data/AAPL.csv" "date" "close"
 > aapl_close
        index |  values
        ----- |  ------
@@ -282,7 +283,7 @@ One important feature of series is the ability to efficiently group values toget
 Let's load some stock price data for this part:
 
 ```haskell
-> (aapl_close :: Series String Double) <- either error id <$> readCSVFromFile "docs/data/AAPL.csv" "date" "close" 
+> (aapl_close :: Series String Double) <- either error id <$> IO.readCSVFromFile "docs/data/AAPL.csv" "date" "close" 
 > aapl_close
        index |  values
        ----- |  ------

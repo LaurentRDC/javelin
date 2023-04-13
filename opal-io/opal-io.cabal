@@ -1,0 +1,58 @@
+cabal-version:      3.0
+name:               opal-io
+version:            0.1.0.0
+synopsis:           IO operations for the `opal` package
+description:
+license:            MIT
+license-file:       LICENSE
+author:             Laurent René de Cotret
+maintainer:         laurent.decotret@outlook.com
+category:           Data
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+extra-source-files: test/data/*.csv
+                    test/data/*.json
+
+common common
+    default-language: GHC2021
+    ghc-options: -Wall
+                 -Wcompat
+                 -Widentities
+                 -Wincomplete-uni-patterns
+                 -Wincomplete-record-updates
+                 -Wredundant-constraints
+                 -fhide-source-paths
+                 -Wpartial-fields
+
+library
+    import:           common
+    hs-source-dirs:   src
+    exposed-modules:  Data.Series.IO
+    build-depends:    aeson >= 2.0 && < 2.2,
+                      base  >=4.15.0.0,
+                      bytestring,
+                      cassava,
+                      containers,
+                      opal,
+                      text,
+                      vector
+
+test-suite opal-io-test
+    import:           common
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    other-modules:    Test.Data.Series.IO
+    build-depends:    base,
+                      containers,
+                      hedgehog,
+                      ieee754,
+                      opal,
+                      opal-io,
+                      statistics,
+                      tasty,
+                      tasty-hedgehog,
+                      tasty-hunit,
+                      HUnit,
+                      tasty-hspec,
+                      vector

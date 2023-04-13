@@ -18,7 +18,6 @@
 -- Authors importing this module are expected to track development
 -- closely.
 
-module Data.Series.Generic.Internal ( ColumnName(..), Series(..) ) where
+module Data.Series.Generic.Internal ( Series(..) ) where
 
 import Data.Series.Generic.Definition   ( Series(..) )
-import Data.Series.Generic.IO           ( ColumnName(..) )

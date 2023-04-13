@@ -1,6 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Data.Series.Generic.IO (
+module Data.Series.IO (
     ColumnName(..),
     readCSV,
     readCSVFromFile,
@@ -25,7 +25,7 @@ import qualified Data.Csv               as CSV
 import           Data.Functor           ( (<&>) )
 import           Data.Map.Strict        ( Map )
 import           Data.String            ( IsString )
-import           Data.Series.Generic.Definition ( Series, fromList, fromStrictMap )
+import           Data.Series.Generic    ( Series, fromList, fromStrictMap )
 import           Data.Text              ( Text )
 import qualified Data.Text.Encoding     as Text
 import qualified Data.Vector            as Boxed

@@ -1,21 +1,13 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Series.Unboxed
+-- Module      :  Data.Series
 -- Copyright   :  (c) Laurent P. René de Cotret
 -- License     :  MIT
 -- Maintainer  :  laurent.decotret@outlook.com
 -- Portability :  portable
 --
--- This module contains data structures and functions to work with `Series` capable of holding unboxed values,
--- i.e. values of types which are instances of `Unbox`.
---
--- = Why use unboxed series?
---
--- Unboxed series can have much better performance, at the cost of less flexibility. For example,
--- an unboxed series cannot contain values of type @`Maybe` a@. Moreover, unboxed series aren't instances of 
--- `Functor` or `Foldable`.
---
--- If you are hesitating, you should prefer the series implementation in the "Data.Series" module.
+-- This module contains data structures and functions to work with `Series` capable of holding any Haskell value. 
+-- For better performance, at the cost of less flexibility, see the "Data.Series.Unboxed".
 --
 -- = Introduction to series
 --
@@ -39,7 +31,7 @@
 -- For better performance (at the cost of more constraints), especially when it comes to numerical calculations, prefer to
 -- use "Data.Series.Unboxed", which contains an implementation of series specialized to the unboxed container type `Data.Vector.Unboxed.Vector`.
  
-module Data.Series.Unboxed (
+module Data.Series (
     Series, index, values,
 
     -- * Building/converting `Series`
@@ -52,21 +44,15 @@ module Data.Series.Unboxed (
     -- ** Conversion between `Series` types
     G.convert,
 
-    -- * IO operations
-    G.ColumnName, columns, columnsFromFile,
-    -- ** From CSV
-    readCSV, readCSVFromFile,
-    -- ** From JSON
-    readJSON, readJSONFromFile,
-
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter,
 
     -- * Combining series
-    zipWithMatched, 
+    zipWith, zipWithMatched, 
+    ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
-    dropIndex,
+    reindex, dropna, dropIndex,
 
     -- * Accessors
     -- ** Bulk access
@@ -77,36 +63,24 @@ module Data.Series.Unboxed (
     -- * Grouping operations
     GroupBy, groupBy, aggregateWith,
 
-    -- * Folds
-    -- ** General folds
-    foldMap, foldMap', 
-    -- ** Specialized folds
-    all, any, and, or, sum, product, maximum, minimum,
-
     -- * Numerical aggregation
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
 ) where
 
-import           Data.Aeson          ( FromJSON, FromJSONKey )
-import qualified Data.ByteString.Lazy as BL
-import           Data.Csv            ( FromField )
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to )
 import qualified Data.Series.Generic as G
-import           Data.Vector.Unboxed ( Vector, Unbox )
-import qualified Data.Vector.Unboxed as Vector
+import           Data.Vector         ( Vector )
 
-import           Prelude             hiding ( map, zipWith, filter, foldMap, all, any, and, or
-                                            , sum, product, maximum, minimum 
-                                            )
+import           Prelude             hiding (map, zipWith, filter)
 
 -- $setup
--- >>> import qualified Data.Series.Unboxed as Series
+-- >>> import qualified Data.Series as Series
 -- >>> import qualified Data.Series.Index as Index
 
 infixl 1 `select` 
@@ -146,7 +120,7 @@ values = G.values
 --   'a' |      5
 --   'b' |      0
 --   'd' |      1
-fromList :: (Unbox a, Ord k) => [(k, a)] -> Series k a
+fromList :: Ord k => [(k, a)] -> Series k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
 
@@ -162,42 +136,42 @@ fromList = fromStrictMap . MS.fromList
 --   'd' |      1
 -- >>> toList xs
 -- [('a',5),('b',0),('d',1)]
-toList :: Unbox a => Series k a -> [(k, a)]
+toList :: Series k a -> [(k, a)]
 {-# INLINE toList #-}
 toList = G.toList
 
 
 -- | Convert a series into a lazy @Map@.
-toLazyMap :: (Unbox a, Ord k) => Series k a -> ML.Map k a
+toLazyMap :: Ord k => Series k a -> ML.Map k a
 {-# INLINE toLazyMap #-}
 toLazyMap = G.toLazyMap
 
 
 -- | Construct a series from a lazy @Map@.
-fromLazyMap :: (Unbox a, Ord k) => ML.Map k a -> Series k a
+fromLazyMap :: Ord k => ML.Map k a -> Series k a
 {-# INLINE fromLazyMap #-}
 fromLazyMap = G.fromLazyMap
 
 
 -- | Convert a series into a strict @Map@.
-toStrictMap :: (Unbox a, Ord k) => Series k a -> MS.Map k a
+toStrictMap :: Ord k => Series k a -> MS.Map k a
 {-# INLINE toStrictMap #-}
 toStrictMap = G.toStrictMap
 
 -- | Construct a series from a strict @Map@.
-fromStrictMap :: (Unbox a, Ord k) => MS.Map k a -> Series k a
+fromStrictMap :: Ord k => MS.Map k a -> Series k a
 {-# INLINE fromStrictMap #-}
 fromStrictMap = G.fromStrictMap
 
 
 -- | \(O(n)\) Map every element of a `Series`.
-map :: (Unbox a, Unbox b) => (a -> b) -> Series k a -> Series k b
+map :: (a -> b) -> Series k a -> Series k b
 {-# INLINE map #-}
 map = G.map
 
 
 -- | \(O(n)\) Map every element of a `Series`, possibly using the key as well.
-mapWithKey :: (Unbox a, Unbox b) => (k -> a -> b) -> Series k a -> Series k b
+mapWithKey :: (k -> a -> b) -> Series k a -> Series k b
 {-# INLINE mapWithKey #-}
 mapWithKey = G.mapWithKey
 
@@ -220,9 +194,31 @@ mapWithKey = G.mapWithKey
 -- ----- | ------
 --   'L' |      4
 --   'P' |      1
-mapIndex :: (Unbox a, Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
+mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
+
+
+
+-- | Apply a function elementwise to two series, matching elements
+-- based on their keys. For keys present only in the left or right series, 
+-- the value @Nothing@ is returned.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWith (+) xs ys
+--   index |  values
+--   ----- |  ------
+-- "alpha" | Just 10
+--  "beta" | Just 12
+-- "delta" | Nothing
+-- "gamma" | Nothing
+--
+-- To only combine elements where keys are in both series, see `zipWithMatched`.
+zipWith :: (Ord k) 
+        => (a -> b -> c) -> Series k a -> Series k b -> Series k (Maybe c)
+zipWith = G.zipWith 
+{-# INLINE zipWith #-}
 
 
 -- | Apply a function elementwise to two series, matching elements
@@ -237,10 +233,96 @@ mapIndex = G.mapIndex
 --  "beta" |     12
 --
 -- To combine elements where keys are in either series, see `zipWith`.
-zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k) 
-               => (a -> b -> c) -> Series k a -> Series k b -> Series k c
+zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
+
+
+-- | A `ZipStrategy` is a function which is used to decide what to do when a key is missing from one
+-- of two `Series` being zipped together with `zipWithStrategy`.
+--
+-- If a `ZipStrategy` returns @Nothing@, the key is dropped.
+-- If a `ZipStrategy` returns @Just v@ for key @k@, then the value @v@ is inserted at key @k@.
+--
+-- For example, the most basic `ZipStrategy` is to skip over any key which is missing from the other series.
+-- Such a strategy can be written as @skip key value = Nothing@ (see `skipStrategy`).
+type ZipStrategy k a b = (k -> a -> Maybe b)
+
+-- | This `ZipStrategy` drops keys which are not present in both `Series`.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWithStrategy (+) skipStrategy skipStrategy xs ys
+--   index | values
+--   ----- | ------
+-- "alpha" |     10
+--  "beta" |     12
+skipStrategy :: ZipStrategy k a b
+{-# INLINE skipStrategy #-}
+skipStrategy _ _ = Nothing
+
+
+-- | This `ZipStrategy` sets a constant value at keys which are not present in both `Series`.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWithStrategy (+) (constStrategy (-100)) (constStrategy 200)  xs ys
+--   index | values
+--   ----- | ------
+-- "alpha" |     10
+--  "beta" |     12
+-- "delta" |    200
+-- "gamma" |   -100
+constStrategy :: b -> ZipStrategy k a b
+{-# INLINE constStrategy #-}
+constStrategy v = \_ _ -> Just v
+
+
+-- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.
+--
+-- In the example below, we want to set the value to @-100@ (via @`constStrategy` (-100)@) for keys which are only present 
+-- in the left `Series`, and drop keys (via `skipStrategy`) which are only present in the `right `Series`  
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWithStrategy (+) (constStrategy (-100)) skipStrategy  xs ys
+--   index | values
+--   ----- | ------
+-- "alpha" |     10
+--  "beta" |     12
+-- "gamma" |   -100
+--
+-- Note that if you want to drop keys missing in either `Series`, it is faster to use @`zipWithMatched` f@ 
+-- than using @`zipWithStrategy` f skipStrategy skipStrategy@.
+zipWithStrategy :: (Ord k) 
+               => (a -> b -> c)     -- ^ Function to combine values when present in both series
+               -> ZipStrategy k a c -- ^ Strategy for when the key is in the left series but not the right
+               -> ZipStrategy k b c -- ^ Strategy for when the key is in the right series but not the left
+               -> Series k a
+               -> Series k b 
+               -> Series k c
+{-# INLINE zipWithStrategy #-}
+zipWithStrategy = G.zipWithStrategy
+
+-- | Reindex a series with a new index.
+-- Contrary to @select@, all keys in the `Index` will be present in the re-indexed series.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> xs `reindex` Index.fromList ["Paris", "Lisbon", "Taipei"]
+--    index |  values
+--    ----- |  ------
+-- "Lisbon" |  Just 4
+--  "Paris" |  Just 1
+-- "Taipei" | Nothing
+reindex :: Ord k => Series k a -> Index k -> Series k (Maybe a)
+{-# INLINE reindex #-}
+reindex = G.reindex 
 
 
 -- | Drop the index of a series by replacing it with an `Int`-based index. Values will
@@ -278,9 +360,31 @@ dropIndex = G.dropIndex
 --    index | values
 --    ----- | ------
 -- "Lisbon" |      4
-filter :: (Unbox a, Ord k) => (a -> Bool) -> Series k a -> Series k a
+filter :: Ord k => (a -> Bool) -> Series k a -> Series k a
 {-# INLINE filter #-}
 filter = G.filter
+
+
+-- | Drop elements which are not available (NA). 
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> let ys = xs `reindex` Index.fromList ["Paris", "London", "Lisbon", "Toronto"]
+-- >>> ys
+--     index |  values
+--     ----- |  ------
+--  "Lisbon" |  Just 4
+--  "London" |  Just 2
+--   "Paris" |  Just 1
+-- "Toronto" | Nothing
+-- >>> dropna ys
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+dropna :: Ord k => Series k (Maybe a) -> Series k a
+{-# INLINE dropna #-}
+dropna = G.dropna
 
 
 -- | Select a subseries. There are a few ways to do this.
@@ -313,7 +417,7 @@ filter = G.filter
 --   'd' |     40
 --
 -- See `reindex` if you want to ensure that all keys are present.
-select :: (Unbox a, Selection s, Ord k) => Series k a -> s k -> Series k a
+select :: (Selection s, Ord k) => Series k a -> s k -> Series k a
 select = G.select
 
 
@@ -326,12 +430,12 @@ select = G.select
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `selectWhere` (Series.map (>1) xs)
+-- >>> xs `selectWhere` (fmap (>1) xs)
 --    index | values
 --    ----- | ------
 -- "Lisbon" |      4
 -- "London" |      2
-selectWhere :: (Unbox a, Ord k) => Series k a -> Series k Bool -> Series k a
+selectWhere :: Ord k => Series k a -> Series k Bool -> Series k a
 {-# INLINE selectWhere #-}
 selectWhere = G.selectWhere
 
@@ -343,7 +447,7 @@ selectWhere = G.selectWhere
 -- Just 1
 -- >>> xs `at` "Sydney"
 -- Nothing
-at :: (Unbox a, Ord k) => Series k a -> k -> Maybe a
+at :: Ord k => Series k a -> k -> Maybe a
 {-# INLINE at #-}
 at = G.at
 
@@ -361,7 +465,7 @@ at = G.at
 -- Just 4
 -- >>> xs `iat` 3
 -- Nothing
-iat :: Unbox a => Series k a -> Int -> Maybe a
+iat :: Series k a -> Int -> Maybe a
 {-# INLINE iat #-}
 iat = G.iat
 
@@ -382,13 +486,13 @@ type GroupBy = G.GroupBy Vector
 --                                , ((2020, "June")   , 20)
 --                                , ((2021, "June")   , 25) 
 --                                ]
---      in xs `groupBy` month `aggregateWith` Series.minimum
+--      in xs `groupBy` month `aggregateWith` minimum
 -- :}
 --     index | values
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Unbox a, Ord k, Ord g) 
+groupBy :: (Ord k, Ord g) 
         => Series k a       -- ^ Input series
         -> (k -> g)         -- ^ Grouping function
         -> GroupBy g k a    -- ^ Grouped series
@@ -398,7 +502,7 @@ groupBy = G.groupBy
 
 -- | Aggregate grouped series. This function is expected to be used in conjunction
 -- with `groupBy`.
-aggregateWith :: (Unbox b, Ord g) 
+aggregateWith :: (Ord g) 
               => GroupBy g k a      -- ^ Grouped series
               -> (Series k a -> b)  -- ^ Aggregation function
               -> Series g b         -- ^ Aggregated series
@@ -406,128 +510,31 @@ aggregateWith :: (Unbox b, Ord g)
 aggregateWith = G.aggregateWith
 
 
--- | /O(n)/ Map each element of the structure to a monoid and combine
--- the results.
-foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
-{-# INLINE foldMap #-}
-foldMap f = Vector.foldMap f . values
-
--- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
--- implementation as the corresponding method of the 'Foldable' type class.
--- Note that it's implemented in terms of 'foldl'', so it fuses in most
--- contexts.
---
--- @since 0.12.2.0
-foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
-{-# INLINE foldMap' #-}
-foldMap' f = Vector.foldMap' f . values
-
--- | /O(n)/ Check if all elements satisfy the predicate.
-all :: Unbox a => (a -> Bool) -> Series k a -> Bool
-{-# INLINE all #-}
-all f = Vector.all f . values
-
--- | /O(n)/ Check if any element satisfies the predicate.
-any :: Unbox a => (a -> Bool) -> Series k a -> Bool
-{-# INLINE any #-}
-any f = Vector.any f . values
-
--- | /O(n)/ Check if all elements are 'True'.
-and :: Series k Bool -> Bool
-{-# INLINE and #-}
-and = Vector.and . values
-
--- | /O(n)/ Check if any element is 'True'.
-or :: Series k Bool -> Bool
-{-# INLINE or #-}
-or = Vector.or . values
-
--- | /O(n)/ Compute the sum of the elements.
-sum :: (Unbox a, Num a) => Series k a -> a
-{-# INLINE sum #-}
-sum = Vector.sum . values
-
--- | /O(n)/ Compute the product of the elements.
-product :: (Unbox a, Num a) => Series k a -> a
-{-# INLINE product #-}
-product = Vector.product . values
-
--- | /O(n)/ Yield the maximum element of the series. The series may not be
--- empty. In case of a tie, the first occurrence wins.
-maximum :: (Unbox a, Ord a) => Series k a -> a
-{-# INLINE maximum #-}
-maximum = Vector.maximum . values
-
--- | /O(n)/ Yield the minimum element of the series. The series may not be
--- empty. In case of a tie, the first occurrence wins.
-minimum :: (Unbox a, Ord a) => Series k a -> a
-{-# INLINE minimum #-}
-minimum = Vector.minimum . values
-
-
-readCSV :: (Unbox a, Ord k, FromField k, FromField a)
-        => G.ColumnName -- ^ Index column
-        -> G.ColumnName -- ^ Values volumn
-        -> BL.ByteString
-        -> Either String (Series k a)
-readCSV = G.readCSV
-
-
-readCSVFromFile :: (Unbox a, Ord k, FromField k, FromField a)
-                => FilePath
-                -> G.ColumnName -- ^ Index column
-                -> G.ColumnName -- ^ Values column
-                -> IO (Either String (Series k a))
-readCSVFromFile = G.readCSVFromFile 
-
-
-columns :: BL.ByteString -> Either String [G.ColumnName]
-columns = G.columns
-
-
-columnsFromFile :: FilePath -> IO (Either String [G.ColumnName])
-columnsFromFile = G.columnsFromFile
-
-
-readJSON :: (Unbox a, Ord k, FromJSONKey k, FromJSON a) 
-         => BL.ByteString 
-         -> Either String (MS.Map G.ColumnName (Series k a))
-readJSON = G.readJSON
-
-
-readJSONFromFile :: (Unbox a, Ord k, FromJSONKey k, FromJSON a) 
-                 => FilePath 
-                 -> IO (Either String (MS.Map G.ColumnName (Series k a)))
-readJSONFromFile = G.readJSONFromFile
-
-
-
-
 -- | Compute the mean of the values in the series.
 -- An empty series will have a mean of NaN.
-mean :: (Unbox a, Real a, RealFloat b) => Series k a -> b
+mean :: (Real a, RealFloat b) => Series k a -> b
 {-# INLINE mean #-}
 mean = G.mean
 
 
 -- | Compute the mean and variance of the values in a series in a single-pass.
-meanAndVariance :: (Unbox a, RealFloat a) => Series k a -> (a, a)
+meanAndVariance :: (RealFloat a) => Series k a -> (a, a)
 {-# INLINE meanAndVariance #-}
 meanAndVariance = G.meanAndVariance
 
 -- | Population variance.
-var :: (Unbox a, RealFloat a) => Series k a -> a
+var :: (RealFloat a) => Series k a -> a
 {-# INLINE var #-}
 var = G.var
 
 
 -- | Population standard deviation.
-std :: (Unbox a, RealFloat a) => Series k a -> a
+std :: (RealFloat a) => Series k a -> a
 {-# INLINE std #-}
 std = sqrt . var
 
 
 -- | Sample variance.
-sampleVariance :: (Unbox a, RealFloat a) => Series k a -> a
+sampleVariance :: (RealFloat a) => Series k a -> a
 {-# INLINE sampleVariance #-}
 sampleVariance = G.sampleVariance
