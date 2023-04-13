@@ -69,6 +69,11 @@ module Data.Series (
 
     -- * Grouping operations
     GroupBy, groupBy, aggregateWith,
+
+    -- * Numerical aggregation
+    mean, var, std, 
+    sampleVariance,
+    meanAndVariance,
 ) where
 
 import           Data.Aeson          ( FromJSON, FromJSONKey )
@@ -549,3 +554,33 @@ readJSONFromFile :: (Ord k, FromJSONKey k, FromJSON a)
                  => FilePath 
                  -> IO (Either String (MS.Map G.ColumnName (Series k a)))
 readJSONFromFile = G.readJSONFromFile
+
+
+-- | Compute the mean of the values in the series.
+-- An empty series will have a mean of NaN.
+mean :: (Real a, RealFloat b) => Series k a -> b
+{-# INLINE mean #-}
+mean = G.mean
+
+
+-- | Compute the mean and variance of the values in a series in a single-pass.
+meanAndVariance :: (RealFloat a) => Series k a -> (a, a)
+{-# INLINE meanAndVariance #-}
+meanAndVariance = G.meanAndVariance
+
+-- | Population variance.
+var :: (RealFloat a) => Series k a -> a
+{-# INLINE var #-}
+var = G.var
+
+
+-- | Population standard deviation.
+std :: (RealFloat a) => Series k a -> a
+{-# INLINE std #-}
+std = sqrt . var
+
+
+-- | Sample variance.
+sampleVariance :: (RealFloat a) => Series k a -> a
+{-# INLINE sampleVariance #-}
+sampleVariance = G.sampleVariance

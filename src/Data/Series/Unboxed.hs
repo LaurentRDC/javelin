@@ -81,7 +81,12 @@ module Data.Series.Unboxed (
     -- ** General folds
     foldMap, foldMap', 
     -- ** Specialized folds
-    all, any, and, or, sum, product, maximum, minimum
+    all, any, and, or, sum, product, maximum, minimum,
+
+    -- * Numerical aggregation
+    mean, var, std, 
+    sampleVariance,
+    meanAndVariance,
 ) where
 
 import           Data.Aeson          ( FromJSON, FromJSONKey )
@@ -494,3 +499,35 @@ readJSONFromFile :: (Unbox a, Ord k, FromJSONKey k, FromJSON a)
                  => FilePath 
                  -> IO (Either String (MS.Map G.ColumnName (Series k a)))
 readJSONFromFile = G.readJSONFromFile
+
+
+
+
+-- | Compute the mean of the values in the series.
+-- An empty series will have a mean of NaN.
+mean :: (Unbox a, Real a, RealFloat b) => Series k a -> b
+{-# INLINE mean #-}
+mean = G.mean
+
+
+-- | Compute the mean and variance of the values in a series in a single-pass.
+meanAndVariance :: (Unbox a, RealFloat a) => Series k a -> (a, a)
+{-# INLINE meanAndVariance #-}
+meanAndVariance = G.meanAndVariance
+
+-- | Population variance.
+var :: (Unbox a, RealFloat a) => Series k a -> a
+{-# INLINE var #-}
+var = G.var
+
+
+-- | Population standard deviation.
+std :: (Unbox a, RealFloat a) => Series k a -> a
+{-# INLINE std #-}
+std = sqrt . var
+
+
+-- | Sample variance.
+sampleVariance :: (Unbox a, RealFloat a) => Series k a -> a
+{-# INLINE sampleVariance #-}
+sampleVariance = G.sampleVariance

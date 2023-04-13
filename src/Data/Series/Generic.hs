@@ -32,11 +32,9 @@ module Data.Series.Generic (
     GroupBy, groupBy, aggregateWith,
 
     -- * Numerical aggregations
-    mean, nanmean,
-    var, nanvar, 
-    sampleVariance, nanSampleVariance,
-    meanAndVariance, nanMeanAndVariance,
-    std, nanstd,
+    mean, var, std, 
+    sampleVariance,
+    meanAndVariance,
 
     -- * Windowing operations
     windows, iwindows, expanding, irolling,
@@ -50,6 +48,6 @@ import Data.Series.Generic.Aggregation          ( GroupBy, groupBy, aggregateWit
 import Data.Series.Generic.Broadcast            ( zipWith, zipWithMatched, zipWithStrategy, ZipStrategy, skipStrategy, constStrategy  )
 import Data.Series.Generic.Definition           ( Series(index, values), convert, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey, mapIndex, length, sum )
 import Data.Series.Generic.IO                   ( ColumnName, readCSV, readCSVFromFile, columns, columnsFromFile, readJSON, readJSONFromFile )
-import Data.Series.Generic.Numeric              ( mean, nanmean, var, nanvar, sampleVariance, nanSampleVariance, std, nanstd, meanAndVariance, nanMeanAndVariance )
+import Data.Series.Generic.Numeric              ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.View                 ( Range, Selection, at, iat, select, selectWhere, to, filter, reindex, dropna, dropIndex )
 import Data.Series.Generic.Windowing            ( windows, iwindows, expanding, irolling )
