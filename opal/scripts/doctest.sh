@@ -1,1 +1,1 @@
-cabal repl --with-ghc=doctest
+cabal repl opal --with-ghc=doctest
