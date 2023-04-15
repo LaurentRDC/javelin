@@ -8,7 +8,7 @@ module Data.Series.Generic.Zip (
     constStrategy,
 ) where
 
-import           Data.Series.Generic.Definition ( Series(MkSeries, index), mapWithKey )
+import           Data.Series.Generic.Definition ( Series(MkSeries, index, values), mapWithKey )
 import qualified Data.Series.Generic.Definition as G
 import           Data.Series.Generic.View       ( select, dropna )
 import           Data.Vector.Generic            ( Vector )
@@ -75,18 +75,23 @@ zipWithMatched f left right
 
 -- | Replace values from the right series with values from the left series at matching keys.
 -- Keys in the right series but not in the right series are unaffected.
-replace :: (Vector v a, Ord k) => Series v k a -> Series v k a -> Series v k a
+replace :: (Vector v a, Vector v Int, Ord k) 
+        => Series v k a -> Series v k a -> Series v k a
 {-# INLINE replace #-}
--- TODO: would it be faster to use Vector.update instead?
-xs `replace` ys = (xs `select` index ys) <> ys  -- This works because (<>) is left-biased
+xs `replace` ys 
+    = let keysToReplace = index xs `Index.intersection` index ys
+          iixs          = Index.toAscVector $ Index.mapMonotonic (\k -> Index.findIndex k (index ys)) keysToReplace
+       in MkSeries (index ys) $ Vector.update_ (values ys) iixs (values (xs `select` keysToReplace))
 
 
-(|->) :: (Vector v a, Ord k) => Series v k a -> Series v k a -> Series v k a
+(|->) :: (Vector v a, Vector v Int, Ord k)
+      => Series v k a -> Series v k a -> Series v k a
 {-# INLINE (|->) #-}
 (|->) = replace
 
 
-(<-|) :: (Vector v a, Ord k) => Series v k a -> Series v k a -> Series v k a
+(<-|) :: (Vector v a, Vector v Int, Ord k) 
+      => Series v k a -> Series v k a -> Series v k a
 {-# INLINE (<-|)  #-}
 (<-|) = flip replace
 

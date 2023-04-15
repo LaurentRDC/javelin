@@ -70,10 +70,11 @@ testPropZipWith
 
 testPropReplace :: TestTree
 testPropReplace 
-    = testProperty "mean" $ property $ do
+    = testProperty "replace" $ property $ do
         ms <- forAll $ Gen.list (Range.linear 10 100) (Gen.int $ Range.linear (-500) 500) 
         ns <- forAll $ Gen.list (Range.linear 0 10)   (Gen.int $ Range.linear (-500) 500) 
-        let (xs :: Series Vector Int Int) = fromList (zip [0::Int ..] ms)
+        ixs <- forAll $ Gen.list (Range.singleton $ length ns) (Gen.int $ Range.linear 0 150)
+        let (xs :: Series Vector Int Int) = fromList (zip ixs ms)
             ys = fromList (zip [0..] ns)
             rs = ys `replace` xs
 
@@ -86,10 +87,11 @@ testPropReplace
 
 testPropReplaceInfix :: TestTree
 testPropReplaceInfix 
-    = testProperty "mean" $ property $ do
+    = testProperty "(|->) and (<-|)" $ property $ do
         ms <- forAll $ Gen.list (Range.linear 10 100) (Gen.int $ Range.linear (-500) 500) 
         ns <- forAll $ Gen.list (Range.linear 0 10)   (Gen.int $ Range.linear (-500) 500) 
-        let (xs :: Series Vector Int Int) = fromList (zip [0::Int ..] ms)
+        ixs <- forAll $ Gen.list (Range.singleton $ length ns) (Gen.int $ Range.linear 0 150)
+        let (xs :: Series Vector Int Int) = fromList (zip ixs ms)
             ys = fromList (zip [0..] ns)
             rs = ys `replace` xs
         
