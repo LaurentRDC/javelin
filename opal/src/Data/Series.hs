@@ -52,7 +52,7 @@ module Data.Series (
     ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
-    reindex, dropna, dropIndex,
+    require, dropna, dropIndex,
 
     -- * Accessors
     -- ** Bulk access
@@ -304,8 +304,8 @@ zipWithStrategy :: (Ord k)
 {-# INLINE zipWithStrategy #-}
 zipWithStrategy = G.zipWithStrategy
 
--- | Reindex a series with a new index.
--- Contrary to @select@, all keys in the `Index` will be present in the re-indexed series.
+-- | Require a series to have a specific `Index`.
+-- Contrary to @select@, all keys in the `Index` will be present in the resulting series.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
 -- >>> xs
@@ -314,15 +314,15 @@ zipWithStrategy = G.zipWithStrategy
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `reindex` Index.fromList ["Paris", "Lisbon", "Taipei"]
+-- >>> xs `require` Index.fromList ["Paris", "Lisbon", "Taipei"]
 --    index |  values
 --    ----- |  ------
 -- "Lisbon" |  Just 4
 --  "Paris" |  Just 1
 -- "Taipei" | Nothing
-reindex :: Ord k => Series k a -> Index k -> Series k (Maybe a)
-{-# INLINE reindex #-}
-reindex = G.reindex 
+require :: Ord k => Series k a -> Index k -> Series k (Maybe a)
+{-# INLINE require #-}
+require = G.require 
 
 
 -- | Drop the index of a series by replacing it with an `Int`-based index. Values will
@@ -368,7 +368,7 @@ filter = G.filter
 -- | Drop elements which are not available (NA). 
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
--- >>> let ys = xs `reindex` Index.fromList ["Paris", "London", "Lisbon", "Toronto"]
+-- >>> let ys = xs `require` Index.fromList ["Paris", "London", "Lisbon", "Toronto"]
 -- >>> ys
 --     index |  values
 --     ----- |  ------
@@ -416,7 +416,7 @@ dropna = G.dropna
 --   'a' |     10
 --   'd' |     40
 --
--- See `reindex` if you want to ensure that all keys are present.
+-- See `require` if you want to ensure that all keys are present.
 select :: (Selection s, Ord k) => Series k a -> s k -> Series k a
 select = G.select
 

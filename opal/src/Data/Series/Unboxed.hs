@@ -302,7 +302,7 @@ filter = G.filter
 --   'a' |     10
 --   'd' |     40
 --
--- See `reindex` if you want to ensure that all keys are present.
+-- See `require` if you want to ensure that all keys are present.
 select :: (Unbox a, Selection s, Ord k) => Series k a -> s k -> Series k a
 select = G.select
 

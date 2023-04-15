@@ -1,7 +1,7 @@
 module Test.Data.Series.Generic.View (tests) where
 
 import qualified Data.Map.Strict      as MS
-import           Data.Series.Generic  ( Series, fromStrictMap, fromList, to, select, selectWhere, reindex, mapIndex )
+import           Data.Series.Generic  ( Series, fromStrictMap, fromList, to, select, selectWhere, require, mapIndex )
 import qualified Data.Series.Index    as Index
 import           Data.Vector          ( Vector )
 import           Test.Tasty           ( testGroup, TestTree ) 
@@ -11,7 +11,7 @@ tests :: TestTree
 tests = testGroup "Data.Series.Generic.View" [ testSelectRange
                                              , testSelectSet 
                                              , testSelectWhere
-                                             , testReindex
+                                             , testrequire
                                              , testMapIndex
                                              ]
 
@@ -42,10 +42,10 @@ testSelectWhere = testCase "selectWhere" $ do
     assertEqual mempty expectation subSeries
 
 
-testReindex :: TestTree
-testReindex = testCase "reindex" $ do
+testrequire :: TestTree
+testrequire = testCase "require" $ do
     let (series :: Series Vector Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
-        subSeries = series `reindex` Index.fromList ['a', 'd', 'x']
+        subSeries = series `require` Index.fromList ['a', 'd', 'x']
         expectation = fromStrictMap $ MS.fromList [('a', Just 1), ('d', Just 4), ('x', Nothing)]
     
     assertEqual mempty expectation subSeries

@@ -12,7 +12,7 @@ module Data.Series.Generic.View (
     Selection,
 
     -- * Resizing
-    reindex,
+    require,
     filter,
     dropna,
     dropIndex,
@@ -66,12 +66,12 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 {-# INLINE iat #-}
 
 
--- | Reindex a series with a new index.
+-- | require a series with a new index.
 -- Contrary to `select`, all keys in @Set k@ will be present in the re-indexed series.
-reindex :: (Vector v a, Vector v (Maybe a), Ord k) 
+require :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
-{-# INLINE reindex #-}
-reindex xs ss 
+{-# INLINE require #-}
+require xs ss 
     = let existingKeys = index xs `Index.intersection` ss
           newKeys      = ss `Index.difference` existingKeys
        in (G.map Just (xs `select` existingKeys)) <> MkSeries newKeys (Vector.replicate (Index.size newKeys) Nothing)
@@ -167,7 +167,7 @@ class Selection s where
     --   'a' |     10
     --   'd' |     40
     --
-    -- See @reindex@ if you want to ensure that all keys are present.
+    -- See @require@ if you want to ensure that all keys are present.
     select :: (Vector v a, Ord k) => Series v k a -> s k -> Series v k a
 
 

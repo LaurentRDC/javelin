@@ -25,6 +25,15 @@
 -- >>> ix
 -- Index [1,2,3,4,5] 
 --
+-- Another useful function to construct an `Index` is `range`. This allows to build an `Index`
+-- from a starting value up to an ending value, with a custom step function. For example,
+-- here's an `Index` with values from 1 to 10, in steps of 3:
+--
+-- >>> range (+3) (1 :: Int) 10
+-- Index [1,4,7,10]
+--
+-- Note that `range` is a special case of the `unfoldr` function, which is also provided in this module.
+--
 -- = Set operations
 -- 
 -- Just like a `Set`, `Index` supports efficient `member`, `notMember`, `union`, `intersection`, and `difference` operations.
