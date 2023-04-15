@@ -227,6 +227,7 @@ instance Selection Range where
 
 -- | Select a sub-series from a series matching a condition.
 selectWhere :: (Vector v a, Vector v Int, Vector v Bool, Ord k) => Series v k a -> Series v k Bool -> Series v k a
+{-# INLINE selectWhere #-}
 selectWhere xs ys = xs `select` (Index.fromSet keysWhereTrue)
     where
         (MkSeries _ cond) = ys `select` index xs
