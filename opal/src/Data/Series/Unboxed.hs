@@ -59,7 +59,7 @@ module Data.Series.Unboxed (
     zipWithMatched, 
 
     -- * Index manipulation
-    dropIndex,
+    require, dropIndex,
 
     -- * Accessors
     -- ** Bulk access
@@ -231,6 +231,33 @@ zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k)
                => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
+
+
+-- | Require a series to have a specific `Index`. 
+-- Contrary to @select@, all keys in the `Index` will be present in the resulting series.
+--
+-- Note that unlike the implementation for boxed series (`Data.Series.require`), missing keys need to be mapped to some values because unboxed
+-- series cannot contain values of type @`Maybe` a@. 
+--
+-- In the example below, the missing value for key @\"Taipei\"@ is mapped to 0:
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> require (const 0) xs (Index.fromList ["Paris", "Lisbon", "Taipei"])
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+--  "Paris" |      1
+-- "Taipei" |      0
+require :: (Unbox a, Ord k) 
+        => (k -> a) -> Series k a -> Index k -> Series k a
+{-# INLINE require #-}
+require f = G.requireWith f id
 
 
 -- | Drop the index of a series by replacing it with an `Int`-based index. Values will

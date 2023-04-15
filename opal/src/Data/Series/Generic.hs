@@ -20,7 +20,7 @@ module Data.Series.Generic (
     ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
-    require, dropna, dropIndex,
+    require, requireWith, dropna, dropIndex,
 
     -- * Accessors
     -- ** Bulk access
@@ -44,5 +44,5 @@ import Data.Series.Generic.Aggregation          ( GroupBy, groupBy, aggregateWit
 import Data.Series.Generic.Broadcast            ( zipWith, zipWithMatched, zipWithStrategy, ZipStrategy, skipStrategy, constStrategy  )
 import Data.Series.Generic.Definition           ( Series(index, values), convert, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey, mapIndex, length, sum )
 import Data.Series.Generic.Numeric              ( mean, var, sampleVariance, std, meanAndVariance )
-import Data.Series.Generic.View                 ( Range, Selection, at, iat, select, selectWhere, to, filter, require, dropna, dropIndex )
+import Data.Series.Generic.View                 ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
 import Data.Series.Generic.Windowing            ( windows, iwindows, expanding, irolling )

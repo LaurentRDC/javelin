@@ -13,6 +13,7 @@ module Data.Series.Generic.View (
 
     -- * Resizing
     require,
+    requireWith,
     filter,
     dropna,
     dropIndex,
@@ -71,10 +72,22 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 require :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
 {-# INLINE require #-}
-require xs ss 
+require xs ss = requireWith (const Nothing) (Just) xs ss
+
+
+-- | Generalization of `require`, which maps missing keys to values.
+-- This is particularly usefol for `Vector` instances which don't support `Maybe`, like "Data.Vector.Unboxed".
+requireWith :: (Vector v a, Vector v b, Ord k)
+            => (k -> b)  -- ^ Function to apply to keys which are missing from the input series, but required in the input index
+            -> (a -> b)  -- ^ Function to apply to values which are in the input series and input index.
+            -> Series v k a 
+            -> Index k 
+            -> Series v k b
+{-# INLINE requireWith #-}
+requireWith replacement f xs ss 
     = let existingKeys = index xs `Index.intersection` ss
           newKeys      = ss `Index.difference` existingKeys
-       in (G.map Just (xs `select` existingKeys)) <> MkSeries newKeys (Vector.replicate (Index.size newKeys) Nothing)
+       in (G.map f (xs `select` existingKeys)) <> (MkSeries newKeys $ Vector.fromListN (Index.size newKeys) (replacement <$> Index.toAscList newKeys))
 
 
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
