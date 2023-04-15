@@ -1,7 +1,3 @@
--- We ignore redundant constraint on `Ord k`.
--- While this constraint is redundant in this module,
--- `Series v k a` where `k` is not an instance of `Ord` would be practically useless
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.Series.Generic.Definition ( 
@@ -10,9 +6,11 @@ module Data.Series.Generic.Definition (
     convert,
 
     -- * Basic interface
+    singleton,
     headM, lastM, take, map, mapWithKey, mapIndex,
     foldMap, bifoldMap, sum, length, null,
 
+    fromIndex,
     -- * Conversion to/from Maps
     fromStrictMap,
     toStrictMap,
@@ -69,9 +67,24 @@ convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
 convert (MkSeries ix vs) = MkSeries ix $ Vector.convert vs 
 
 
+-- | Create a `Series` with a single element.
+singleton :: Vector v a => k -> a -> Series v k a
+{-# INLINE singleton #-}
+singleton k v = MkSeries (Index.singleton k) $ Vector.singleton v
+
+
+-- | \(O(n)\) Generate a `Series` by mapping every element of its index.
+fromIndex :: (Vector v a) 
+          => (k -> a) -> Index k -> Series v k a
+{-# INLINE fromIndex #-}
+fromIndex f ix = MkSeries ix $ Vector.convert 
+                             $ Boxed.map f -- Using boxed vector to prevent a (Vector v k) constraint
+                             $ Index.toAscVector ix
+
+
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
-fromList :: (Vector v a, Eq k, Ord k) => [(k, a)] -> Series v k a
+fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
 
@@ -83,13 +96,13 @@ toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Convert a series into a lazy @Map@.
-toLazyMap :: (Vector v a, Eq k, Ord k) => Series v k a -> Map k a
+toLazyMap :: (Vector v a) => Series v k a -> Map k a
 {-# INLINE toLazyMap #-}
 toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Construct a series from a lazy @Map@.
-fromLazyMap :: (Vector v a, Eq k, Ord k) => ML.Map k a -> Series v k a
+fromLazyMap :: (Vector v a) => ML.Map k a -> Series v k a
 {-# INLINE fromLazyMap #-}
 fromLazyMap mp = let keys = ML.keysSet mp 
                   in MkSeries { index  = Index.fromSet keys 
@@ -98,13 +111,13 @@ fromLazyMap mp = let keys = ML.keysSet mp
 
 
 -- | Convert a series into a strict @Map@.
-toStrictMap :: (Vector v a, Eq k, Ord k) => Series v k a -> Map k a
+toStrictMap :: (Vector v a) => Series v k a -> Map k a
 {-# INLINE toStrictMap #-}
 toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Construct a series from a strict @Map@.
-fromStrictMap :: (Vector v a, Eq k, Ord k) => MS.Map k a -> Series v k a
+fromStrictMap :: (Vector v a) => MS.Map k a -> Series v k a
 {-# INLINE fromStrictMap #-}
 fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
                             , values = Vector.fromListN (MS.size mp) $ MS.elems mp
@@ -205,7 +218,7 @@ instance (Functor v) => Functor (Series v k) where
 
 instance (Foldable v) => Foldable (Series v k) where
     {-# INLINE foldMap #-}
-    foldMap :: (Foldable v, Monoid m) => (a -> m) -> Series v k a -> m
+    foldMap :: (Monoid m) => (a -> m) -> Series v k a -> m
     foldMap f xs = Foldable.foldMap f (values xs)
 
 instance (Foldable v) => Bifoldable (Series v) where
@@ -235,7 +248,7 @@ length :: Vector v a => Series v k a -> Int
 length = Vector.length . values
 
 
-instance (NFData (v a), NFData k, NFData a) => NFData (Series v k a) where
+instance (NFData (v a), NFData k) => NFData (Series v k a) where
     rnf :: Series v k a -> ()
     rnf (MkSeries ks vs) = rnf ks `seq` rnf vs
 

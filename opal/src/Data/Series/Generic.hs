@@ -5,6 +5,7 @@ module Data.Series.Generic (
     convert,
 
     -- * Building/converting `Series`
+    singleton, fromIndex,
     -- ** Lists
     fromList, toList,
     -- ** Strict Maps
@@ -44,7 +45,7 @@ module Data.Series.Generic (
 ) where
 
 import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith )
-import Data.Series.Generic.Definition   ( Series(index, values), convert, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey, mapIndex, length, sum )
+import Data.Series.Generic.Definition   ( Series(index, values), convert, singleton, fromIndex, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey, mapIndex, length, sum )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
 import Data.Series.Generic.Windowing    ( windows, iwindows, expanding, irolling )

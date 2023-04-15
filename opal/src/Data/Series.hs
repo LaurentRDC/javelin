@@ -35,6 +35,7 @@ module Data.Series (
     Series, index, values,
 
     -- * Building/converting `Series`
+    singleton, fromIndex,
     -- ** Lists
     fromList, toList,
     -- ** Strict Maps
@@ -113,6 +114,24 @@ values :: Series k a -> Vector a
 {-# INLINE values #-}
 values = G.values
 
+-- | Create a `Series` with a single element.
+singleton :: k -> a -> Series k a
+{-# INLINE singleton #-}
+singleton = G.singleton
+
+
+-- | \(O(n)\) Generate a `Series` by mapping every element of its index.
+--
+-- >>> fromIndex (const (0::Int)) $ Index.fromList ['a','b','c','d']
+-- index | values
+-- ----- | ------
+--   'a' |      0
+--   'b' |      0
+--   'c' |      0
+--   'd' |      0
+fromIndex :: (k -> a) -> Index k -> Series k a
+{-# INLINE fromIndex #-}
+fromIndex = G.fromIndex
 
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
@@ -146,24 +165,24 @@ toList = G.toList
 
 
 -- | Convert a series into a lazy @Map@.
-toLazyMap :: Ord k => Series k a -> ML.Map k a
+toLazyMap :: Series k a -> ML.Map k a
 {-# INLINE toLazyMap #-}
 toLazyMap = G.toLazyMap
 
 
 -- | Construct a series from a lazy @Map@.
-fromLazyMap :: Ord k => ML.Map k a -> Series k a
+fromLazyMap :: ML.Map k a -> Series k a
 {-# INLINE fromLazyMap #-}
 fromLazyMap = G.fromLazyMap
 
 
 -- | Convert a series into a strict @Map@.
-toStrictMap :: Ord k => Series k a -> MS.Map k a
+toStrictMap :: Series k a -> MS.Map k a
 {-# INLINE toStrictMap #-}
 toStrictMap = G.toStrictMap
 
 -- | Construct a series from a strict @Map@.
-fromStrictMap :: Ord k => MS.Map k a -> Series k a
+fromStrictMap :: MS.Map k a -> Series k a
 {-# INLINE fromStrictMap #-}
 fromStrictMap = G.fromStrictMap
 
@@ -486,7 +505,7 @@ iat = G.iat
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> let ys = Series.fromList [("Paris", 99::Int)]
+-- >>> let ys = Series.singleton "Paris" (99::Int)
 -- >>> ys `replace` xs
 --    index | values
 --    ----- | ------
@@ -508,7 +527,7 @@ replace = G.replace
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> let ys = Series.fromList [("Paris", 99::Int)]
+-- >>> let ys = Series.singleton "Paris" (99::Int)
 -- >>> ys |-> xs
 --    index | values
 --    ----- | ------
@@ -530,7 +549,7 @@ replace = G.replace
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> let ys = Series.fromList [("Paris", 99::Int)]
+-- >>> let ys = Series.singleton "Paris" (99::Int)
 -- >>> xs <-| ys
 --    index | values
 --    ----- | ------
@@ -576,8 +595,7 @@ groupBy = G.groupBy
 
 -- | Aggregate grouped series. This function is expected to be used in conjunction
 -- with `groupBy`.
-aggregateWith :: (Ord g) 
-              => GroupBy g k a      -- ^ Grouped series
+aggregateWith :: GroupBy g k a      -- ^ Grouped series
               -> (Series k a -> b)  -- ^ Aggregation function
               -> Series g b         -- ^ Aggregated series
 {-# INLINE aggregateWith #-}

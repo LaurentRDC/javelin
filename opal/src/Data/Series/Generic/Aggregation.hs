@@ -56,7 +56,7 @@ newtype GroupBy v g k a
 
 -- | Aggregate grouped series. This function is expected to be used in conjunction
 -- with @groupBy@.
-aggregateWith :: (Vector v b, Ord g) 
+aggregateWith :: (Vector v b) 
               => GroupBy v g k a      -- ^ Grouped series
               -> (Series v k a -> b)  -- ^ Aggregation function
               -> Series v g b         -- ^ Aggregated series
