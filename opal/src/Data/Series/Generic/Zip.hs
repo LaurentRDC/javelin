@@ -1,4 +1,4 @@
-module Data.Series.Generic.Broadcast (
+module Data.Series.Generic.Zip (
     zipWith, zipWithMatched,
     replace, (|->), (<-|),
     -- * Generalized zipping with strategies

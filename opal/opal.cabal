@@ -31,11 +31,11 @@ library
                       Data.Series.Index
                       Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
-                      Data.Series.Generic.Broadcast
                       Data.Series.Generic.Definition
                       Data.Series.Generic.Numeric
                       Data.Series.Generic.View
                       Data.Series.Generic.Windowing
+                      Data.Series.Generic.Zip
     build-depends:    base  >=4.15.0.0,
                       containers,
                       deepseq,
@@ -49,11 +49,11 @@ test-suite opal-test
     other-modules:    Test.Data.Series
                       Test.Data.Series.Index
                       Test.Data.Series.Generic.Aggregation
-                      Test.Data.Series.Generic.Broadcast
                       Test.Data.Series.Generic.Definition
                       Test.Data.Series.Generic.Numeric
                       Test.Data.Series.Generic.View
                       Test.Data.Series.Generic.Windowing
+                      Test.Data.Series.Generic.Zip
                       Test.Utils
     build-depends:    base,
                       containers,

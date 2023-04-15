@@ -1,5 +1,5 @@
 
-module Test.Data.Series.Generic.Broadcast ( tests ) where
+module Test.Data.Series.Generic.Zip ( tests ) where
 
 
 import           Control.Monad        ( forM_ )
@@ -23,7 +23,7 @@ import           Test.Tasty.Hedgehog  ( testProperty )
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
-tests = testGroup "Data.Series.Generic.Broadcast" [ testZipWith
+tests = testGroup "Data.Series.Generic.Zip" [ testZipWith
                                                   , testPropZipWithMatched
                                                   , testPropZipWith
                                                   , testPropReplace
