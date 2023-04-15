@@ -114,7 +114,7 @@ Note that the bounds may contain less data than you think! For example, let's lo
 "2010-01-12" | 6.3597
 ```
 
-We've requested a range of 5 days (2010-01-08, 2010-01-09, 2010-01-10, 2010-01-11, 2010-01-12), but there's no data in our series with the keys 2010-01-09 and 2010-01-10. 
+We've requested a range of 5 days (2010-01-08, 2010-01-09, 2010-01-10, 2010-01-11, 2010-01-12), but there's no data in our series with the keys 2010-01-09 and 2010-01-10, because it was the week-end (stock markets are usually closed on week-ends). 
 
 Sometimes you want to be more specific than a contiguous range of data; `select` also supports bulk random access like so:
 
@@ -127,12 +127,12 @@ Sometimes you want to be more specific than a contiguous range of data; `select`
 "2010-01-22" | 6.0544
 ```
 
-Note above that we've requested data for the date `"2010-01-16"`, but it's missing. Therefore, the data isn't returned. If you want to get a sub-series which has the exact index that you've asked for, you can use `reindex` in combination with an `Index`:
+Note above that we've requested data for the date `"2010-01-16"`, but it's missing. Therefore, the data isn't returned. If you want to get a sub-series which has the exact index that you've asked for, you can use `require` in combination with an `Index`:
 
 ```haskell
 > import qualified Data.Series.Index as Index
-> import Data.Series (reindex)
-> aapl_close `reindex` Index.fromList ["2010-01-08", "2010-01-12", "2010-01-16", "2010-01-22"]
+> import Data.Series (require)
+> aapl_close `require` Index.fromList ["2010-01-08", "2010-01-12", "2010-01-16", "2010-01-22"]
        index |      values
        ----- |      ------
 "2010-01-08" | Just 6.4901
@@ -140,6 +140,8 @@ Note above that we've requested data for the date `"2010-01-16"`, but it's missi
 "2010-01-16" |     Nothing
 "2010-01-22" | Just 6.0544
 ```
+
+See further below on a description of the `Index` type.
 
 ## Operations
 
