@@ -60,6 +60,9 @@ module Data.Series (
     -- ** Single-element access
     at, iat, 
 
+    -- * Replacing values
+    replace, (|->), (<-|),
+
     -- * Grouping operations
     GroupBy, groupBy, aggregateWith,
 
@@ -84,6 +87,7 @@ import           Prelude             hiding (map, zipWith, filter)
 -- >>> import qualified Data.Series.Index as Index
 
 infixl 1 `select` 
+infix 6 |->, <-|
 
 -- | A series is a labeled array of values of type @a@,
 -- indexed by keys of type @k@.
@@ -468,6 +472,76 @@ at = G.at
 iat :: Series k a -> Int -> Maybe a
 {-# INLINE iat #-}
 iat = G.iat
+
+
+-- | Replace values in the right series from values in the left series at matching keys.
+-- Keys not in the right series are unaffected.
+-- 
+-- See `(|->)` and `(<-|)`, which might be more readable.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> let ys = Series.fromList [("Paris", 99::Int)]
+-- >>> ys `replace` xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |     99
+replace :: Ord k => Series k a -> Series k a -> Series k a
+{-# INLINE replace #-}
+replace = G.replace
+
+
+-- | Replace values in the right series from values in the left series at matching keys.
+-- Keys not in the right series are unaffected.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> let ys = Series.fromList [("Paris", 99::Int)]
+-- >>> ys |-> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |     99
+(|->) :: (Ord k) => Series k a -> Series k a -> Series k a
+{-# INLINE (|->) #-}
+(|->) = (G.|->)
+
+
+-- | Replace values in the left series from values in the right series at matching keys.
+-- Keys not in the left series are unaffected.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> let ys = Series.fromList [("Paris", 99::Int)]
+-- >>> xs <-| ys
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |     99
+(<-|) :: (Ord k) => Series k a -> Series k a -> Series k a
+{-# INLINE (<-|) #-}
+(<-|) = (G.<-|)
+
+
 
 -- | Data type representing groups of @Series k a@, indexed by keys of type @g@.
 -- See the documentation for @groupBy@.

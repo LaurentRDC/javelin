@@ -6,7 +6,7 @@ import           Control.Monad        ( forM_ )
 
 import           Data.Maybe           ( fromJust, isNothing )
 import           Data.Series.Generic  ( Series(index)
-                                      , fromStrictMap, fromList, zipWith, select, at
+                                      , fromStrictMap, fromList, zipWith, select, at, replace, (|->), (<-|)
                                       )
 import qualified Data.Series.Generic  as Series
 import qualified Data.Series.Index    as Index 
@@ -26,6 +26,8 @@ tests :: TestTree
 tests = testGroup "Data.Series.Generic.Broadcast" [ testZipWith
                                                   , testPropZipWithMatched
                                                   , testPropZipWith
+                                                  , testPropReplace
+                                                  , testPropReplaceInfix
                                                   , testPropZipWithStrategySkipStrategy
                                                   ]
 
@@ -64,6 +66,35 @@ testPropZipWith
             fromJust (comb `at` k) === Just (left + right)
         
         assert $ all isNothing $ Series.values (comb `select` symdiff)
+
+
+testPropReplace :: TestTree
+testPropReplace 
+    = testProperty "mean" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 10 100) (Gen.int $ Range.linear (-500) 500) 
+        ns <- forAll $ Gen.list (Range.linear 0 10)   (Gen.int $ Range.linear (-500) 500) 
+        let (xs :: Series Vector Int Int) = fromList (zip [0::Int ..] ms)
+            ys = fromList (zip [0..] ns)
+            rs = ys `replace` xs
+
+        index rs === index xs
+
+        let commonKeys = index xs `Index.intersection` index ys
+
+        (rs `select` commonKeys) === (ys `select` commonKeys)
+
+
+testPropReplaceInfix :: TestTree
+testPropReplaceInfix 
+    = testProperty "mean" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 10 100) (Gen.int $ Range.linear (-500) 500) 
+        ns <- forAll $ Gen.list (Range.linear 0 10)   (Gen.int $ Range.linear (-500) 500) 
+        let (xs :: Series Vector Int Int) = fromList (zip [0::Int ..] ms)
+            ys = fromList (zip [0..] ns)
+            rs = ys `replace` xs
+        
+        ys |-> xs === rs 
+        ys |-> xs === xs <-| ys 
 
 
 testPropZipWithStrategySkipStrategy :: TestTree

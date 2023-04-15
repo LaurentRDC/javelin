@@ -1,5 +1,6 @@
 module Data.Series.Generic.Broadcast (
     zipWith, zipWithMatched,
+    replace, (|->), (<-|),
     -- * Generalized zipping with strategies
     zipWithStrategy,
     ZipStrategy,
@@ -17,6 +18,8 @@ import           Prelude                        hiding ( zipWith )
 
 -- $setup
 -- >>> import qualified Data.Series as Series
+
+infix 6 |->, <-|
 
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. For keys present only in the left or right series, 
@@ -68,6 +71,24 @@ zipWithMatched f left right
           matched         = MkSeries matchedKeys $ Vector.zipWith f xs ys
        in matched
 {-# INLINE zipWithMatched #-}
+
+
+-- | Replace values from the right series with values from the left series at matching keys.
+-- Keys in the right series but not in the right series are unaffected.
+replace :: (Vector v a, Ord k) => Series v k a -> Series v k a -> Series v k a
+{-# INLINE replace #-}
+-- TODO: would it be faster to use Vector.update instead?
+xs `replace` ys = (xs `select` index ys) <> ys  -- This works because (<>) is left-biased
+
+
+(|->) :: (Vector v a, Ord k) => Series v k a -> Series v k a -> Series v k a
+{-# INLINE (|->) #-}
+(|->) = replace
+
+
+(<-|) :: (Vector v a, Ord k) => Series v k a -> Series v k a -> Series v k a
+{-# INLINE (<-|)  #-}
+(<-|) = flip replace
 
 
 -- | A `ZipStrategy` is a function which is used to decide what to do when a key is missing from one

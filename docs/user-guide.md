@@ -278,6 +278,48 @@ Finally, in case we want full control over what to do when a key is missing, we 
 
 As you can imagine, `zipWithStrategy` is the most general and gives the most control, but is less easy to use than `zipWith` and `zipWithMatched`.
 
+## Replacing certain values
+
+`Series.map` allows to map every value of a series. How about replacing *some* values in a series? The function `(|->)` replaces values in the right operand which have an analogue in the left operand. The flipped version, `(<-|)`, is also available:
+
+```haskell
+> import Data.Series ( (|->), (<-|) )
+> let nan = (0/0) :: Double
+> let right = Series.fromList [('a', 1), ('b', nan), ('c', 3), ('d', nan)]
+> right
+index | values
+----- | ------
+  'a' |    1.0
+  'b' |    NaN
+  'c' |    3.0
+  'd' |    NaN
+> let left = Series.fromList [('b', 0::Double), ('d', 0), ('e', 0)]
+> left
+index | values
+----- | ------
+  'b' |    0.0
+  'd' |    0.0
+  'e' |    0.0
+> left |-> right
+index | values
+----- | ------
+  'a' |    1.0
+  'b' |    0.0
+  'c' |    3.0
+  'd' |    0.0
+> right <-| left
+index | values
+----- | ------
+  'a' |    1.0
+  'b' |    0.0
+  'c' |    3.0
+  'd' |    0.0
+```
+
+In the example above, the key `'e'` is ignored since it was not in the `right` series to begin with.
+
+The flipped version, `(<-|)`, is also available.
+
 ## Grouping
 
 One important feature of series is the ability to efficiently group values together based on their keys.

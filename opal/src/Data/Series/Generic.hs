@@ -28,6 +28,9 @@ module Data.Series.Generic (
     -- ** Single-element access
     at, iat, 
 
+    -- * Replacement
+    replace, (|->), (<-|),
+
     -- * Grouping operations
     GroupBy, groupBy, aggregateWith,
 
@@ -41,7 +44,7 @@ module Data.Series.Generic (
 ) where
 
 import Data.Series.Generic.Aggregation          ( GroupBy, groupBy, aggregateWith )
-import Data.Series.Generic.Broadcast            ( zipWith, zipWithMatched, zipWithStrategy, ZipStrategy, skipStrategy, constStrategy  )
+import Data.Series.Generic.Broadcast            ( zipWith, zipWithMatched, replace, (|->), (<-|), zipWithStrategy, ZipStrategy, skipStrategy, constStrategy  )
 import Data.Series.Generic.Definition           ( Series(index, values), convert, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, map, mapWithKey, mapIndex, length, sum )
 import Data.Series.Generic.Numeric              ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.View                 ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
