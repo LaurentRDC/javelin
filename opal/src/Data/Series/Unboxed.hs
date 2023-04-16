@@ -126,6 +126,7 @@ index :: Series k a -> Index k
 {-# INLINE index #-}
 index = G.index
 
+
 values :: Series k a -> Vector a
 {-# INLINE values #-}
 values = G.values
@@ -524,6 +525,7 @@ foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap #-}
 foldMap f = Vector.foldMap f . values
 
+
 -- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
 -- implementation as the corresponding method of the 'Foldable' type class.
 -- Note that it's implemented in terms of 'foldl'', so it fuses in most
@@ -534,41 +536,49 @@ foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap' #-}
 foldMap' f = Vector.foldMap' f . values
 
+
 -- | /O(n)/ Check if all elements satisfy the predicate.
 all :: Unbox a => (a -> Bool) -> Series k a -> Bool
 {-# INLINE all #-}
 all f = Vector.all f . values
+
 
 -- | /O(n)/ Check if any element satisfies the predicate.
 any :: Unbox a => (a -> Bool) -> Series k a -> Bool
 {-# INLINE any #-}
 any f = Vector.any f . values
 
+
 -- | /O(n)/ Check if all elements are 'True'.
 and :: Series k Bool -> Bool
 {-# INLINE and #-}
 and = Vector.and . values
+
 
 -- | /O(n)/ Check if any element is 'True'.
 or :: Series k Bool -> Bool
 {-# INLINE or #-}
 or = Vector.or . values
 
+
 -- | /O(n)/ Compute the sum of the elements.
 sum :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE sum #-}
 sum = Vector.sum . values
+
 
 -- | /O(n)/ Compute the product of the elements.
 product :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE product #-}
 product = Vector.product . values
 
+
 -- | /O(n)/ Yield the maximum element of the series. The series may not be
 -- empty. In case of a tie, the first occurrence wins.
 maximum :: (Unbox a, Ord a) => Series k a -> a
 {-# INLINE maximum #-}
 maximum = Vector.maximum . values
+
 
 -- | /O(n)/ Yield the minimum element of the series. The series may not be
 -- empty. In case of a tie, the first occurrence wins.
@@ -588,6 +598,7 @@ mean = G.mean
 meanAndVariance :: (Unbox a, RealFloat a) => Series k a -> (a, a)
 {-# INLINE meanAndVariance #-}
 meanAndVariance = G.meanAndVariance
+
 
 -- | Population variance.
 var :: (Unbox a, RealFloat a) => Series k a -> a

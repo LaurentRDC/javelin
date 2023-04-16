@@ -76,8 +76,7 @@ module Data.Series (
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic.View 
-                                     ( Range, Selection, to )
+import           Data.Series.Generic ( Range, Selection, ZipStrategy, to )
 import qualified Data.Series.Generic as G
 import           Data.Vector         ( Vector )
 
@@ -110,9 +109,11 @@ index :: Series k a -> Index k
 {-# INLINE index #-}
 index = G.index
 
+
 values :: Series k a -> Vector a
 {-# INLINE values #-}
 values = G.values
+
 
 -- | Create a `Series` with a single element.
 singleton :: k -> a -> Series k a
@@ -132,6 +133,7 @@ singleton = G.singleton
 fromIndex :: (k -> a) -> Index k -> Series k a
 {-# INLINE fromIndex #-}
 fromIndex = G.fromIndex
+
 
 -- | Construct a series from a list of key-value pairs. There is no
 -- condition on the order of pairs.
@@ -181,6 +183,7 @@ toStrictMap :: Series k a -> MS.Map k a
 {-# INLINE toStrictMap #-}
 toStrictMap = G.toStrictMap
 
+
 -- | Construct a series from a strict @Map@.
 fromStrictMap :: MS.Map k a -> Series k a
 {-# INLINE fromStrictMap #-}
@@ -222,7 +225,6 @@ mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 mapIndex = G.mapIndex
 
 
-
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. For keys present only in the left or right series, 
 -- the value @Nothing@ is returned.
@@ -260,16 +262,6 @@ zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
 
-
--- | A `ZipStrategy` is a function which is used to decide what to do when a key is missing from one
--- of two `Series` being zipped together with `zipWithStrategy`.
---
--- If a `ZipStrategy` returns @Nothing@, the key is dropped.
--- If a `ZipStrategy` returns @Just v@ for key @k@, then the value @v@ is inserted at key @k@.
---
--- For example, the most basic `ZipStrategy` is to skip over any key which is missing from the other series.
--- Such a strategy can be written as @skip key value = Nothing@ (see `skipStrategy`).
-type ZipStrategy k a b = (k -> a -> Maybe b)
 
 -- | This `ZipStrategy` drops keys which are not present in both `Series`.
 --
@@ -561,7 +553,6 @@ replace = G.replace
 (<-|) = (G.<-|)
 
 
-
 -- | Data type representing groups of @Series k a@, indexed by keys of type @g@.
 -- See the documentation for @groupBy@.
 type GroupBy = G.GroupBy Vector
@@ -613,6 +604,7 @@ mean = G.mean
 meanAndVariance :: (RealFloat a) => Series k a -> (a, a)
 {-# INLINE meanAndVariance #-}
 meanAndVariance = G.meanAndVariance
+
 
 -- | Population variance.
 var :: (RealFloat a) => Series k a -> a
