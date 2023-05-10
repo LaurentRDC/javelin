@@ -1,7 +1,7 @@
 cabal-version:      3.0
-name:               opal-io
+name:               javelin-io
 version:            0.1.0.0
-synopsis:           IO operations for the `opal` package
+synopsis:           IO operations for the `javelin` package
 description:
 license:            MIT
 license-file:       LICENSE
@@ -33,11 +33,11 @@ library
                       bytestring,
                       cassava,
                       containers,
-                      opal,
+                      javelin,
                       text,
                       vector
 
-test-suite opal-io-test
+test-suite javelin-io-test
     import:           common
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
@@ -47,8 +47,8 @@ test-suite opal-io-test
                       containers,
                       hedgehog,
                       ieee754,
-                      opal,
-                      opal-io,
+                      javelin,
+                      javelin-io,
                       statistics,
                       tasty,
                       tasty-hedgehog,

@@ -1,5 +1,5 @@
-packages: opal/opal.cabal
-          opal-io/opal-io.cabal
+packages: javelin/javelin.cabal
+          javelin-io/javelin-io.cabal
 test-show-details: streaming
 tests: True
 benchmarks: True

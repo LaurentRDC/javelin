@@ -1,9 +1,9 @@
 
 # Data.Series User Guide
 
-This is a short user guide on how to get started using `opal`. The following document shows examples running in a Haskell interpreter (e.g. GHCi)
+This is a short user guide on how to get started using `javelin`. The following document shows examples running in a Haskell interpreter (e.g. GHCi)
 
-This guide is assuming that you have `opal` and `opal-io` installed. Let's start by setting up our environment:
+This guide is assuming that you have `javelin` and `javelin-io` installed. Let's start by setting up our environment:
 
 ``` haskell
 > :set -XOverloadedStrings

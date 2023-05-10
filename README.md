@@ -21,9 +21,9 @@ A user guide is available in the `docs` directory.
 
 ### Haddocks
 
-You can generate documentation for `opal` or `opal-io` using `haddock` like so:
+You can generate documentation for `javelin` or `javelin-io` using `haddock` like so:
 
 ```bash
-cabal haddock opal
-cabal haddock opal-io
+cabal haddock javelin
+cabal haddock javelin-io
 ```

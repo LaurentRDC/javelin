@@ -1,0 +1,1 @@
+cabal repl javelin --with-ghc=doctest

@@ -1,4 +1,4 @@
-# Revision history for opal
+# Revision history for javelin-io
 
 ## 0.1.0.0 -- YYYY-mm-dd
 

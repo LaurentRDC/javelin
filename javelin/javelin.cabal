@@ -1,5 +1,5 @@
 cabal-version:      3.0
-name:               opal
+name:               javelin
 version:            0.1.0.0
 synopsis:           Labeled one-dimensional arrays
 description:
@@ -41,7 +41,7 @@ library
                       deepseq,
                       vector
 
-test-suite opal-test
+test-suite javelin-test
     import:           common
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
@@ -59,7 +59,7 @@ test-suite opal-test
                       containers,
                       hedgehog,
                       ieee754,
-                      opal,
+                      javelin,
                       statistics,
                       tasty,
                       tasty-hedgehog,
@@ -77,7 +77,7 @@ benchmark comparison-containers
     main-is:          Comparison.hs
     build-depends:    base,
                       containers,
-                      opal,
+                      javelin,
                       vector, 
                       criterion, 
                       deepseq, 
@@ -94,7 +94,7 @@ benchmark operations
     build-depends:    base,
                       containers,
                       deepseq,
-                      opal,
+                      javelin,
                       criterion
 
 
