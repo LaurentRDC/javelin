@@ -1,5 +1,7 @@
 # Haskell implementation of labeled one-dimensional arrays
 
+:warning: This repository is in experimental development. Backwards compatibility may be broken at any moment.  
+
 Packages in this repository implement series, or labeled one-dimensional arrays.
 
 Like [`Data.Map.Strict`](https://hackage.haskell.org/package/containers/docs/Data-Map-Strict.html), series support efficient:
