@@ -12,6 +12,8 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files: test/data/*.csv
                     test/data/*.json
+tested-with:        GHC ==9.6.1
+                     || ==9.4.5  
 
 common common
     default-language: GHC2021
