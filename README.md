@@ -23,9 +23,10 @@ A user guide is available in the `docs` directory.
 
 ### Haddocks
 
-You can generate documentation for `javelin` or `javelin-io` using `haddock` like so:
+You can generate documentation for all packages using `haddock` like so:
 
 ```bash
 cabal haddock javelin
 cabal haddock javelin-io
+cabal haddock javelin-finance
 ```
