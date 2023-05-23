@@ -1,0 +1,58 @@
+cabal-version:      3.0
+name:               javelin-finance
+version:            0.1.0.0
+synopsis:           Technical analysis and financial metrics on Haskell series
+license:            MIT
+license-file:       LICENSE
+author:             Laurent René de Cotret
+maintainer:         laurent.decotret@outlook.com
+category:           Finance
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+tested-with:        GHC ==9.6.1
+                     || ==9.4.5
+
+common common
+    default-language: GHC2021
+    ghc-options: -Wall
+                 -Wcompat
+                 -Widentities
+                 -Wincomplete-uni-patterns
+                 -Wincomplete-record-updates
+                 -Wredundant-constraints
+                 -fhide-source-paths
+                 -Wpartial-fields
+
+library
+    import:           common
+    exposed-modules:  Data.Series.Metrics
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base >=4.15.0.0 && <5,
+                      javelin,
+                      vector,
+    hs-source-dirs:   src
+    default-language: GHC2021
+
+test-suite javelin-finance-test
+    import:           common
+    default-language: Haskell2010
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    other-modules:    Test.Data.Series.Metrics
+                      Test.Utils
+    build-depends:    base,
+                      hedgehog,
+                      ieee754,
+                      javelin,
+                      javelin-finance,
+                      statistics,
+                      tasty,
+                      tasty-hedgehog,
+                      tasty-hunit,
+                      HUnit,
+                      tasty-hspec,
+                      vector

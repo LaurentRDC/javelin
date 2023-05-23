@@ -1,5 +1,7 @@
 packages: javelin/javelin.cabal
           javelin-io/javelin-io.cabal
+          javelin-finance/javelin-finance.cabal
+
 test-show-details: streaming
 tests: True
 benchmarks: True
