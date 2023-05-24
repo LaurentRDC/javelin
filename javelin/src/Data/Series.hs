@@ -46,7 +46,8 @@ module Data.Series (
     G.convert,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, filter,
+    map, mapWithKey, mapIndex, 
+    takeWhile, dropWhile, filter,
 
     -- * Combining series
     zipWith, zipWithMatched, 
@@ -80,7 +81,7 @@ import           Data.Series.Generic ( Range, Selection, ZipStrategy, to )
 import qualified Data.Series.Generic as G
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, zipWith, filter)
+import           Prelude             hiding (map, zipWith, filter, takeWhile, dropWhile)
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -223,6 +224,46 @@ mapWithKey = G.mapWithKey
 mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
+
+
+-- | \(O(n)\) Returns the longest prefix (possibly empty) of the input `Series` that satisfy a predicate.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- "Vienna" |      5
+
+-- >>> takeWhile (>1) xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+takeWhile :: (a -> Bool) -> Series k a -> Series k a
+takeWhile = G.takeWhile
+
+
+-- | \(O(n)\) Returns the complement of `takeWhile`.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- "Vienna" |      5
+
+-- >>> dropWhile (>1) xs
+--    index | values
+--    ----- | ------
+--  "Paris" |      1
+-- "Vienna" |      5
+dropWhile :: (a -> Bool) -> Series k a -> Series k a
+dropWhile = G.dropWhile
 
 
 -- | Apply a function elementwise to two series, matching elements

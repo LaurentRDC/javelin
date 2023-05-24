@@ -9,6 +9,7 @@ module Data.Series.Generic.Definition (
     singleton,
     headM, lastM, take, map, mapWithKey, mapIndex,
     foldMap, bifoldMap, sum, length, null,
+    takeWhile, dropWhile,
 
     fromIndex,
     -- * Conversion to/from Maps
@@ -22,6 +23,7 @@ module Data.Series.Generic.Definition (
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
+import           Data.Bifoldable        ( Bifoldable )
 import qualified Data.Bifoldable        as Bifoldable        
 import qualified Data.Foldable          as Foldable
 import qualified Data.List              as List
@@ -35,9 +37,8 @@ import qualified Data.Vector            as Boxed
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
 
-import           Prelude                hiding ( take, map, foldMap, sum, length, null )
+import           Prelude                hiding ( take, takeWhile, dropWhile, map, foldMap, sum, length, null )
 import qualified Prelude                as P
-import Data.Bifoldable (Bifoldable)
 
 
 -- | A @Series v k a@ is a labeled array of type @v@ filled with values of type @a@,
@@ -137,6 +138,22 @@ lastM (MkSeries _ vs) = Vector.lastM vs
 take :: Vector v a => Int -> Series v k a -> Series v k a
 {-# INLINE take #-}
 take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
+
+
+-- | \(O(n)\) Returns the longest prefix (possibly empty) of the input `Series` that satisfy a predicate.
+takeWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
+takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
+                 in MkSeries { index  = Index.take (Vector.length taken) ix
+                             , values = taken 
+                             }
+
+
+-- | \(O(n)\) Returns the complement of `takeWhile`.
+dropWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
+dropWhile f (MkSeries ix vs) = let dropped = Vector.dropWhile f vs
+                 in MkSeries { index  = Index.drop (Index.size ix - Vector.length dropped) ix
+                             , values = dropped
+                             }
 
 
 -- | \(O(n)\) Map every element of a `Series`.

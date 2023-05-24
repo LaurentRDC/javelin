@@ -27,6 +27,8 @@ tests = testGroup "Data.Series.Generic.Definition" [ testMappend
                                                    , testPropRoundtripConversionWithList
                                                    , testFromLazyMap
                                                    , testToLazyMap
+                                                   , testTakeWhile
+                                                   , testDropWhile
                                                    ]
 
 
@@ -119,3 +121,21 @@ testToLazyMap = testCase "toLazyMap" $ do
         (series :: Series Vector Char Int) = fromLazyMap input
     
     assertEqual mempty (toLazyMap series) input
+
+
+testTakeWhile :: TestTree
+testTakeWhile = testProperty "takeWhile behaves like lists" $ property $ do
+    xs <- forAll $ Gen.list (Range.linear 0 100) (Gen.int (Range.linear (-50) 50))
+    let (ys :: Series Vector Int Int) = Series.fromList $ zip [0..] xs
+
+    n  <- forAll $ Gen.int  (Range.linear 1 10)
+    Series.takeWhile (\v -> v `mod` n == 0) ys === Series.fromList (takeWhile (\(_, v) -> v `mod` n == 0) $ Series.toList ys)
+
+
+testDropWhile :: TestTree
+testDropWhile = testProperty "dropWhile behaves like lists" $ property $ do
+    xs <- forAll $ Gen.list (Range.linear 0 100) (Gen.int (Range.linear (-50) 50))
+    let (ys :: Series Vector Int Int) = Series.fromList $ zip [0..] xs
+
+    n  <- forAll $ Gen.int  (Range.linear 1 10)
+    Series.dropWhile (\v -> v `mod` n /= 0) ys === Series.fromList (dropWhile (\(_, v) -> v `mod` n /= 0) $ Series.toList ys)
