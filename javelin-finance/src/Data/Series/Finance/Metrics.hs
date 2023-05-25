@@ -109,7 +109,7 @@ drawdowns :: (Vector v a, Num a, Ord a, Ord k)
 drawdowns xs = go xs mempty
     where
         go ys acc
-            | GSeries.length ys == 0 = acc
+            | GSeries.null ys = acc
             | otherwise = let ys' = GSeries.dropWhile (>0) ys
                               (dd, after) = part (<=0) ys'
                               toRecover = -1 * GSeries.sum dd
@@ -120,6 +120,19 @@ drawdowns xs = go xs mempty
 
 
 -- | Returns the most negative drawdown from a series of returns.
+--
+-- >>> let returns = Series.fromList $ zip [(0::Int)..] [ (-1.0::Double), -2.0, 0.0, -3.0, 1.0, -5.0 ]
+-- >>> returns
+-- index | values
+-- ----- | ------
+--     0 |   -1.0
+--     1 |   -2.0
+--     2 |    0.0
+--     3 |   -3.0
+--     4 |    1.0
+--     5 |   -5.0
+-- >>> maxDrawDown returns
+-- -6.0
 maxDrawDown :: (Vector v a, Num a, Ord a, Ord k) 
             => Series v k a 
             -> a

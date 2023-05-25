@@ -14,7 +14,7 @@ module Data.Series.Generic (
     fromLazyMap, toLazyMap,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, filter, length, sum, 
+    map, mapWithKey, mapIndex, filter, null, length, sum, 
     takeWhile, dropWhile,
 
     -- * Scans
@@ -49,8 +49,10 @@ module Data.Series.Generic (
 ) where
 
 import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith )
-import Data.Series.Generic.Definition   ( Series(index, values), convert, singleton, fromIndex, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList
-                                        , map, mapWithKey, mapIndex, length, sum, takeWhile, dropWhile )
+import Data.Series.Generic.Definition   ( Series(index, values), convert, singleton, fromIndex, fromStrictMap
+                                        , toStrictMap, fromLazyMap, toLazyMap, fromList, toList
+                                        , map, mapWithKey, mapIndex, null, length, sum, takeWhile, dropWhile 
+                                        )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
