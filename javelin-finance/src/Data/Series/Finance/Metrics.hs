@@ -1,16 +1,18 @@
 
 module Data.Series.Finance.Metrics ( 
     sharpeRatio,
+    sortinoRatio,
 
     -- * Drawdowns
     DrawDown, amount, duration, recovery,
     drawdowns, maxDrawDown,
 ) where
 
-import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty  as NE
 import           Data.Vector.Generic ( Vector )
 import           Data.Series.Generic ( Series, select, index )
 import qualified Data.Series.Generic as GSeries
+import           GHC.Real            ( infinity )
 
 
 -- $setup
@@ -19,7 +21,7 @@ import qualified Data.Series.Generic as GSeries
 
 -- | \(O(n)\) Calculate the Sharpe ratio of excess returns. 
 --
--- >>> let returns = Series.fromList $ zip [(0::Int)..] [ (1.0::Double),2.0,3.0,2.0 ]
+-- >>> let returns = Series.fromList $ zip [(0::Int)..] [ (1.0::Double), 2.0, 3.0, 2.0 ]
 -- >>> returns
 -- index | values
 -- ----- | ------
@@ -33,9 +35,42 @@ sharpeRatio :: ( RealFloat a
                , Vector v a
                , Vector v (Int, a, a)
                ) => Series v k a -> a
+-- Note that the standard deviation of returns and standard deviation of excess returns
+-- are always equal; the standard deviation is invariant under addition of a constant.
 sharpeRatio returns = GSeries.mean returns 
                     / GSeries.std returns
 
+
+-- | \(O(n)\) Calculate the Sortino ratio of excess returns.
+--
+-- We distinguish between two edge cases:
+-- 1. If the input series is empty, the result is NaN;
+-- 2. if the input series is not empty, but there are no negative returns, the result is +infinity.
+--
+-- >>> let returns = Series.fromList $ zip [(0::Int)..] [ (1.0::Double), -2.0, 3.0, -1.0 ]
+-- >>> returns
+-- index | values
+-- ----- | ------
+--     0 |    1.0
+--     1 |   -2.0
+--     2 |    3.0
+--     3 |   -1.0
+-- >>> sortinoRatio returns
+-- 0.5
+sortinoRatio :: ( RealFloat a
+                , Vector v a
+                , Vector v Int
+                , Vector v (Int, a, a)
+                , Ord k
+                ) => Series v k a -> a
+-- Note that the standard deviation of returns and standard deviation of excess returns
+-- are always equal; the standard deviation is invariant under addition of a constant.
+sortinoRatio returns
+    | GSeries.length returns == 0    = 0/0
+    | GSeries.length negReturns == 0 = fromRational infinity
+    | otherwise = GSeries.mean returns / GSeries.std negReturns
+    where 
+        negReturns = GSeries.filter (<0) returns
 
 -- | Representation of a drawdown: a continuous series of non-positive returns.
 data DrawDown v k a 
