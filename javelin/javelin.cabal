@@ -35,6 +35,7 @@ library
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Definition
                       Data.Series.Generic.Numeric
+                      Data.Series.Generic.Scans
                       Data.Series.Generic.View
                       Data.Series.Generic.Windowing
                       Data.Series.Generic.Zip

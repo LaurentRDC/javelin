@@ -17,6 +17,9 @@ module Data.Series.Generic (
     map, mapWithKey, mapIndex, filter, length, sum, 
     takeWhile, dropWhile,
 
+    -- * Scans
+    postscanl,
+
     -- * Combining series
     zipWith, zipWithMatched, 
     ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
@@ -49,6 +52,7 @@ import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith )
 import Data.Series.Generic.Definition   ( Series(index, values), convert, singleton, fromIndex, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList
                                         , map, mapWithKey, mapIndex, length, sum, takeWhile, dropWhile )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
+import Data.Series.Generic.Scans        ( postscanl )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
 import Data.Series.Generic.Windowing    ( windows, iwindows, expanding, irolling )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, replace, (|->), (<-|), zipWithStrategy, ZipStrategy, skipStrategy, constStrategy )
