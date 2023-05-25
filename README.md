@@ -1,6 +1,6 @@
-# Haskell implementation of labeled one-dimensional arrays
+# [Experimental] Haskell implementation of labeled one-dimensional arrays
 
-:warning: This repository is in experimental development. Backwards compatibility may be broken at any moment.  
+:warning: This repository is in experimental development. Backwards compatibility may be broken at any moment. Feel free to make usage suggestions if you're interested in this topic!
 
 Packages in this repository implement series, or labeled one-dimensional arrays.
 
