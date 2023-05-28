@@ -15,7 +15,7 @@ module Data.Series.Generic (
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter, null, length, sum, 
-    takeWhile, dropWhile,
+    take, takeWhile, dropWhile,
 
     -- * Scans
     postscanl,
@@ -51,7 +51,7 @@ module Data.Series.Generic (
 import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith )
 import Data.Series.Generic.Definition   ( Series(index, values), convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, toList
-                                        , map, mapWithKey, mapIndex, null, length, sum, takeWhile, dropWhile 
+                                        , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile 
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl )

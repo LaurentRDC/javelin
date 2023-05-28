@@ -46,6 +46,7 @@ test-suite javelin-io-test
     main-is:          Main.hs
     other-modules:    Test.Data.Series.IO
     build-depends:    base,
+                      cassava,
                       containers,
                       hedgehog,
                       ieee754,

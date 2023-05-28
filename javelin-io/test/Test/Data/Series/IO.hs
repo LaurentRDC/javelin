@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Data.Series.IO (tests) where
 
+import           Data.Csv             ( FromNamedRecord(..), (.:) )
 import           Data.Map.Strict      ( Map )
 import qualified Data.Map.Strict      as Map
 import           Data.Series.Generic  ( Series, at, fromList)
 import qualified Data.Series.Generic  as Series
-import           Data.Series.IO       ( ColumnName, readCSVFromFile, columnsFromFile, readJSONFromFile )
+import           Data.Series.IO       ( ColumnName, readCSVFromFile, readJSONFromFile )
+import           Data.String          ( IsString )
 import           Data.Vector          ( Vector )
 
 import           Test.Tasty           ( testGroup, TestTree ) 
@@ -13,15 +15,29 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
 tests = testGroup "Data.Series.IO" [ testReadCSVFromFile
-                                   , testColumnsFromFile 
                                    , testReadJSONFromFile
                                    ]
 
 
+data LatLong = MkLatLong {lat :: Double, long :: Double}
+
+instance FromNamedRecord LatLong where
+    parseNamedRecord r = MkLatLong <$> r .: "latitude"
+                                   <*> r .: "longitude"
+
+newtype City = MkCity String
+    deriving (Eq, Ord, IsString) 
+
+instance FromNamedRecord City where
+    parseNamedRecord r = MkCity <$> r .: "city"
+
+
 testReadCSVFromFile :: TestTree
 testReadCSVFromFile = testCase "Read CSV data" $ do
-    (latitudes  :: Series Vector String Double) <- either (error . show) id <$> readCSVFromFile "test/data/lat-long-city.csv" "city" "latitude"
-    (longitudes :: Series Vector String Double) <- either (error . show) id <$> readCSVFromFile "test/data/lat-long-city.csv" "city" "longitude"
+    (latlongs  :: Series Vector City LatLong) <- either (error . show) id <$> readCSVFromFile "test/data/lat-long-city.csv"
+
+    let latitudes  = fmap lat latlongs
+        longitudes = fmap long latlongs
 
     assertEqual mempty 4 (Series.length latitudes)
     assertEqual mempty (Just 48.856667) (latitudes `at` "Paris") 
@@ -35,11 +51,6 @@ testReadCSVFromFile = testCase "Read CSV data" $ do
     assertEqual mempty (Just 121.5625) (longitudes `at` "Taipei") 
     assertEqual mempty (Just (-58.381667)) (longitudes `at` "Buenos Aires") 
 
-
-testColumnsFromFile :: TestTree
-testColumnsFromFile = testCase "Read columns in CSV file" $ do
-    columns <- either (error . show) id <$> columnsFromFile "test/data/lat-long-city.csv"
-    assertEqual mempty ["latitude", "longitude", "city"] columns
 
 
 testReadJSONFromFile :: TestTree
