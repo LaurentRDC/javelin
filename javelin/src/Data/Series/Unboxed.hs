@@ -54,7 +54,7 @@ module Data.Series.Unboxed (
     G.convert,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, 
+    map, mapWithKey, mapIndex, null, length,
     takeWhile, dropWhile, filter,
 
     -- * Combining series
