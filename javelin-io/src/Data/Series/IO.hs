@@ -6,23 +6,29 @@ module Data.Series.IO (
     readCSV,
     readCSVFromFile,
 
+    writeCSV,
+    writeCSVToFile,
+
     readJSON,
     readJSONFromFile,
 ) where
 
 
 import           Control.Monad          ( forM )
+import           Control.Monad.IO.Class ( MonadIO(liftIO) )
 import           Data.Aeson             ( FromJSONKey, FromJSON )
 import qualified Data.Aeson             as JSON
 import           Data.Bifunctor         ( Bifunctor(second) )
 import qualified Data.ByteString        as BS
 import qualified Data.ByteString.Lazy   as BL
-import           Data.Csv               ( FromNamedRecord(..) )
+import           Data.Csv               ( FromNamedRecord(..), ToNamedRecord(..), )
 import qualified Data.Csv               as CSV
 import           Data.Functor           ( (<&>) )
+import qualified Data.HashMap.Strict    as HashMap
 import           Data.Map.Strict        ( Map )
 import           Data.String            ( IsString )
 import           Data.Series.Generic    ( Series, fromList, fromStrictMap )
+import qualified Data.Series.Generic    as GSeries
 import           Data.Text              ( Text )
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Generic    ( Vector )
@@ -100,11 +106,12 @@ readCSV bytes = do
     pure $ fromList rows
 
 
-fromFile :: FilePath
+fromFile :: MonadIO m 
+         => FilePath
          -> (BL.ByteString -> Either String b)
-         -> IO (Either String b)
+         -> m (Either String b)
 fromFile fp f
-    = IO.withFile fp IO.ReadMode $ \h -> do
+    = liftIO $ IO.withFile fp IO.ReadMode $ \h -> do
         IO.hSetBinaryMode h True
         (BS.hGetContents h <&> BL.fromStrict) <&> f
 
@@ -125,10 +132,29 @@ main = do
     print latlongs
 @
 -}
-readCSVFromFile :: (Vector v a, Ord k, FromNamedRecord k, FromNamedRecord a)
+readCSVFromFile :: (MonadIO m, Vector v a, Ord k, FromNamedRecord k, FromNamedRecord a)
                 => FilePath
-                -> IO (Either String (Series v k a))
+                -> m (Either String (Series v k a))
 readCSVFromFile fp = fromFile fp readCSV 
+
+
+
+writeCSV :: (Vector v a, ToNamedRecord k, ToNamedRecord a)
+         => Series v k a
+         -> BL.ByteString
+writeCSV xs 
+    | GSeries.null xs = mempty
+    | otherwise       = let recs   = [ toNamedRecord k <> toNamedRecord v | (k, v) <- GSeries.toList xs]
+                            header =  CSV.header $ HashMap.keys $ head recs
+                         in CSV.encodeByName header recs
+
+
+writeCSVToFile :: (MonadIO m, Vector v a, ToNamedRecord k, ToNamedRecord a)
+               => FilePath
+               -> Series v k a
+               -> m ()
+writeCSVToFile fp xs = liftIO $ BS.writeFile fp $ BL.toStrict $ writeCSV xs
+
 
 
 readJSON :: (Vector v a, Ord k, FromJSONKey k, FromJSON a) 

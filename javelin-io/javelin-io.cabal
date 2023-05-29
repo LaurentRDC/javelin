@@ -35,6 +35,7 @@ library
                       bytestring,
                       cassava,
                       containers,
+                      unordered-containers,
                       javelin,
                       text,
                       vector
@@ -48,6 +49,7 @@ test-suite javelin-io-test
     build-depends:    base,
                       cassava,
                       containers,
+                      filepath,
                       hedgehog,
                       ieee754,
                       javelin,
@@ -58,4 +60,5 @@ test-suite javelin-io-test
                       tasty-hunit,
                       HUnit,
                       tasty-hspec,
+                      temporary,
                       vector

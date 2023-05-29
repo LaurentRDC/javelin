@@ -1,35 +1,47 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Data.Series.IO (tests) where
 
-import           Data.Csv             ( FromNamedRecord(..), (.:) )
+import           Data.Csv             ( FromNamedRecord(..), (.:), ToNamedRecord(..), (.=), namedRecord )
 import           Data.Map.Strict      ( Map )
 import qualified Data.Map.Strict      as Map
 import           Data.Series.Generic  ( Series, at, fromList)
 import qualified Data.Series.Generic  as Series
-import           Data.Series.IO       ( ColumnName, readCSVFromFile, readJSONFromFile )
+import           Data.Series.IO       ( ColumnName, readCSVFromFile, readJSONFromFile, writeCSVToFile )
 import           Data.String          ( IsString )
 import           Data.Vector          ( Vector )
+
+import           System.FilePath      ( (</>) )
+import           System.IO.Temp       ( withSystemTempDirectory )
 
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
 tests = testGroup "Data.Series.IO" [ testReadCSVFromFile
+                                   , testWriteCSVToFile
                                    , testReadJSONFromFile
                                    ]
 
 
-data LatLong = MkLatLong {lat :: Double, long :: Double}
+data LatLong = MkLatLong {lat :: Double, long :: Double} deriving (Eq, Show)
 
 instance FromNamedRecord LatLong where
     parseNamedRecord r = MkLatLong <$> r .: "latitude"
                                    <*> r .: "longitude"
 
+instance ToNamedRecord LatLong where
+    toNamedRecord (MkLatLong lat long) = namedRecord [ "latitude" .= lat
+                                                     , "longitude" .= long
+                                                     ]
+
 newtype City = MkCity String
-    deriving (Eq, Ord, IsString) 
+    deriving (Eq, Ord, IsString, Show) 
 
 instance FromNamedRecord City where
     parseNamedRecord r = MkCity <$> r .: "city"
+
+instance ToNamedRecord City where
+    toNamedRecord (MkCity city) = namedRecord ["city" .= city]
 
 
 testReadCSVFromFile :: TestTree
@@ -51,6 +63,17 @@ testReadCSVFromFile = testCase "Read CSV data" $ do
     assertEqual mempty (Just 121.5625) (longitudes `at` "Taipei") 
     assertEqual mempty (Just (-58.381667)) (longitudes `at` "Buenos Aires") 
 
+
+testWriteCSVToFile :: TestTree
+testWriteCSVToFile = testCase "Write CSV data" $ do
+    (latlongs  :: Series Vector City LatLong) <- either (error . show) id <$> readCSVFromFile "test/data/lat-long-city.csv"
+    
+    (written :: Series Vector City LatLong) <- withSystemTempDirectory "test-javelin-op" $ \dirname -> do
+        writeCSVToFile (dirname </> "myseries.csv") latlongs
+
+        either (error . show) id <$> readCSVFromFile (dirname </> "myseries.csv")
+    
+    assertEqual mempty latlongs written
 
 
 testReadJSONFromFile :: TestTree
