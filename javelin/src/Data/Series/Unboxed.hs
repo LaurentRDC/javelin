@@ -45,7 +45,7 @@ module Data.Series.Unboxed (
     -- * Building/converting `Series`
     singleton, fromIndex,
     -- ** Lists
-    fromList, toList,
+    fromList, fromListDuplicates, Occ, toList,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -92,6 +92,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to )
+import           Data.Series.Generic ( Occ )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -164,9 +165,29 @@ fromIndex = G.fromIndex
 --   'a' |      5
 --   'b' |      0
 --   'd' |      1
+--
+-- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
 fromList :: (Unbox a, Ord k) => [(k, a)] -> Series k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
+
+
+-- | Construct a series from a list of key-value pairs.
+-- Contrary to `fromList`, values at duplicate keys are preserved. To keep each
+-- key unique, an `Occ` (short for occurrence) number counts up.
+--
+-- >>> let xs = fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
+-- >>> xs
+--   index | values
+--   ----- | ------
+-- ('a',0) |      5
+-- ('b',0) |      0
+-- ('d',0) |      1
+-- ('d',1) |     -4
+-- ('d',2) |      7
+fromListDuplicates :: (Unbox a, Ord k) => [(k, a)] -> Series (k, Occ) a
+{-# INLINE fromListDuplicates #-}
+fromListDuplicates = G.fromListDuplicates
 
 
 -- | Construct a list from key-value pairs. The elements are in order sorted by key:

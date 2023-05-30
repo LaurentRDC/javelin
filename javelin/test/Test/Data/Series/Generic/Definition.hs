@@ -4,7 +4,7 @@ module Test.Data.Series.Generic.Definition (tests) where
 import           Data.List            ( nubBy, sortOn )
 import qualified Data.Map.Strict      as MS
 import qualified Data.Map.Lazy        as ML
-import           Data.Series.Generic  ( Series, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
+import           Data.Series.Generic  ( Series, Occ, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
 import qualified Data.Series.Generic  as Series
 import           Data.Vector          ( Vector )
 
@@ -25,6 +25,7 @@ tests = testGroup "Data.Series.Generic.Definition" [ testMappend
                                                    , testPropRoundtripConversionWithStrictMap
                                                    , testPropRoundtripConversionWithLazyMap
                                                    , testPropRoundtripConversionWithList
+                                                   , testPropFromListDuplicatesNeverDrops
                                                    , testFromLazyMap
                                                    , testToLazyMap
                                                    , testTakeWhile
@@ -104,6 +105,13 @@ testPropRoundtripConversionWithList
         -- the expected List won't have duplicated (hence the use of nubBy), but the elements which
         -- are kept are in the order of `reverse xs`.
         (toList :: Series Vector Int Char -> [(Int, Char)] ) (fromList xs) === sortOn fst (nubBy (\left right -> fst left == fst right) (reverse xs))
+
+
+testPropFromListDuplicatesNeverDrops :: TestTree
+testPropFromListDuplicatesNeverDrops
+    = testProperty "fromListDuplicates never drops elements" $ property $ do
+        xs <- forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
+        Series.length (Series.fromListDuplicates xs :: Series Vector (Int, Occ) Char) === length xs
 
 
 testFromLazyMap :: TestTree

@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Data.Series.Generic.Definition ( 
     Series(..),
@@ -19,10 +20,12 @@ module Data.Series.Generic.Definition (
     toLazyMap,
     -- * Convertion to/from list
     fromList,
+    fromListDuplicates, Occ,
     toList,
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
+
 import           Data.Bifoldable        ( Bifoldable )
 import qualified Data.Bifoldable        as Bifoldable        
 import qualified Data.Foldable          as Foldable
@@ -36,6 +39,8 @@ import qualified Data.Set               as Set
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
+ 
+import           Numeric.Natural        ( Natural )
 
 import           Prelude                hiding ( take, takeWhile, dropWhile, map, foldMap, sum, length, null )
 import qualified Prelude                as P
@@ -84,13 +89,41 @@ fromIndex f ix = MkSeries ix $ Vector.convert
 
 
 -- | Construct a series from a list of key-value pairs. There is no
--- condition on the order of pairs.
+-- condition on the order of pairs. Duplicate keys are silently dropped. If you
+-- need to handle duplicate keys, see `fromListDuplicates`.
 fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
 
+-- | Integer-like, non-negative number that specifies how many occurrences
+-- of a key is present in a `Series`.
+--
+-- The easiest way to convert from an `Occ` to another integer-like type
+-- is the `fromIntegral` function.
+newtype Occ = MkOcc Natural
+    deriving (Eq, Enum, Num, Ord, Integral, Real)
+    deriving newtype Show 
 
--- | Construct a list from key-value pairs. The elements are in order sorted by key:
+
+-- | Construct a series from a list of key-value pairs.
+-- Contrary to `fromList`, aalues at duplicate keys are preserved. To keep each
+-- key unique, an `Occ` (short for occurrence) number counts up.
+fromListDuplicates :: (Vector v a, Ord k) => [(k, a)] -> Series v (k, Occ) a
+{-# INLINE fromListDuplicates #-}
+fromListDuplicates = fromStrictMap . toOccMap
+    where
+        toOccMap :: Ord k => [(k, a)] -> Map (k, Occ) a
+        toOccMap xs = go xs mempty
+            where
+                go []                  acc = acc
+                go ((key, val) : rest) acc = let eqKeys = filter (\(k, _) -> k == key) $ MS.keys acc
+                                                 occ = if P.null eqKeys
+                                                            then 0
+                                                            else 1 + maximum (snd <$> eqKeys)
+                                              in go rest $ MS.insert (key, occ) val acc
+
+
+-- | Construct a list from key-value pairs. The elements are in order sorted by key. 
 toList :: Vector v a => Series v k a -> [(k, a)]
 {-# INLINE toList #-}
 toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)

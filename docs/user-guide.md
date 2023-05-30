@@ -38,7 +38,9 @@ index | values
   'd' |      4
 ```
 
-`Series`, like `Map`s, have unique keys; therefore, the output series above is not the same length as the input series, since the `'a'` key is repeated. Since `Series` are like `Map`, it's easy to convert between the two:
+`Series`, like `Map`s, have unique keys; therefore, the output series may not be the same length as the input series. See further below for an explanation of how to handle duplicate keys. 
+
+Since `Series` are like `Map`, it's easy to convert between the two:
 
 ```haskell
 > import qualified Data.Map.Strict as Map -- from the 'containers' package
@@ -69,6 +71,30 @@ Most data you might be interested in will be stored in data files, for example c
 "2022-01-06" |   172.0
 "2022-01-07" |  172.17
 ```
+
+### (Advanced) Handling duplicate keys
+
+If you must build a `Series` with duplicate keys, you can use the `fromListDuplicates` function. In the example below, the key `'d'` is repeated three times:
+
+```haskell
+> Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
+  index | values
+  ----- | ------
+('a',0) |      5
+('b',0) |      0
+('d',0) |      1
+('d',1) |     -4
+('d',2) |      7
+```
+
+Note that the `Series` produced by `fromListDuplicates` still has unique keys, but each key is a composite of a character and an occurrence. This is reflected in the type:
+
+```haskell
+> Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
+  :: Series (Char, Occ) Int
+```
+
+Here, `Occ` is short for *occurrence*. It is a non-negative number similar to a `Natural` number, and can be converted to other integer-like numbers using `fromIntegral`. In practice, you should aim to aggregate your `Series` to remove duplicate keys. See further below for an explanation on grouping.
 
 ## Selection
 
