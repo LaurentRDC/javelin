@@ -70,6 +70,7 @@ data Series v k a
 
 -- | \(O(n)\) Convert between two types of `Series`.
 convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
+{-# INLINE convert #-}
 convert (MkSeries ix vs) = MkSeries ix $ Vector.convert vs 
 
 
@@ -175,6 +176,7 @@ take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
 
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input `Series` that satisfy a predicate.
 takeWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
+{-# INLINE takeWhile #-}
 takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
                  in MkSeries { index  = Index.take (Vector.length taken) ix
                              , values = taken 
@@ -183,6 +185,7 @@ takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
 
 -- | \(O(n)\) Returns the complement of `takeWhile`.
 dropWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
+{-# INLINE dropWhile #-}
 dropWhile f (MkSeries ix vs) = let dropped = Vector.dropWhile f vs
                  in MkSeries { index  = Index.drop (Index.size ix - Vector.length dropped) ix
                              , values = dropped
@@ -283,18 +286,22 @@ foldMap f = Vector.foldMap f . values
 
 
 bifoldMap :: (Vector v a, Monoid m) => (k -> m) -> (a -> m) -> Series v k a -> m
+{-# INLINE bifoldMap #-}
 bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Vector.foldMap fv vs
 
 
 sum :: Num a => Vector v a => Series v k a -> a
+{-# INLINE sum #-}
 sum = Vector.sum . values
 
 
 null :: Vector v a => Series v k a -> Bool
+{-# INLINE null #-}
 null = Vector.null . values
 
 
 length :: Vector v a => Series v k a -> Int
+{-# INLINE length #-}
 length = Vector.length . values
 
 
