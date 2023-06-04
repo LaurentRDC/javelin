@@ -81,7 +81,8 @@ module Data.Series.Unboxed (
     -- ** Specialized folds
     all, any, and, or, sum, product, maximum, minimum,
 
-    -- * Numerical aggregation
+    -- * aggregation
+    first, last,
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
@@ -98,7 +99,8 @@ import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
 
 import           Prelude             hiding ( map, zipWith, filter, foldMap, all, any, and, or
-                                            , sum, product, maximum, minimum, takeWhile, dropWhile,
+                                            , sum, product, maximum, minimum, takeWhile, dropWhile
+                                            , last
                                             )
 
 -- $setup
@@ -647,6 +649,18 @@ maximum = Vector.maximum . values
 minimum :: (Unbox a, Ord a) => Series k a -> a
 {-# INLINE minimum #-}
 minimum = Vector.minimum . values
+
+
+-- | Extract the first value out of a `Series`.
+first :: Unbox a => Series k a -> a
+{-# INLINE first #-}
+first = G.first
+
+
+-- | Extract the last value out of a `Series`.
+last :: Unbox a => Series k a -> a
+{-# INLINE last #-}
+last = G.last
 
 
 -- | Compute the mean of the values in the series.

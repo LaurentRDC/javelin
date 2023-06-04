@@ -2,6 +2,8 @@ module Data.Series.Generic.Aggregation (
     GroupBy, 
     groupBy,
     aggregateWith,
+    -- * Aggregation functions
+    first, last
 ) where
 
 import           Data.Map.Strict                ( Map )
@@ -9,7 +11,9 @@ import qualified Data.Map.Strict                as Map
 import           Data.Series.Generic.Definition ( Series(..), fromStrictMap )
 import           Data.Series.Generic.View       ( select )
 import           Data.Vector.Generic            ( Vector )
+import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
+import           Prelude                        hiding ( last )
 
 infixl 9 `groupBy`
 infixr 0 `aggregateWith`
@@ -18,7 +22,8 @@ infixr 0 `aggregateWith`
 -- >>> import qualified Data.Series as Series
 -- >>> import qualified Data.Set as Set
 
--- | Group values in a @Series@ by some function (@k -> g@).
+-- | Group values in a @Series@ by some grouping function (@k -> g@).
+-- The provided grouping function is guaranteed to operate on a non-empty `Series`.
 --
 -- This function is expected to be used in conjunction with @aggregateWith@:
 -- 
@@ -62,3 +67,15 @@ aggregateWith :: (Vector v b)
               -> Series v g b         -- ^ Aggregated series
 {-# INLINE aggregateWith #-}
 aggregateWith gps agg = fromStrictMap $ fmap agg (groups gps) 
+
+
+-- | Extract the first value out of a `Series`.
+first :: Vector v a => Series v k a -> a
+{-# INLINE first #-}
+first = Vector.head . values
+
+
+-- | Extract the last value out of a `Series`.
+last :: Vector v a => Series v k a -> a
+{-# INLINE last #-}
+last = Vector.last . values

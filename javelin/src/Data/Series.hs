@@ -69,6 +69,7 @@ module Data.Series (
     GroupBy, groupBy, aggregateWith,
 
     -- * Numerical aggregation
+    first, last,
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
@@ -81,7 +82,7 @@ import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to )
 import qualified Data.Series.Generic as G
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, zipWith, filter, takeWhile, dropWhile)
+import           Prelude             hiding (map, zipWith, filter, takeWhile, dropWhile, last)
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -351,7 +352,7 @@ skipStrategy _ _ = Nothing
 -- "gamma" |   -100
 constStrategy :: b -> ZipStrategy k a b
 {-# INLINE constStrategy #-}
-constStrategy v = \_ _ -> Just v
+constStrategy v _ _= Just v
 
 
 -- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.
@@ -652,6 +653,18 @@ aggregateWith :: GroupBy g k a      -- ^ Grouped series
               -> Series g b         -- ^ Aggregated series
 {-# INLINE aggregateWith #-}
 aggregateWith = G.aggregateWith
+
+
+-- | Extract the first value out of a `Series`.
+first :: Series k a -> a
+{-# INLINE first #-}
+first = G.first
+
+
+-- | Extract the last value out of a `Series`.
+last :: Series k a -> a
+{-# INLINE last #-}
+last = G.last
 
 
 -- | Compute the mean of the values in the series.
