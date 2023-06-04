@@ -5,7 +5,7 @@ module Test.Data.Series.Generic.Zip ( tests ) where
 import           Control.Monad        ( forM_ )
 
 import           Data.Maybe           ( fromJust, isNothing )
-import           Data.Series.Generic  ( Series(index)
+import           Data.Series.Generic  ( Series(index), mapStrategy
                                       , fromStrictMap, fromList, zipWith, select, at, replace, (|->), (<-|)
                                       )
 import qualified Data.Series.Generic  as Series
@@ -29,6 +29,7 @@ tests = testGroup "Data.Series.Generic.Zip" [ testZipWith
                                                   , testPropReplace
                                                   , testPropReplaceInfix
                                                   , testPropZipWithStrategySkipStrategy
+                                                  , testMapStrategy
                                                   ]
 
 
@@ -112,3 +113,19 @@ testPropZipWithStrategySkipStrategy
         
         expectation === Series.zipWithStrategy (+) Series.skipStrategy Series.skipStrategy xs ys
 
+
+testMapStrategy :: TestTree
+testMapStrategy 
+    = testCase "mapStrategy works as expected" $ do
+        let (xs :: Series Vector Int Int) = Series.fromList $ zip [0..] [1,2,3,4,5]
+            ys =                            Series.fromList $ zip [3..]       [3,4,5]
+        
+            expected = Series.fromList [ (0, 1+1)
+                                       , (1, 2+1)
+                                       , (2, 3+1)
+                                       , (3, 4+3)
+                                       , (4, 5+4)
+                                       , (5, 5*2)
+                                       ]
+
+        assertEqual mempty expected $ Series.zipWithStrategy (+) (mapStrategy (+1)) (mapStrategy (*2)) xs ys

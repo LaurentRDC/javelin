@@ -22,7 +22,7 @@ module Data.Series.Generic (
 
     -- * Combining series
     zipWith, zipWithMatched, 
-    ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
+    ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
     require, requireWith, dropna, dropIndex,
@@ -60,4 +60,4 @@ import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAn
 import Data.Series.Generic.Scans        ( postscanl )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
 import Data.Series.Generic.Windowing    ( windows, iwindows, expanding, irolling )
-import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, replace, (|->), (<-|), zipWithStrategy, ZipStrategy, skipStrategy, constStrategy )
+import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, replace, (|->), (<-|), zipWithStrategy, ZipStrategy, skipStrategy, mapStrategy, constStrategy )

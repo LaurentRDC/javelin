@@ -5,6 +5,7 @@ module Data.Series.Generic.Zip (
     zipWithStrategy,
     ZipStrategy,
     skipStrategy,
+    mapStrategy,
     constStrategy,
 ) where
 
@@ -106,6 +107,7 @@ xs `replace` ys
 -- Such a strategy can be written as @skip key value = Nothing@ (see `skipStrategy`).
 type ZipStrategy k a b = (k -> a -> Maybe b)
 
+
 -- | This `ZipStrategy` drops keys which are not present in both `Series`.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
@@ -120,6 +122,23 @@ skipStrategy _ _ = Nothing
 {-# INLINE skipStrategy #-}
 
 
+-- | This `ZipStrategy` sets the value at keys which are not present in both `Series` 
+-- to the some mapping from the value present in one of the series. See the example below.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 5::Int), ("beta", 6), ("delta", 7) ]
+-- >>> zipWithStrategy (+) (mapStrategy id) (mapStrategy (*10)) xs ys
+--   index | values
+--   ----- | ------
+-- "alpha" |      5
+--  "beta" |      7
+-- "delta" |     70
+-- "gamma" |      2
+mapStrategy :: (a -> b) -> ZipStrategy k a b
+mapStrategy f _ x = Just (f x)
+{-# INLINE mapStrategy #-}
+
+
 -- | This `ZipStrategy` sets a constant value at keys which are not present in both `Series`.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
@@ -132,7 +151,7 @@ skipStrategy _ _ = Nothing
 -- "delta" |    200
 -- "gamma" |   -100
 constStrategy :: b -> ZipStrategy k a b
-constStrategy v = \_ _ -> Just v
+constStrategy v = mapStrategy (const v)
 {-# INLINE constStrategy #-}
 
 

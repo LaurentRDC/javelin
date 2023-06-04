@@ -51,7 +51,7 @@ module Data.Series (
 
     -- * Combining series
     zipWith, zipWithMatched, 
-    ZipStrategy, skipStrategy, constStrategy, zipWithStrategy,
+    ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
     require, dropna, dropIndex,
@@ -80,6 +80,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to )
 import qualified Data.Series.Generic as G
+import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
 
 import           Prelude             hiding (map, zipWith, filter, takeWhile, dropWhile, last)
@@ -323,36 +324,6 @@ zipWith = G.zipWith
 zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
-
-
--- | This `ZipStrategy` drops keys which are not present in both `Series`.
---
--- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
--- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
--- >>> zipWithStrategy (+) skipStrategy skipStrategy xs ys
---   index | values
---   ----- | ------
--- "alpha" |     10
---  "beta" |     12
-skipStrategy :: ZipStrategy k a b
-{-# INLINE skipStrategy #-}
-skipStrategy _ _ = Nothing
-
-
--- | This `ZipStrategy` sets a constant value at keys which are not present in both `Series`.
---
--- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
--- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
--- >>> zipWithStrategy (+) (constStrategy (-100)) (constStrategy 200)  xs ys
---   index | values
---   ----- | ------
--- "alpha" |     10
---  "beta" |     12
--- "delta" |    200
--- "gamma" |   -100
-constStrategy :: b -> ZipStrategy k a b
-{-# INLINE constStrategy #-}
-constStrategy v _ _= Just v
 
 
 -- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.

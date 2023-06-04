@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 module Data.Series.Generic.View (
     -- * Accessing a single element
     (!),
@@ -72,7 +71,7 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 require :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
 {-# INLINE require #-}
-require xs ss = requireWith (const Nothing) (Just) xs ss
+require = requireWith (const Nothing) Just
 
 
 -- | Generalization of `require`, which maps missing keys to values.
@@ -87,7 +86,7 @@ requireWith :: (Vector v a, Vector v b, Ord k)
 requireWith replacement f xs ss 
     = let existingKeys = index xs `Index.intersection` ss
           newKeys      = ss `Index.difference` existingKeys
-       in (G.map f (xs `select` existingKeys)) <> (MkSeries newKeys $ Vector.fromListN (Index.size newKeys) (replacement <$> Index.toAscList newKeys))
+       in G.map f (xs `select` existingKeys) <> MkSeries newKeys (Vector.fromListN (Index.size newKeys) (replacement <$> Index.toAscList newKeys))
 
 
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
@@ -228,7 +227,7 @@ instance Selection Range where
 -- | Select a sub-series from a series matching a condition.
 selectWhere :: (Vector v a, Vector v Int, Vector v Bool, Ord k) => Series v k a -> Series v k Bool -> Series v k a
 {-# INLINE selectWhere #-}
-selectWhere xs ys = xs `select` (Index.fromSet keysWhereTrue)
+selectWhere xs ys = xs `select` Index.fromSet keysWhereTrue
     where
         (MkSeries _ cond) = ys `select` index xs
         whereValuesAreTrue = Set.fromDistinctAscList $ Vector.toList (Vector.findIndices id cond)
