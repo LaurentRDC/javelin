@@ -43,7 +43,7 @@ infixr 0 `aggregateWith`
 --    "June" |     20
 groupBy :: (Vector v a, Ord k, Ord g) 
         => Series v k a       -- ^ Input series
-        -> (k -> g)         -- ^ Grouping function
+        -> (k -> g)           -- ^ Grouping function
         -> GroupBy v g k a    -- ^ Grouped series
 {-# INLINE groupBy #-}
 groupBy xs by = MkGroupBy $ select xs <$> groupedKeys

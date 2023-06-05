@@ -59,6 +59,7 @@ module Data.Series.Unboxed (
 
     -- * Combining series
     zipWithMatched, 
+    ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
 
     -- * Index manipulation
     require, dropIndex,
@@ -93,7 +94,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to )
-import           Data.Series.Generic ( Occ )
+import           Data.Series.Generic ( ZipStrategy, Occ, skipStrategy, mapStrategy, constStrategy )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -322,6 +323,33 @@ zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k)
                => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
+
+
+-- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.
+--
+-- In the example below, we want to set the value to @-100@ (via @`constStrategy` (-100)@) for keys which are only present 
+-- in the left `Series`, and drop keys (via `skipStrategy`) which are only present in the `right `Series`  
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWithStrategy (+) (constStrategy (-100)) skipStrategy  xs ys
+--   index | values
+--   ----- | ------
+-- "alpha" |     10
+--  "beta" |     12
+-- "gamma" |   -100
+--
+-- Note that if you want to drop keys missing in either `Series`, it is faster to use @`zipWithMatched` f@ 
+-- than using @`zipWithStrategy` f skipStrategy skipStrategy@.
+zipWithStrategy :: (Ord k, Unbox a, Unbox b, Unbox c) 
+                => (a -> b -> c)     -- ^ Function to combine values when present in both series
+                -> ZipStrategy k a c -- ^ Strategy for when the key is in the left series but not the right
+                -> ZipStrategy k b c -- ^ Strategy for when the key is in the right series but not the left
+                -> Series k a
+                -> Series k b 
+                -> Series k c
+{-# INLINE zipWithStrategy #-}
+zipWithStrategy = G.zipWithStrategy
 
 
 -- | Require a series to have a specific `Index`. 

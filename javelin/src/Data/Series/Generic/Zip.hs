@@ -9,9 +9,10 @@ module Data.Series.Generic.Zip (
     constStrategy,
 ) where
 
-import           Data.Series.Generic.Definition ( Series(MkSeries, index, values), mapWithKey )
+import qualified Data.Map.Strict                as Map
+import           Data.Series.Generic.Definition ( Series(MkSeries, index, values) )
 import qualified Data.Series.Generic.Definition as G
-import           Data.Series.Generic.View       ( select, dropna )
+import           Data.Series.Generic.View       ( select )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
@@ -45,7 +46,7 @@ zipWith f left right
           allKeys       = index left `Index.union` index right
           unmatchedKeys = allKeys `Index.difference` matchedKeys
           unmatched     = MkSeries unmatchedKeys (Vector.replicate (Index.size unmatchedKeys) Nothing)
-       in (G.map Just matched) <> unmatched
+       in G.map Just matched <> unmatched
 {-# INLINE zipWith #-}
 
 
@@ -162,19 +163,28 @@ constStrategy v = mapStrategy (const v)
 --
 -- Note that if you want to drop keys missing in either `Series`, it is faster to use @`zipWithMatched` f@ 
 -- than using @`zipWithStrategy` f skipStrategy skipStrategy@.
-zipWithStrategy :: (Vector v a, Vector v b, Vector v c, Vector v (Maybe c), Vector v Int, Ord k) 
-               => (a -> b -> c)     -- ^ Function to combine values when present in both series
-               -> ZipStrategy k a c -- ^ Strategy for when the key is in the left series but not the right
-               -> ZipStrategy k b c -- ^ Strategy for when the key is in the right series but not the left
-               -> Series v k a
-               -> Series v k b 
-               -> Series v k c
+zipWithStrategy :: (Vector v a, Vector v b, Vector v c, Ord k) 
+                => (a -> b -> c)     -- ^ Function to combine values when present in both series
+                -> ZipStrategy k a c -- ^ Strategy for when the key is in the left series but not the right
+                -> ZipStrategy k b c -- ^ Strategy for when the key is in the right series but not the left
+                -> Series v k a
+                -> Series v k b 
+                -> Series v k c
 zipWithStrategy f whenLeft whenRight left right 
     = let onlyLeftKeys  = index left  `Index.difference` index right
           onlyRightKeys = index right `Index.difference` index left
 
-          leftZip =  dropna $ mapWithKey whenLeft  $ left  `select` onlyLeftKeys
-          rightZip = dropna $ mapWithKey whenRight $ right `select` onlyRightKeys
+          leftZip =  applyStrategy whenLeft  $ left  `select` onlyLeftKeys
+          rightZip = applyStrategy whenRight $ right `select` onlyRightKeys
           
         in zipWithMatched f left right <> leftZip <> rightZip
+    where
+        -- Application of the `ZipStrategy` is done on a `Map` rather than
+        -- the `Series` directly to keep the type contraints of `zipWithStrategy` to
+        -- a minimum. Recall that unboxed `Series` cannot contain `Maybe a`.  
+        applyStrategy strat = G.fromStrictMap 
+                            . Map.mapMaybeWithKey strat
+                            . G.toStrictMap
+
+
 {-# INLINE zipWithStrategy #-}

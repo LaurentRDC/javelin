@@ -352,6 +352,7 @@ zipWithStrategy :: (Ord k)
 {-# INLINE zipWithStrategy #-}
 zipWithStrategy = G.zipWithStrategy
 
+
 -- | Require a series to have a specific `Index`.
 -- Contrary to @select@, all keys in the `Index` will be present in the resulting series.
 --
