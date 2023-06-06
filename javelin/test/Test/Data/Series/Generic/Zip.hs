@@ -5,6 +5,7 @@ module Test.Data.Series.Generic.Zip ( tests ) where
 import           Control.Monad        ( forM_ )
 
 import           Data.Maybe           ( fromJust, isNothing )
+import           Data.Monoid          ( Sum(..) )
 import           Data.Series.Generic  ( Series(index), mapStrategy
                                       , fromStrictMap, fromList, zipWith, select, at, replace, (|->), (<-|)
                                       )
@@ -25,6 +26,7 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 tests :: TestTree
 tests = testGroup "Data.Series.Generic.Zip" [ testZipWith
                                                   , testPropZipWithMatched
+                                                  , testPropZipWithMatchedAndZipWithMonoid
                                                   , testPropZipWith
                                                   , testPropReplace
                                                   , testPropReplaceInfix
@@ -48,6 +50,20 @@ testPropZipWithMatched
         m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
         let (xs :: Series Vector Char Int) = fromStrictMap m1
         zipWith (+) xs xs === fmap (Just . (*2)) xs
+
+
+testPropZipWithMatchedAndZipWithMonoid :: TestTree
+testPropZipWithMatchedAndZipWithMonoid 
+    = testProperty "zipWithMonoid and zipWithStrategy give compatible results" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        m2 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        let (xs :: Series Vector Char (Sum Int)) = Series.map Sum $ fromStrictMap m1
+            (ys :: Series Vector Char (Sum Int)) = Series.map Sum $ fromStrictMap m2
+
+            expectation = Series.zipWithStrategy (<>) (mapStrategy id) (mapStrategy id) xs ys
+        
+        expectation === Series.zipWithMonoid (<>) xs ys
+
 
 
 testPropZipWith :: TestTree

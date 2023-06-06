@@ -60,6 +60,7 @@ module Data.Series.Unboxed (
     -- * Combining series
     zipWithMatched, 
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
+    zipWithMonoid, esum, eproduct,
 
     -- * Index manipulation
     require, dropIndex,
@@ -350,6 +351,66 @@ zipWithStrategy :: (Ord k, Unbox a, Unbox b, Unbox c)
                 -> Series k c
 {-# INLINE zipWithStrategy #-}
 zipWithStrategy = G.zipWithStrategy
+
+
+-- | Zip two `Series` with a combining function. The value for keys which are missing from
+-- either `Series` is replaced with the appropriate `mempty` value.
+--
+-- >>> import Data.Monoid ( Sum(..) )
+-- >>> let xs = Series.fromList [ ("2023-01-01", Sum (1::Int)), ("2023-01-02", Sum 2) ]
+-- >>> let ys = Series.fromList [ ("2023-01-01", Sum (5::Int)), ("2023-01-03", Sum 7) ]
+-- >>> zipWithMonoid (<>) xs ys
+--        index |           values
+--        ----- |           ------
+-- "2023-01-01" | Sum {getSum = 6}
+-- "2023-01-02" | Sum {getSum = 2}
+-- "2023-01-03" | Sum {getSum = 7}
+zipWithMonoid :: ( Monoid a, Monoid b
+                 , Unbox a, Unbox b, Unbox c
+                 , Ord k
+                 ) 
+              => (a -> b -> c)
+              -> Series k a
+              -> Series k b 
+              -> Series k c
+zipWithMonoid = G.zipWithMonoid
+{-# INLINE zipWithMonoid #-}
+
+
+-- | Elementwise sum of two `Series`. Elements missing in one or the other `Series` is considered 0. 
+--
+-- >>> let xs = Series.fromList [ ("2023-01-01", (1::Int)), ("2023-01-02", 2) ]
+-- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
+-- >>> xs `esum` ys
+--        index | values
+--        ----- | ------
+-- "2023-01-01" |      6
+-- "2023-01-02" |      2
+-- "2023-01-03" |      7
+esum :: (Ord k, Num a, Unbox a) 
+     => Series k a 
+     -> Series k a
+     -> Series k a
+esum = G.esum
+{-# INLINE esum #-}
+
+
+-- | Elementwise product of two `Series`. Elements missing in one or the other `Series` is considered 1. 
+--
+-- >>> let xs = Series.fromList [ ("2023-01-01", (2::Int)), ("2023-01-02", 3) ]
+-- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
+-- >>> xs `eproduct` ys
+--        index | values
+--        ----- | ------
+-- "2023-01-01" |     10
+-- "2023-01-02" |      3
+-- "2023-01-03" |      7
+eproduct :: (Ord k, Num a, Unbox a) 
+         => Series k a 
+         -> Series k a
+         -> Series k a
+eproduct = G.eproduct
+{-# INLINE eproduct #-}
 
 
 -- | Require a series to have a specific `Index`. 

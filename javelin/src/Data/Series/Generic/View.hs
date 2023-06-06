@@ -75,7 +75,7 @@ require = requireWith (const Nothing) Just
 
 
 -- | Generalization of `require`, which maps missing keys to values.
--- This is particularly usefol for `Vector` instances which don't support `Maybe`, like "Data.Vector.Unboxed".
+-- This is particularly useful for `Vector` instances which don't support `Maybe`, like "Data.Vector.Unboxed".
 requireWith :: (Vector v a, Vector v b, Ord k)
             => (k -> b)  -- ^ Function to apply to keys which are missing from the input series, but required in the input index
             -> (a -> b)  -- ^ Function to apply to values which are in the input series and input index.

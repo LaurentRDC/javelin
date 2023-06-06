@@ -1,18 +1,24 @@
 module Data.Series.Generic.Zip (
     zipWith, zipWithMatched,
     replace, (|->), (<-|),
+    
     -- * Generalized zipping with strategies
     zipWithStrategy,
     ZipStrategy,
     skipStrategy,
     mapStrategy,
     constStrategy,
+
+    -- * Special case of zipping monoids
+    zipWithMonoid,
+    esum, eproduct,
 ) where
 
 import qualified Data.Map.Strict                as Map
+import           Data.Monoid                    ( Sum(..), Product(..) )
 import           Data.Series.Generic.Definition ( Series(MkSeries, index, values) )
 import qualified Data.Series.Generic.Definition as G
-import           Data.Series.Generic.View       ( select )
+import           Data.Series.Generic.View       ( select, requireWith )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
@@ -144,6 +150,13 @@ mapStrategy f _ x = Just (f x)
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> zipWith (+) xs ys
+--   index |  values
+--   ----- |  ------
+-- "alpha" | Just 10
+--  "beta" | Just 12
+-- "delta" | Nothing
+-- "gamma" | Nothing
 -- >>> zipWithStrategy (+) (constStrategy (-100)) (constStrategy 200)  xs ys
 --   index | values
 --   ----- | ------
@@ -157,9 +170,6 @@ constStrategy v = mapStrategy (const v)
 
 
 -- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.
---
--- In the example below, we want to set the value to @-100@ (via @`constStrategy` (-100)@) for keys which are only present 
--- in the left `Series`, and drop keys (via `skipStrategy`) which are only present in the `right `Series`.  
 --
 -- Note that if you want to drop keys missing in either `Series`, it is faster to use @`zipWithMatched` f@ 
 -- than using @`zipWithStrategy` f skipStrategy skipStrategy@.
@@ -185,6 +195,74 @@ zipWithStrategy f whenLeft whenRight left right
         applyStrategy strat = G.fromStrictMap 
                             . Map.mapMaybeWithKey strat
                             . G.toStrictMap
-
-
 {-# INLINE zipWithStrategy #-}
+
+
+-- | Zip two `Series` with a combining function. The value for keys which are missing from
+-- either `Series` is replaced with the appropriate `mempty` value.
+--
+-- >>> import Data.Monoid ( Sum(..) )
+-- >>> let xs = Series.fromList [ ("2023-01-01", Sum (1::Int)), ("2023-01-02", Sum 2) ]
+-- >>> let ys = Series.fromList [ ("2023-01-01", Sum (5::Int)), ("2023-01-03", Sum 7) ]
+-- >>> zipWith (<>) xs ys
+--        index |                  values
+--        ----- |                  ------
+-- "2023-01-01" | Just (Sum {getSum = 6})
+-- "2023-01-02" |                 Nothing
+-- "2023-01-03" |                 Nothing
+-- >>> zipWithMonoid (<>) xs ys
+--        index |           values
+--        ----- |           ------
+-- "2023-01-01" | Sum {getSum = 6}
+-- "2023-01-02" | Sum {getSum = 2}
+-- "2023-01-03" | Sum {getSum = 7}
+zipWithMonoid :: ( Monoid a, Monoid b
+                 , Vector v a, Vector v b, Vector v c
+                 , Ord k
+                 ) 
+              => (a -> b -> c)
+              -> Series v k a
+              -> Series v k b 
+              -> Series v k c
+zipWithMonoid f left right 
+    = let fullindex = index left `Index.union` index right
+          (MkSeries ix ls) = requireWith (const mempty) id left  fullindex
+          (MkSeries _ rs)  = requireWith (const mempty) id right fullindex          
+        in MkSeries ix $ Vector.zipWith f ls rs
+{-# INLINE zipWithMonoid #-}
+
+
+-- | Elementwise sum of two `Series`. Elements missing in one or the other `Series` is considered 0. 
+--
+-- >>> let xs = Series.fromList [ ("2023-01-01", (1::Int)), ("2023-01-02", 2) ]
+-- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
+-- >>> xs `esum` ys
+--        index | values
+--        ----- | ------
+-- "2023-01-01" |      6
+-- "2023-01-02" |      2
+-- "2023-01-03" |      7
+esum :: (Ord k, Num a, Vector v a, Vector v (Sum a)) 
+     => Series v k a 
+     -> Series v k a
+     -> Series v k a
+esum ls rs = G.map getSum $ zipWithMonoid (<>) (G.map Sum ls) (G.map Sum rs)
+{-# INLINE esum #-}
+
+
+-- | Elementwise product of two `Series`. Elements missing in one or the other `Series` is considered 1. 
+--
+-- >>> let xs = Series.fromList [ ("2023-01-01", (2::Int)), ("2023-01-02", 3) ]
+-- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
+-- >>> xs `eproduct` ys
+--        index | values
+--        ----- | ------
+-- "2023-01-01" |     10
+-- "2023-01-02" |      3
+-- "2023-01-03" |      7
+eproduct :: (Ord k, Num a, Vector v a, Vector v (Product a)) 
+         => Series v k a 
+         -> Series v k a
+         -> Series v k a
+eproduct ls rs = G.map getProduct $ zipWithMonoid (<>) (G.map Product ls) (G.map Product rs)
+{-# INLINE eproduct #-}
