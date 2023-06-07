@@ -18,10 +18,12 @@ module Data.Series.Generic.Definition (
     toStrictMap,
     fromLazyMap,
     toLazyMap,
-    -- * Convertion to/from list
+    -- * Conversion to/from list
     fromList,
     fromListDuplicates, Occ,
     toList,
+    -- * Conversion to/from vectors
+    toVector,
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
@@ -128,6 +130,12 @@ fromListDuplicates = fromStrictMap . toOccMap
 toList :: Vector v a => Series v k a -> [(k, a)]
 {-# INLINE toList #-}
 toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
+
+
+-- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
+toVector :: (Vector v a, Vector v k, Vector v (k, a)) 
+         => Series v k a -> v (k, a)
+toVector (MkSeries ks vs) = Vector.zip (Index.toAscVector ks) vs
 
 
 -- | Convert a series into a lazy @Map@.

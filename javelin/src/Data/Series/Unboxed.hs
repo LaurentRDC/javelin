@@ -46,6 +46,8 @@ module Data.Series.Unboxed (
     singleton, fromIndex,
     -- ** Lists
     fromList, fromListDuplicates, Occ, toList,
+    -- ** Vectors
+    toVector,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -95,7 +97,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to )
-import           Data.Series.Generic ( ZipStrategy, Occ, skipStrategy, mapStrategy, constStrategy )
+import           Data.Series.Generic ( ZipStrategy, Occ, skipStrategy, mapStrategy, constStrategy, aggregateWith )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -208,6 +210,11 @@ fromListDuplicates = G.fromListDuplicates
 toList :: Unbox a => Series k a -> [(k, a)]
 {-# INLINE toList #-}
 toList = G.toList
+
+
+-- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
+toVector :: (Unbox a, Unbox k) => Series k a -> Vector (k, a)
+toVector = G.toVector
 
 
 -- | Convert a series into a lazy @Map@.
@@ -654,22 +661,11 @@ type GroupBy = G.GroupBy Vector
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Unbox a, Ord k, Ord g) 
-        => Series k a       -- ^ Input series
+groupBy :: Series k a       -- ^ Input series
         -> (k -> g)         -- ^ Grouping function
         -> GroupBy g k a    -- ^ Grouped series
 {-# INLINE groupBy #-}
 groupBy = G.groupBy
-
-
--- | Aggregate grouped series. This function is expected to be used in conjunction
--- with `groupBy`.
-aggregateWith :: (Unbox b) 
-              => GroupBy g k a      -- ^ Grouped series
-              -> (Series k a -> b)  -- ^ Aggregation function
-              -> Series g b         -- ^ Aggregated series
-{-# INLINE aggregateWith #-}
-aggregateWith = G.aggregateWith
 
 
 -- | /O(n)/ Map each element of the structure to a monoid and combine

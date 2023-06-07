@@ -8,6 +8,8 @@ module Data.Series.Generic (
     singleton, fromIndex,
     -- ** Lists
     fromList, Occ, fromListDuplicates, toList,
+    -- ** Vectors
+    toVector,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -38,7 +40,7 @@ module Data.Series.Generic (
     replace, (|->), (<-|),
 
     -- * Grouping operations
-    GroupBy, groupBy, aggregateWith,
+    GroupBy, groupBy, aggregateWith, foldGroupsWith,
 
     -- * Aggregation functions
     first, last,
@@ -52,9 +54,10 @@ module Data.Series.Generic (
     windows, iwindows, expanding, irolling,
 ) where
 
-import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, first, last, )
+import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldGroupsWith, first, last, )
 import Data.Series.Generic.Definition   ( Series(index, values), Occ, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
+                                        , toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile 
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )

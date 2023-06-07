@@ -38,6 +38,8 @@ module Data.Series (
     singleton, fromIndex,
     -- ** Lists
     fromList, fromListDuplicates, Occ, toList,
+    -- ** Vectors
+    toVector,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -79,7 +81,7 @@ module Data.Series (
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to )
+import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to, aggregateWith )
 import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
@@ -188,6 +190,11 @@ fromListDuplicates = G.fromListDuplicates
 toList :: Series k a -> [(k, a)]
 {-# INLINE toList #-}
 toList = G.toList
+
+
+-- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
+toVector :: Series k a -> Vector (k, a)
+toVector = G.toVector
 
 
 -- | Convert a series into a lazy @Map@.
@@ -674,21 +681,11 @@ type GroupBy = G.GroupBy Vector
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Ord k, Ord g)
-        => Series k a       -- ^ Input series
+groupBy :: Series k a       -- ^ Input series
         -> (k -> g)         -- ^ Grouping function
         -> GroupBy g k a    -- ^ Grouped series
 {-# INLINE groupBy #-}
 groupBy = G.groupBy
-
-
--- | Aggregate grouped series. This function is expected to be used in conjunction
--- with `groupBy`.
-aggregateWith :: GroupBy g k a      -- ^ Grouped series
-              -> (Series k a -> b)  -- ^ Aggregation function
-              -> Series g b         -- ^ Aggregated series
-{-# INLINE aggregateWith #-}
-aggregateWith = G.aggregateWith
 
 
 -- | Extract the first value out of a `Series`.
