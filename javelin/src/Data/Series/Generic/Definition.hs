@@ -89,7 +89,7 @@ fromIndex f ix = MkSeries ix $ Vector.convert
                              $ Index.toAscVector ix
 
 
--- | Construct a series from a list of key-value pairs. There is no
+-- | Construct a `Series` from a list of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
 -- need to handle duplicate keys, see `fromListDuplicates`.
 fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a

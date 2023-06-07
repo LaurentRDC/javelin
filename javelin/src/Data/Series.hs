@@ -153,7 +153,7 @@ fromIndex = G.fromIndex
 -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
 fromList :: Ord k => [(k, a)] -> Series k a
 {-# INLINE fromList #-}
-fromList = fromStrictMap . MS.fromList
+fromList = G.fromList
 
 
 -- | Construct a series from a list of key-value pairs.
@@ -674,7 +674,7 @@ type GroupBy = G.GroupBy Vector
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Ord k, Ord g) 
+groupBy :: (Ord k, Ord g)
         => Series k a       -- ^ Input series
         -> (k -> g)         -- ^ Grouping function
         -> GroupBy g k a    -- ^ Grouped series

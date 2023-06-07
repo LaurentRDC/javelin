@@ -69,6 +69,7 @@ module Data.Series.Index (
     fromSet,
     fromList,
     fromAscList,
+    fromDistinctAscList,
     fromVector,
     fromAscVector,
     toSet,
@@ -204,6 +205,13 @@ fromList = fromSet . Set.fromList
 -- the index may not be the same as the length of the input list.
 fromAscList :: Eq k => [k] -> Index k
 fromAscList = MkIndex . Set.fromAscList
+
+
+-- | \(O(n)\) Build an `Index` from a list of distinct elements in ascending order. The precondition
+-- that elements be unique and sorted is not checked.
+fromDistinctAscList :: [k] -> Index k
+{-# INLINE fromDistinctAscList #-}
+fromDistinctAscList = MkIndex . Set.fromDistinctAscList
 
 
 -- | \(O(n \log n)\) Build an `Index` from a `Vector`. Note that since an `Index` is

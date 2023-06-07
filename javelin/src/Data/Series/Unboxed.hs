@@ -173,7 +173,7 @@ fromIndex = G.fromIndex
 -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
 fromList :: (Unbox a, Ord k) => [(k, a)] -> Series k a
 {-# INLINE fromList #-}
-fromList = fromStrictMap . MS.fromList
+fromList = G.fromList
 
 
 -- | Construct a series from a list of key-value pairs.
@@ -681,10 +681,6 @@ foldMap f = Vector.foldMap f . values
 
 -- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
 -- implementation as the corresponding method of the 'Foldable' type class.
--- Note that it's implemented in terms of 'foldl'', so it fuses in most
--- contexts.
---
--- @since 0.12.2.0
 foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap' #-}
 foldMap' f = Vector.foldMap' f . values

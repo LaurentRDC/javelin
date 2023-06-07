@@ -92,7 +92,7 @@ requireWith replacement f xs ss
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
 -- be indexed from 0.
 dropIndex :: Series v k a -> Series v Int a
-dropIndex (MkSeries ks vs) = MkSeries (Index.fromAscList [0..Index.size ks - 1]) vs
+dropIndex (MkSeries ks vs) = MkSeries (Index.fromDistinctAscList [0..Index.size ks - 1]) vs
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 

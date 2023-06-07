@@ -17,7 +17,7 @@ tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
 
 
 testGroupBy :: TestTree
-testGroupBy = testGroup "Data.Series.groupBy" $ [ testGroupBy1, testGroupBy2 ]
+testGroupBy = testGroup "Data.Series.groupBy" [ testGroupBy1, testGroupBy2 ]
     where
         testGroupBy1 = testCase "groupBy" $ do
             let (series :: Series Vector String Int) = fromStrictMap $ MS.fromList [("aa", 1), ("ab", 2), ("c", 3), ("dc", 4), ("ae", 5)]
