@@ -77,7 +77,7 @@ module Data.Series.Unboxed (
     replace, (|->), (<-|),
 
     -- * Grouping operations
-    GroupBy, groupBy, aggregateWith,
+    GroupBy, groupBy, aggregateWith, foldGroupsWith,
 
     -- * Folds
     -- ** General folds
@@ -86,7 +86,6 @@ module Data.Series.Unboxed (
     all, any, and, or, sum, product, maximum, minimum,
 
     -- * aggregation
-    first, last,
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
@@ -97,7 +96,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to )
-import           Data.Series.Generic ( ZipStrategy, Occ, skipStrategy, mapStrategy, constStrategy, aggregateWith )
+import           Data.Series.Generic ( ZipStrategy, Occ, skipStrategy, mapStrategy, constStrategy )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -668,6 +667,29 @@ groupBy :: Series k a       -- ^ Input series
 groupBy = G.groupBy
 
 
+-- | Aggregate each group in a `GroupBy` using a binary function.
+-- While this is not as expressive as `aggregateWith`, users looking for maximum
+-- performance should use `foldGroupsWith` as much as possible.
+foldGroupsWith :: (Ord g, Unbox a) 
+               => GroupBy g k a 
+               -> (a -> a -> a) 
+               -> Series g a
+{-# INLINE foldGroupsWith #-}
+foldGroupsWith = G.foldGroupsWith
+
+
+-- | General-purpose aggregation for a `GroupBy`,
+--
+-- If you can express your aggregation as a binary function @a -> a -> a@, then 
+-- using `foldGroupsWith` can be an order of magnitude faster. 
+aggregateWith :: (Ord k, Ord g, Unbox a, Unbox b) 
+              => GroupBy g k a 
+              -> (Series k a -> b) 
+              ->  Series g b
+{-# INLINE aggregateWith #-}
+aggregateWith = G.aggregateWith
+
+
 -- | /O(n)/ Map each element of the structure to a monoid and combine
 -- the results.
 foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
@@ -730,18 +752,6 @@ maximum = Vector.maximum . values
 minimum :: (Unbox a, Ord a) => Series k a -> a
 {-# INLINE minimum #-}
 minimum = Vector.minimum . values
-
-
--- | Extract the first value out of a `Series`.
-first :: Unbox a => Series k a -> a
-{-# INLINE first #-}
-first = G.first
-
-
--- | Extract the last value out of a `Series`.
-last :: Unbox a => Series k a -> a
-{-# INLINE last #-}
-last = G.last
 
 
 -- | Compute the mean of the values in the series.

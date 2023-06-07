@@ -69,10 +69,9 @@ module Data.Series (
     replace, (|->), (<-|),
 
     -- * Grouping operations
-    GroupBy, groupBy, aggregateWith,
+    GroupBy, groupBy, aggregateWith, foldGroupsWith,
 
     -- * Numerical aggregation
-    first, last,
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
@@ -81,7 +80,7 @@ module Data.Series (
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to, aggregateWith )
+import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to )
 import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
@@ -688,16 +687,27 @@ groupBy :: Series k a       -- ^ Input series
 groupBy = G.groupBy
 
 
--- | Extract the first value out of a `Series`.
-first :: Series k a -> a
-{-# INLINE first #-}
-first = G.first
+-- | Aggregate each group in a `GroupBy` using a binary function.
+-- While this is not as expressive as `aggregateWith`, users looking for maximum
+-- performance should use `foldGroupsWith` as much as possible.
+foldGroupsWith :: (Ord g) 
+               => GroupBy g k a 
+               -> (a -> a -> a) 
+               -> Series g a
+{-# INLINE foldGroupsWith #-}
+foldGroupsWith = G.foldGroupsWith
 
 
--- | Extract the last value out of a `Series`.
-last :: Series k a -> a
-{-# INLINE last #-}
-last = G.last
+-- | General-purpose aggregation for a `GroupBy`,
+--
+-- If you can express your aggregation as a binary function @a -> a -> a@, then 
+-- using `foldGroupsWith` can be an order of magnitude faster. 
+aggregateWith :: (Ord k, Ord g) 
+              => GroupBy g k a 
+              -> (Series k a -> b) 
+              ->  Series g b
+{-# INLINE aggregateWith #-}
+aggregateWith = G.aggregateWith
 
 
 -- | Compute the mean of the values in the series.

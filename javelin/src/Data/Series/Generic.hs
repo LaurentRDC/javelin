@@ -41,9 +41,6 @@ module Data.Series.Generic (
 
     -- * Grouping operations
     GroupBy, groupBy, aggregateWith, foldGroupsWith,
-
-    -- * Aggregation functions
-    first, last,
     
     -- * Numerical aggregations
     mean, var, std, 
@@ -54,7 +51,7 @@ module Data.Series.Generic (
     windows, iwindows, expanding, irolling,
 ) where
 
-import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldGroupsWith, first, last, )
+import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldGroupsWith )
 import Data.Series.Generic.Definition   ( Series(index, values), Occ, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , toVector

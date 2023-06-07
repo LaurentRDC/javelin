@@ -2,21 +2,21 @@ module Data.Series.Generic.Aggregation (
     GroupBy, 
     groupBy,
     aggregateWith,
-    -- * Aggregation functions
-    first, last
+    foldGroupsWith,
 ) where
 
-import           Data.Map.Strict                ( Map )
 import qualified Data.Map.Strict                as Map
-import           Data.Series.Generic.Definition ( Series(..), fromStrictMap )
-import           Data.Series.Generic.View       ( select )
+import           Data.Series.Generic.Definition ( Series(..), fromStrictMap, toList )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
+import qualified Data.Vector                    as Boxed
+import           Data.Series.Index              ( Index )
 import qualified Data.Series.Index              as Index
 import           Prelude                        hiding ( last )
 
 infixl 9 `groupBy`
 infixr 0 `aggregateWith`
+infixr 0 `foldGroupsWith`
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -41,41 +41,55 @@ infixr 0 `aggregateWith`
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Vector v a, Ord k, Ord g) 
-        => Series v k a       -- ^ Input series
+groupBy :: Series v k a       -- ^ Input series
         -> (k -> g)           -- ^ Grouping function
         -> GroupBy v g k a    -- ^ Grouped series
 {-# INLINE groupBy #-}
-groupBy xs by = MkGroupBy $ select xs <$> groupedKeys
-    where
-        groupedKeys
-            | Index.null (index xs) = mempty
-            | otherwise = Map.fromListWith (<>) $ [(by k, Index.singleton k) | k <- Index.toAscList (index xs)]
+groupBy = flip MkGroupBy
 
 
 -- | Data type representing groups of @Series k a@, indexed by keys of type @g@.
 -- See the documentation for @groupBy@.
-newtype GroupBy v g k a 
-    = MkGroupBy { groups :: Map g (Series v k a) }
+data GroupBy v g k a 
+    = MkGroupBy (k -> g) !(Series v k a)
 
 
--- | Aggregate grouped series. This function is expected to be used in conjunction
--- with @groupBy@.
-aggregateWith :: (Vector v b) 
-              => GroupBy v g k a      -- ^ Grouped series
-              -> (Series v k a -> b)  -- ^ Aggregation function
-              -> Series v g b         -- ^ Aggregated series
+-- | Aggregate each group in a `GroupBy` using a binary function.
+-- While this is not as expressive as `aggregateWith`, users looking for maximum
+-- performance should use `foldGroupsWith` as much as possible.
+foldGroupsWith :: (Ord g, Vector v a) 
+               => GroupBy v g k a 
+               -> (a -> a -> a) 
+               -> Series v g a
+{-# INLINE foldGroupsWith #-}
+foldGroupsWith (MkGroupBy grouping xs) f 
+    = fromStrictMap $ Map.unionsWith f [Map.singleton (grouping k) v | (k, v) <- toList xs]
+
+
+-- | General-purpose aggregation for a `GroupBy`,
+--
+-- If you can express your aggregation as a binary function @a -> a -> a@, then 
+-- using `foldGroupsWith` can be an order of magnitude faster. 
+aggregateWith :: (Ord k, Ord g, Vector v a, Vector v b) 
+              => GroupBy v g k a 
+              -> (Series v k a -> b) 
+              ->  Series v g b
 {-# INLINE aggregateWith #-}
-aggregateWith gps agg = fromStrictMap $ fmap agg (groups gps) 
+aggregateWith (MkGroupBy by xs) f
+    = fromStrictMap $ Map.map f $ selectSubset xs <$> groupedKeys
+    where
+        groupedKeys
+            | Index.null (index xs) = mempty
+            | otherwise = Map.unionsWith (<>) $ Boxed.map (\k -> Map.singleton (by k) (Index.singleton k)) 
+                                              $ Index.toAscVector (index xs)
 
-
--- | Extract the first value out of a `Series`.
-first :: Vector v a => Series v k a -> a
-{-# INLINE first #-}
-first = Vector.head . values
-
-
--- | Extract the last value out of a `Series`.
-last :: Vector v a => Series v k a -> a
-{-# INLINE last #-}
-last = Vector.last . values
+        -- | Implementation of `select` where the selection keys are known
+        -- to be a subset of the series. This is a performance optimization and 
+        -- therefore is not exposed to users.
+        selectSubset :: (Vector v a, Ord k) => Series v k a -> Index k -> Series v k a
+        {-# INLINE selectSubset #-}
+        selectSubset (MkSeries ks vs) ss 
+            = MkSeries ss $ Boxed.convert
+                          $ Boxed.map (Vector.unsafeIndex vs)
+                          $ Boxed.map (`Index.findIndex` ks) 
+                          $ Index.toAscVector ss
