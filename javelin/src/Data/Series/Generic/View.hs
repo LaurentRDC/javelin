@@ -127,13 +127,17 @@ instance Show k => Show (Range k) where
     show (MkRange start stop) = mconcat ["Range (from ", show start, " to ", show stop, ")"]
 
 
--- | Find the keys which are in range
-keysInRange :: Ord k => Series v k a -> Range k -> (k, k)
+-- | Find the keys which are in range. In case of an empty `Series`,
+-- the returned value is `Nothing`.
+keysInRange :: Ord k => Series v k a -> Range k -> Maybe (k, k)
 {-# INLINE keysInRange #-}
 keysInRange (MkSeries ks _) (MkRange start stop)
-    = let (_, afterStart) = Set.spanAntitone (< start) $ Index.toSet ks
-          inRange         = Set.takeWhileAntitone (<= stop) afterStart
-       in (Set.findMin inRange, Set.findMax inRange)
+    | Index.null ks = Nothing
+    | otherwise     = let (_, afterStart) = Set.spanAntitone (< start) $ Index.toSet ks
+                          inRange         = Set.takeWhileAntitone (<= stop) afterStart
+                       in if Set.null inRange 
+                            then Nothing
+                            else Just (Set.findMin inRange, Set.findMax inRange)
 
 
 -- | Create a @Range@ which can be used for slicing. This function
@@ -218,10 +222,10 @@ instance Selection [] where
 instance Selection Range where
     select :: (Vector v a, Ord k) => Series v k a -> Range k -> Series v k a
     {-# INLINE select #-}
-    select series rng 
-        = let (kstart, kstop) = keysInRange series rng 
-              indexOf xs k = Index.findIndex k (index xs)
-           in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
+    select series rng = case keysInRange series rng of 
+        Nothing              -> mempty
+        Just (kstart, kstop) -> let indexOf xs k = Index.findIndex k (index xs)
+                                 in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
 
 
 -- | Select a sub-series from a series matching a condition.

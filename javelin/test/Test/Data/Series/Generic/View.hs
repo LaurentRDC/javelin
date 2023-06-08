@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
 tests = testGroup "Data.Series.Generic.View" [ testSelectRange
+                                             , testSelectRangeEmptyRange
                                              , testSelectSet 
                                              , testSelectWhere
                                              , testrequire
@@ -22,6 +23,13 @@ testSelectRange = testCase "from ... to ..." $ do
         subSeries = series `select` ('b' `to` 'd')
         expectation = fromStrictMap $ MS.fromList [('b', 2), ('c', 3), ('d', 4)]
     assertEqual mempty expectation subSeries
+
+
+testSelectRangeEmptyRange :: TestTree
+testSelectRangeEmptyRange = testCase "from ... to ... on an empty `Range``" $ do
+    let (series :: Series Vector Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
+        subSeries = series `select` ('f' `to` 'z')
+    assertEqual mempty mempty subSeries
 
 
 testSelectSet :: TestTree
