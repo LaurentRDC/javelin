@@ -1,18 +1,26 @@
 module Test.Data.Series.Generic.View (tests) where
 
 import qualified Data.Map.Strict      as MS
-import           Data.Series.Generic  ( Series, fromStrictMap, fromList, to, select, selectWhere, require, mapIndex )
+import           Data.Series.Generic  ( Series, index, fromStrictMap, fromList, to, select, selectWhere, require, mapIndex )
 import qualified Data.Series.Index    as Index
 import           Data.Vector          ( Vector )
-import           Test.Tasty           ( testGroup, TestTree ) 
+
+import           Hedgehog             ( property, forAll, (===), assert )
+import qualified Hedgehog.Gen         as Gen
+import qualified Hedgehog.Range       as Range
+
+import           Test.Tasty           ( testGroup, TestTree )
+import           Test.Tasty.Hedgehog  ( testProperty )
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
 tests = testGroup "Data.Series.Generic.View" [ testSelectRange
                                              , testSelectRangeEmptyRange
+                                             , testPropSelectRangeSubseries
                                              , testSelectSet 
+                                             , testPropSelectSetSubseries
                                              , testSelectWhere
-                                             , testrequire
+                                             , testPropRequire
                                              , testMapIndex
                                              ]
 
@@ -23,6 +31,17 @@ testSelectRange = testCase "from ... to ..." $ do
         subSeries = series `select` ('b' `to` 'd')
         expectation = fromStrictMap $ MS.fromList [('b', 2), ('c', 3), ('d', 4)]
     assertEqual mempty expectation subSeries
+
+
+testPropSelectRangeSubseries :: TestTree
+testPropSelectRangeSubseries = testProperty "xs `select` <x> `to` <y> always returns a proper subseries" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        start <- forAll Gen.alpha
+        end   <- forAll Gen.alpha
+        let (xs :: Series Vector Char Int) = fromStrictMap m1
+            ys = xs `select` start `to` end
+        
+        assert $ index xs `Index.contains` index ys
 
 
 testSelectRangeEmptyRange :: TestTree
@@ -41,6 +60,16 @@ testSelectSet = testCase "select" $ do
     assertEqual mempty expectation subSeries
 
 
+testPropSelectSetSubseries :: TestTree
+testPropSelectSetSubseries = testProperty "xs `select` <some set> always returns a proper subseries" $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        selection <- forAll $ Gen.set (Range.linear 0 10) Gen.alpha
+        let (xs :: Series Vector Char Int) = fromStrictMap m1
+            ys = xs `select` selection
+        
+        assert $ index xs `Index.contains` index ys
+
+
 testSelectWhere :: TestTree
 testSelectWhere = testCase "selectWhere" $ do
     let (series :: Series Vector Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
@@ -50,13 +79,14 @@ testSelectWhere = testCase "selectWhere" $ do
     assertEqual mempty expectation subSeries
 
 
-testrequire :: TestTree
-testrequire = testCase "require" $ do
-    let (series :: Series Vector Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
-        subSeries = series `require` Index.fromList ['a', 'd', 'x']
-        expectation = fromStrictMap $ MS.fromList [('a', Just 1), ('d', Just 4), ('x', Nothing)]
+testPropRequire :: TestTree
+testPropRequire = testProperty "require always returns a series with the expected index" $ property $ do
+    m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.int (Range.linear 0 1000) <*> Gen.int (Range.linear 0 1000))
+    ss <- forAll $ Gen.set (Range.linear 0 100) (Gen.int (Range.linear (-100) 100))
     
-    assertEqual mempty expectation subSeries
+    let (xs :: Series Vector Int Int) = fromStrictMap m1
+        ix = Index.fromSet ss
+    index (xs `require` ix) === ix 
 
 
 testMapIndex :: TestTree

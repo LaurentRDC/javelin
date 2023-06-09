@@ -37,7 +37,7 @@ testPropRange = testProperty "range always includes the start, and all elements 
     assert $ start `Index.member` ix
     assert $ maximum ix <= end
 
-    if ((end - start) `mod` step == 0)
+    if (end - start) `mod` step == 0
         then assert (end `Index.member` ix)
         else assert (end `Index.notMember` ix)
 
@@ -92,4 +92,4 @@ testPropFilter = testProperty "filter works just like for Sets" $ property $ do
     let ss = Set.fromList ms
         ix = Index.fromSet ss
     
-    (Index.fromSet (Set.filter even ss)) === (Index.filter even ix)
+    Index.fromSet (Set.filter even ss) === Index.filter even ix

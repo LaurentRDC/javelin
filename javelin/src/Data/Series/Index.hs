@@ -84,6 +84,7 @@ module Data.Series.Index (
     intersection,
     difference,
     symmetricDifference,
+    contains,
     size,
     take,
     drop,
@@ -302,6 +303,12 @@ difference (MkIndex ix) (MkIndex jx) = MkIndex $ Set.difference ix jx
 -- (Index "ab",Index "de")
 symmetricDifference :: Ord k => Index k -> Index k -> (Index k, Index k)
 symmetricDifference left right = (left `difference` right, right `difference` left)
+
+
+-- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\).
+-- @(ix1 \`contains\` ix2)@ indicates whether all keys in @ix2@ are also in @ix1@.
+contains :: Ord k => Index k -> Index k -> Bool
+contains (MkIndex ix1) (MkIndex ix2)= ix2 `Set.isSubsetOf` ix1
 
 
 -- | \(O(1)\) Returns the number of keys in the index.
