@@ -27,12 +27,11 @@ import           Data.Functor           ( (<&>) )
 import qualified Data.HashMap.Strict    as HashMap
 import           Data.Map.Strict        ( Map )
 import           Data.String            ( IsString )
-import           Data.Series.Generic    ( Series, fromList, fromStrictMap )
+import           Data.Series.Generic    ( Series, fromVector, convert, fromStrictMap )
 import qualified Data.Series.Generic    as GSeries
 import           Data.Text              ( Text )
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Generic    ( Vector )
-import qualified Data.Vector.Generic    as Vector
 import qualified System.IO              as IO
 
 
@@ -99,11 +98,11 @@ readCSV :: (Vector v a, Ord k, FromNamedRecord k, FromNamedRecord a)
 readCSV bytes = do
     (_, records :: Boxed.Vector CSV.NamedRecord) <- CSV.decodeByName bytes
 
-    rows <- CSV.runParser $ forM (Vector.toList records)
+    rows <- CSV.runParser $ forM records
                           $ \record -> (,) <$> parseNamedRecord record
                                            <*> parseNamedRecord record
 
-    pure $ fromList rows
+    pure $ convert $ fromVector rows
 
 
 fromFile :: MonadIO m 

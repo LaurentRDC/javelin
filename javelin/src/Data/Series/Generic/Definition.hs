@@ -23,14 +23,17 @@ module Data.Series.Generic.Definition (
     fromListDuplicates, Occ,
     toList,
     -- * Conversion to/from vectors
+    fromVector,
     toVector,
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
+import           Control.Monad.ST       ( runST )
 
 import           Data.Bifoldable        ( Bifoldable )
 import qualified Data.Bifoldable        as Bifoldable        
 import qualified Data.Foldable          as Foldable
+import           Data.Function          ( on )
 import qualified Data.List              as List
 import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
@@ -39,6 +42,7 @@ import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Boxed
+import           Data.Vector.Algorithms.Intro ( sortUniqBy )
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
  
@@ -130,6 +134,28 @@ fromListDuplicates = fromStrictMap . toOccMap
 toList :: Vector v a => Series v k a -> [(k, a)]
 {-# INLINE toList #-}
 toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
+
+
+-- | Construct a `Series` from a `Vector` of key-value pairs. There is no
+-- condition on the order of pairs. Duplicate keys are silently dropped. If you
+-- need to handle duplicate keys, see `fromListDuplicates`.
+--
+-- Note that due to differences in sorting,
+-- @Series.fromList@ and @Series.fromVector . Vector.fromList@ 
+-- may not be equivalent if the input list contains duplicate keys.
+fromVector :: (Ord k, Vector v k, Vector v a, Vector v (k, a))
+           => v (k, a) -> Series v k a
+fromVector vec = let (indexVector, valuesVector) 
+                        = Vector.unzip $ runST $ do
+                            mv <- Vector.thaw vec
+                            -- Note that we're using this particular flavor of `sortU
+                            destMV <- sortUniqBy (compare `on` fst) mv
+                            v <- Vector.freeze destMV
+                            pure (Vector.force v)
+                  in MkSeries (fromDistinctAscVector indexVector) valuesVector
+    where
+        fromDistinctAscVector = Index.fromDistinctAscList . Vector.toList
+{-# INLINE fromVector #-}
 
 
 -- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 

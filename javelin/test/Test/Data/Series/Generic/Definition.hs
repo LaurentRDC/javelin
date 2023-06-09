@@ -1,12 +1,14 @@
 
 module Test.Data.Series.Generic.Definition (tests) where
 
+import           Data.Function        ( on )
 import           Data.List            ( nubBy, sortOn )
 import qualified Data.Map.Strict      as MS
 import qualified Data.Map.Lazy        as ML
-import           Data.Series.Generic  ( Series, Occ, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList )
+import           Data.Series.Generic  ( Series, Occ, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, fromVector, toVector )
 import qualified Data.Series.Generic  as Series
 import           Data.Vector          ( Vector )
+import qualified Data.Vector          as Vector
 
 import           Hedgehog             ( property, forAll, (===), tripping )
 import qualified Hedgehog.Gen         as Gen
@@ -26,6 +28,8 @@ tests = testGroup "Data.Series.Generic.Definition" [ testMappend
                                                    , testPropRoundtripConversionWithLazyMap
                                                    , testPropRoundtripConversionWithList
                                                    , testPropFromListDuplicatesNeverDrops
+                                                   , testPropRoundtripConversionWithVector
+                                                   , testPropVectorVsList
                                                    , testFromLazyMap
                                                    , testToLazyMap
                                                    , testTakeWhile
@@ -112,6 +116,26 @@ testPropFromListDuplicatesNeverDrops
     = testProperty "fromListDuplicates never drops elements" $ property $ do
         xs <- forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
         Series.length (Series.fromListDuplicates xs :: Series Vector (Int, Occ) Char) === length xs
+
+
+testPropRoundtripConversionWithVector :: TestTree
+testPropRoundtripConversionWithVector 
+    = testProperty "Roundtrip property with Vector" $ property $ do
+        xs <- forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-50) 50) <*> Gen.alpha)
+
+        let (srs :: Series Vector Int Char) = fromList xs
+        tripping srs toVector (Just . fromVector)
+
+
+testPropVectorVsList :: TestTree
+testPropVectorVsList 
+    = testProperty "building from a list or vector yields the same results" $ property $ do
+        xs <- forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-50) 50) <*> Gen.alpha)
+        -- Note that due to differences in sorting,
+        -- Series.fromList   and Series.fromVector . Vector.fromList 
+        -- are not equivalent if the input list contains duplicate keys.
+        let unique = nubBy ((==) `on` fst) xs 
+        (fromList unique :: Series Vector Int Char) === fromVector (Vector.fromList unique)
 
 
 testFromLazyMap :: TestTree

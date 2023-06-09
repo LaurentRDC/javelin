@@ -47,7 +47,7 @@ module Data.Series.Unboxed (
     -- ** Lists
     fromList, fromListDuplicates, Occ, toList,
     -- ** Vectors
-    toVector,
+    fromVector, toVector,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -213,7 +213,21 @@ toList = G.toList
 
 -- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
 toVector :: (Unbox a, Unbox k) => Series k a -> Vector (k, a)
+{-# INLINE toVector #-}
 toVector = G.toVector
+
+
+-- | Construct a `Series` from a `Vector` of key-value pairs. There is no
+-- condition on the order of pairs. Duplicate keys are silently dropped. If you
+-- need to handle duplicate keys, see `fromListDuplicates`.
+--
+-- Note that due to differences in sorting,
+-- @Series.fromList@ and @Series.fromVector . Vector.fromList@ 
+-- may not be equivalent if the input list contains duplicate keys.
+fromVector :: (Ord k, Unbox k, Unbox a)
+           => Vector (k, a) -> Series k a
+{-# INLINE fromVector #-}
+fromVector = G.fromVector
 
 
 -- | Convert a series into a lazy @Map@.

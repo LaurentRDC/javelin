@@ -9,7 +9,7 @@ module Data.Series.Generic (
     -- ** Lists
     fromList, Occ, fromListDuplicates, toList,
     -- ** Vectors
-    toVector,
+    fromVector, toVector,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -54,7 +54,7 @@ module Data.Series.Generic (
 import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldGroupsWith )
 import Data.Series.Generic.Definition   ( Series(index, values), Occ, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
-                                        , toVector
+                                        , fromVector, toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile 
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )

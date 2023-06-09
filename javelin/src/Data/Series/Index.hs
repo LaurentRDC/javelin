@@ -206,6 +206,7 @@ fromList = fromSet . Set.fromList
 -- the index may not be the same as the length of the input list.
 fromAscList :: Eq k => [k] -> Index k
 fromAscList = MkIndex . Set.fromAscList
+{-# INLINE fromAscList #-}
 
 
 -- | \(O(n)\) Build an `Index` from a list of distinct elements in ascending order. The precondition
@@ -239,6 +240,7 @@ fromVector = fromList . Vector.toList
 -- Index "abc"
 fromAscVector :: (Vector v k, Ord k) => v k -> Index k
 fromAscVector = fromAscList . Vector.toList
+{-# INLINE fromAscVector #-}
 
 
 -- | \(O(1)\) Convert an `Index` to a `Set`.
