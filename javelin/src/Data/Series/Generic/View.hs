@@ -102,7 +102,7 @@ filter :: (Vector v a, Vector v Int, Ord k)
 {-# INLINE filter #-}
 filter predicate xs@(MkSeries ks vs) 
     = let indicesToKeep = Vector.findIndices predicate vs
-          keysToKeep = Index.fromList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
+          keysToKeep = Index.fromDistinctAscList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
        in xs `select` keysToKeep
 
 
