@@ -10,6 +10,7 @@ maintainer:         laurent.decotret@outlook.com
 category:           Data
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
+                    files/aapl.txt
 tested-with:        GHC ==9.6.1
                      || ==9.4.5  
 
@@ -31,6 +32,7 @@ library
                       Data.Series.Generic
                       Data.Series.Generic.Internal
                       Data.Series.Index
+                      Data.Series.Tutorial
                       Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Definition
