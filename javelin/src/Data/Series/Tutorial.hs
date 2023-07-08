@@ -9,6 +9,9 @@ module Data.Series.Tutorial (
     -- * Construction
     -- $construction
 
+    -- * Index
+    -- $index
+
     -- * Selections
     -- ** Single-key selection
     -- $singlekey
@@ -46,8 +49,11 @@ import           Data.Series     ( Series, Occ, at, iat, select, to, require
 import qualified Data.Series     as Series
 import qualified Data.Series.Generic as Series (mean, std)
 import qualified Data.Series.Generic
+import           Data.Series.Index ( Index )
 import qualified Data.Series.Index as Index
 import qualified Data.Series.Unboxed
+import           Data.Set        ( Set )
+import qualified Data.Set
 import           Data.Map.Strict ( Map )
 import qualified Data.Map.Strict
 import qualified Data.Map.Merge.Strict
@@ -102,6 +108,50 @@ index | values
   'd' |      4
 
 Of course, 'Series.fromLazyMap' is also available.
+
+-}
+
+{- $index
+
+'Series' have two components: values and an index.
+
+The index (of type @'Index' k@) is an ordered set of unique elements which allows to determine 
+where are each values in the series. Since all keys in an 'Index' are unique and sorted, it
+is fast to find the value associated to any random key.
+
+As we'll see soon, 'Index' is an important data structure which can be used to slice through a 'Series', 
+so let's get comfortable with them.
+
+>>> import qualified Data.Series.Index as Index
+
+An 'Index' can be constructed from a list:
+
+>>> Index.fromList [5::Int,5,4,3,2,1,5,5,5]
+Index [1,2,3,4,5]
+
+As you see above, repeated elements (in this case, @5@) won't be repeated in the 'Index'. Therefore, it often makes 
+more sense to construct an 'Index' using 'Index.fromSet' from a 'Set' from "Data.Set".
+
+One common way to construct an 'Index' is to programmatically __unfold__ a seed value using 
+'Index.unfoldr'. Below, we want to generate numbers from 7 down to 1:
+
+>>> Index.unfoldr (\x -> if x < 1 then Nothing else Just (x, x-1)) (7 :: Int)
+Index [1,2,3,4,5,6,7]
+
+This task is so common that there is a convenience function to create ranges, 'Index.range'. 
+For example, if you want to create an 'Index' of values starting at 1 and ending at 10, in 
+steps of 3:
+
+>>> Index.range (+3) (1 :: Int) 10
+Index [1,4,7,10]
+
+An 'Index' is very much like a 'Set', so you can 
+
+* check for membership using 'Index.member';
+* combine two 'Index' using 'Index.union', 'Index.intersection', and 'Index.difference';
+* find the integer index of a key using 'Index.lookupIndex';
+
+and more.
 
 -}
 
@@ -183,7 +233,7 @@ also supports bulk *random* access like so:
 
 Note above that we've requested data for the date @"2010-01-10"@, but it's missing. Therefore, 
 the data isn't returned. If you want to get a sub-series which has the exact index that 
-you've asked for, you can use 'require' in combination with an 'Index.Index':
+you've asked for, you can use 'require' in combination with an 'Index':
 
 >>> import qualified Data.Series.Index as Index
 >>> aapl_close `require` Index.fromList ["2010-01-08", "2010-01-10", "2010-01-12"]
@@ -192,6 +242,8 @@ you've asked for, you can use 'require' in combination with an 'Index.Index':
 "2010-01-08" | Just 6.4901
 "2010-01-10" |     Nothing
 "2010-01-12" | Just 6.4047
+
+Using 'require' or 'select' in conjunction with 'Index.range' is very powerful.
 
 -}
 
