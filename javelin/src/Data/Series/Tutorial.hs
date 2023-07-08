@@ -29,6 +29,9 @@ module Data.Series.Tutorial (
     -- ** Handling duplicate keys
     -- $duplicates
 
+    -- ** Unboxed and generic series
+    -- $unboxed
+
     -- ** Replacing values
     -- $replacement
 
@@ -42,13 +45,16 @@ import           Data.Series     ( Series, Occ, at, iat, select, to, require
                                  )
 import qualified Data.Series     as Series
 import qualified Data.Series.Generic as Series (mean, std)
+import qualified Data.Series.Generic
 import qualified Data.Series.Index as Index
+import qualified Data.Series.Unboxed
 import           Data.Map.Strict ( Map )
 import qualified Data.Map.Strict
 import qualified Data.Map.Merge.Strict
 import           Numeric.Natural ( Natural)
 import qualified Data.List
 import qualified Data.Vector
+import qualified Data.Vector.Unboxed
 
 {- $introduction
 
@@ -415,8 +421,45 @@ composite of a character and an occurrence. This is reflected in the type:
 Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
   :: Series (Char, Occ) Int
 
-Here, 'Data.Series.Occ' is short for *occurrence*. It is a non-negative number similar to a 'Natural' number, and can be converted to 
-other integer-like numbers using 'fromIntegral'. In practice, you should aim to aggregate your `Series` to remove duplicate keys.
+Here, 'Data.Series.Occ' is short for __occurrence__. It is a non-negative number similar to a 'Natural' number, and can be converted to 
+other integer-like numbers using 'fromIntegral'. In practice, you should aim to aggregate your `Series` to remove duplicate keys, for example
+using 'Data.Series.groupBy' and grouping on the first element of the key ('fst'):
+
+>>> let xs = Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
+>>> xs `groupBy` fst `aggregateWith` sum
+index | values
+----- | ------
+  'a' |      5
+  'b' |      0
+  'd' |      4
+
+-}
+
+{- $unboxed 
+
+The 'Data.Series.Series' defined in "Data.Series" are based on 'Data.Vector.Vector' from "Data.Vector". 
+This implementation is nice because such 'Series' can hold _any_ Haskell type. However, because
+Haskell types can be arbitrarily complex, numerical operations on 'Series' may not be as fast
+as could be.
+
+For simpler types such as 'Double' and 'Int', a different kind of series can be used to
+speed up numerical calculations: 'Data.Series.Unboxed.Series' from the "Data.Series.Unboxed" module.
+Such 'Data.Series.Unboxed.Series' are much more limited: they can only contain datatypes which are
+instances of 'Data.Vector.Unboxed.Unbox'. 
+
+This then brings the question: how can you write software which supports both ordinary 'Data.Series.Series'
+__and__ unboxed 'Data.Series.Unboxed.Series'? The answer is to use functions from the "Data.Series.Generic".
+
+For example, we could implement the dot product of two series as:
+
+>>> import qualified Data.Series.Generic as G
+>>> import Data.Vector.Generic ( Vector )
+>>> :{
+      dot :: (Ord k, Num a, Vector v a) => G.Series v k a -> G.Series v k a -> a
+      dot v1 v2 = G.sum $ G.zipWithMatched (*) v1 v2
+    :}
+
+You can convert between the two types of series using the 'Data.Series.Generic.convert' function.
 
 -}
 
