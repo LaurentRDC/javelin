@@ -18,6 +18,7 @@ module Data.Series.Generic (
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter, null, length, sum, 
     take, takeWhile, dropWhile,
+    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
     -- * Scans
     postscanl,
@@ -55,7 +56,8 @@ import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldG
 import Data.Series.Generic.Definition   ( Series(index, values), Occ, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, toVector
-                                        , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile 
+                                        , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile
+                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl )

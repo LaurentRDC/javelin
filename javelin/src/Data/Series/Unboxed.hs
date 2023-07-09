@@ -57,6 +57,7 @@ module Data.Series.Unboxed (
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, null, length,
+    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
     takeWhile, dropWhile, filter,
 
     -- * Combining series
@@ -286,6 +287,34 @@ mapWithKey = G.mapWithKey
 mapIndex :: (Unbox a, Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
+
+
+-- | /O(n)/ Apply the monadic action to every element of a series and its
+-- index, yielding a series of results.
+mapWithKeyM :: (Unbox a, Unbox b, Monad m, Ord k) => (k -> a -> m b) -> Series k a -> m (Series k b)
+{-# INLINE mapWithKeyM #-}
+mapWithKeyM = G.mapWithKeyM
+
+
+-- | /O(n)/ Apply the monadic action to every element of a series and its
+-- index, discarding the results.
+mapWithKeyM_ :: (Unbox a, Monad m) => (k -> a -> m b) -> Series k a -> m ()
+{-# INLINE mapWithKeyM_ #-}
+mapWithKeyM_ = G.mapWithKeyM_
+
+
+-- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- yielding a series of results.
+forWithKeyM :: (Unbox a, Unbox b, Monad m, Ord k) => Series k a -> (k -> a -> m b) -> m (Series k b)
+{-# INLINE forWithKeyM #-}
+forWithKeyM = G.forWithKeyM
+
+
+-- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- discarding the results.
+forWithKeyM_ :: (Unbox a, Monad m) => Series k a -> (k -> a -> m b) -> m ()
+{-# INLINE forWithKeyM_ #-}
+forWithKeyM_ = G.forWithKeyM_
 
 
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input `Series` that satisfy a predicate.

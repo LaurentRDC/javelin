@@ -11,6 +11,7 @@ module Data.Series.Generic.Definition (
     headM, lastM, take, map, mapWithKey, mapIndex,
     foldMap, bifoldMap, sum, length, null,
     takeWhile, dropWhile,
+    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
     fromIndex,
     -- * Conversion to/from Maps
@@ -303,15 +304,23 @@ instance (Functor v) => Functor (Series v k) where
     fmap :: (a -> b) -> Series v k a -> Series v k b
     fmap f (MkSeries ks vs) = MkSeries ks (fmap f vs)
 
+
 instance (Foldable v) => Foldable (Series v k) where
     {-# INLINE foldMap #-}
     foldMap :: (Monoid m) => (a -> m) -> Series v k a -> m
     foldMap f xs = Foldable.foldMap f (values xs)
 
+
 instance (Foldable v) => Bifoldable (Series v) where
     {-# INLINE bifoldMap #-}
     bifoldMap :: Monoid m => (k -> m) -> (a -> m) -> Series v k a -> m
     bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Foldable.foldMap fv vs
+
+
+instance (Traversable v) => Traversable (Series v k) where
+    traverse :: Applicative f
+             => (a -> f b) -> Series v k a -> f (Series v k b)
+    traverse f (MkSeries ix vs) = MkSeries ix <$> traverse f vs
 
 
 foldMap :: (Monoid m, Vector v a) => (a -> m) -> Series v k a -> m
@@ -375,3 +384,35 @@ instance (Vector v a, Show k, Show a) => Show (Series v k a) where
                     pad n s
                         | n <= P.length s = s
                         | otherwise     = replicate (n - P.length s) ' ' <> s
+
+
+-- | /O(n)/ Apply the monadic action to every element of a series and its
+-- index, yielding a series of results.
+mapWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) 
+      => (k -> a -> m b) -> Series v k a -> m (Series v k b)
+{-# INLINE mapWithKeyM #-}
+mapWithKeyM f xs = let f' (key, val) = (key,) <$> f key val
+           in fmap fromList $ traverse f' $ toList xs
+
+
+-- | /O(n)/ Apply the monadic action to every element of a series and its
+-- index, discarding the results.
+mapWithKeyM_ :: (Vector v a, Monad m) 
+       => (k -> a -> m b) -> Series v k a -> m ()
+{-# INLINE mapWithKeyM_ #-}
+mapWithKeyM_ f xs = let f' (key, val) = (key,) <$> f key val
+           in mapM_ f' $ toList xs
+
+
+-- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- yielding a series of results.
+forWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) => Series v k a -> (k -> a -> m b) -> m (Series v k b)
+{-# INLINE forWithKeyM #-}
+forWithKeyM = flip mapWithKeyM
+
+
+-- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- discarding the results.
+forWithKeyM_ :: (Vector v a, Monad m) => Series v k a -> (k -> a -> m b) -> m ()
+{-# INLINE forWithKeyM_ #-}
+forWithKeyM_ = flip mapWithKeyM_
