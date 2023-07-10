@@ -22,8 +22,8 @@ infixr 0 `foldGroupsWith`
 -- >>> import qualified Data.Series as Series
 -- >>> import qualified Data.Set as Set
 
--- | Group values in a @Series@ by some grouping function (@k -> g@).
--- The provided grouping function is guaranteed to operate on a non-empty `Series`.
+-- | Group values in a 'Series' by some grouping function (@k -> g@).
+-- The provided grouping function is guaranteed to operate on a non-empty 'Series'.
 --
 -- This function is expected to be used in conjunction with @aggregateWith@:
 -- 
@@ -54,9 +54,9 @@ data GroupBy v g k a
     = MkGroupBy (k -> g) !(Series v k a)
 
 
--- | Aggregate each group in a `GroupBy` using a binary function.
--- While this is not as expressive as `aggregateWith`, users looking for maximum
--- performance should use `foldGroupsWith` as much as possible.
+-- | Aggregate each group in a 'GroupBy' using a binary function.
+-- While this is not as expressive as 'aggregateWith', users looking for maximum
+-- performance should use 'foldGroupsWith' as much as possible.
 foldGroupsWith :: (Ord g, Vector v a) 
                => GroupBy v g k a 
                -> (a -> a -> a) 
@@ -66,10 +66,10 @@ foldGroupsWith (MkGroupBy grouping xs) f
     = fromStrictMap $ Map.unionsWith f [Map.singleton (grouping k) v | (k, v) <- toList xs]
 
 
--- | General-purpose aggregation for a `GroupBy`,
+-- | General-purpose aggregation for a 'GroupBy',
 --
--- If you can express your aggregation as a binary function @a -> a -> a@, then 
--- using `foldGroupsWith` can be an order of magnitude faster. 
+-- If you can express your aggregation as a binary function @a -> a -> a@ (for example, @(+)@), then 
+-- using 'foldGroupsWith' can be an order of magnitude faster. 
 aggregateWith :: (Ord k, Ord g, Vector v a, Vector v b) 
               => GroupBy v g k a 
               -> (Series v k a -> b) 

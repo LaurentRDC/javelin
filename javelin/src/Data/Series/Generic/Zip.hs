@@ -31,7 +31,7 @@ infix 6 |->, <-|
 
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. For keys present only in the left or right series, 
--- the value @Nothing@ is returned.
+-- the value 'Nothing' is returned.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
@@ -43,7 +43,7 @@ infix 6 |->, <-|
 -- "delta" | Nothing
 -- "gamma" | Nothing
 --
--- To only combine elements where keys are in both series, see @zipWithMatched@
+-- To only combine elements where keys are in both series, see 'zipWithMatched'
 zipWith :: (Vector v a, Vector v b, Vector v c, Vector v (Maybe c), Ord k) 
         => (a -> b -> c) -> Series v k a -> Series v k b -> Series v k (Maybe c)
 zipWith f left right
@@ -67,7 +67,7 @@ zipWith f left right
 -- "alpha" |     10
 --  "beta" |     12
 --
--- To combine elements where keys are in either series, see @zipWith@
+-- To combine elements where keys are in either series, see 'zipWith'
 zipWithMatched :: (Vector v a, Vector v b, Vector v c, Ord k) 
                => (a -> b -> c) -> Series v k a -> Series v k b -> Series v k c
 zipWithMatched f left right
@@ -92,30 +92,32 @@ xs `replace` ys
        in MkSeries (index ys) $ Vector.update_ (values ys) iixs (values (xs `select` keysToReplace))
 
 
+-- | Infix version of 'replace'
 (|->) :: (Vector v a, Vector v Int, Ord k)
       => Series v k a -> Series v k a -> Series v k a
 {-# INLINE (|->) #-}
 (|->) = replace
 
 
+-- | Flipped version of '|->',
 (<-|) :: (Vector v a, Vector v Int, Ord k) 
       => Series v k a -> Series v k a -> Series v k a
 {-# INLINE (<-|)  #-}
 (<-|) = flip replace
 
 
--- | A `ZipStrategy` is a function which is used to decide what to do when a key is missing from one
--- of two `Series` being zipped together with `zipWithStrategy`.
+-- | A 'ZipStrategy' is a function which is used to decide what to do when a key is missing from one
+-- of two 'Series' being zipped together with 'zipWithStrategy'.
 --
--- If a `ZipStrategy` returns @Nothing@, the key is dropped.
--- If a `ZipStrategy` returns @Just v@ for key @k@, then the value @v@ is inserted at key @k@.
+-- If a 'ZipStrategy' returns 'Nothing', the key is dropped.
+-- If a 'ZipStrategy' returns @'Just' v@ for key @k@, then the value @v@ is inserted at key @k@.
 --
--- For example, the most basic `ZipStrategy` is to skip over any key which is missing from the other series.
--- Such a strategy can be written as @skip key value = Nothing@ (see `skipStrategy`).
+-- For example, the most basic 'ZipStrategy' is to skip over any key which is missing from the other series.
+-- Such a strategy can be written as @skip key value = 'Nothing'@ (see 'skipStrategy').
 type ZipStrategy k a b = (k -> a -> Maybe b)
 
 
--- | This `ZipStrategy` drops keys which are not present in both `Series`.
+-- | This 'ZipStrategy' drops keys which are not present in both 'Series'.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
@@ -129,7 +131,7 @@ skipStrategy _ _ = Nothing
 {-# INLINE skipStrategy #-}
 
 
--- | This `ZipStrategy` sets the value at keys which are not present in both `Series` 
+-- | This 'ZipStrategy' sets the value at keys which are not present in both 'Series' 
 -- to the some mapping from the value present in one of the series. See the example below.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
@@ -146,7 +148,7 @@ mapStrategy f _ x = Just (f x)
 {-# INLINE mapStrategy #-}
 
 
--- | This `ZipStrategy` sets a constant value at keys which are not present in both `Series`.
+-- | This 'ZipStrategy' sets a constant value at keys which are not present in both 'Series'.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
@@ -169,10 +171,10 @@ constStrategy v = mapStrategy (const v)
 {-# INLINE constStrategy #-}
 
 
--- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.
+-- | Zip two 'Series' with a combining function, applying a 'ZipStrategy' when one key is present in one of the 'Series' but not both.
 --
--- Note that if you want to drop keys missing in either `Series`, it is faster to use @`zipWithMatched` f@ 
--- than using @`zipWithStrategy` f skipStrategy skipStrategy@.
+-- Note that if you want to drop keys missing in either 'Series', it is faster to use @'zipWithMatched' f@ 
+-- than using @'zipWithStrategy' f skipStrategy skipStrategy@.
 zipWithStrategy :: (Vector v a, Vector v b, Vector v c, Ord k) 
                 => (a -> b -> c)     -- ^ Function to combine values when present in both series
                 -> ZipStrategy k a c -- ^ Strategy for when the key is in the left series but not the right
@@ -189,17 +191,17 @@ zipWithStrategy f whenLeft whenRight left right
           
         in zipWithMatched f left right <> leftZip <> rightZip
     where
-        -- Application of the `ZipStrategy` is done on a `Map` rather than
-        -- the `Series` directly to keep the type contraints of `zipWithStrategy` to
-        -- a minimum. Recall that unboxed `Series` cannot contain `Maybe a`.  
+        -- Application of the 'ZipStrategy' is done on a `Map` rather than
+        -- the 'Series' directly to keep the type contraints of `zipWithStrategy` to
+        -- a minimum. Recall that unboxed 'Series' cannot contain `Maybe a`.  
         applyStrategy strat = G.fromStrictMap 
                             . Map.mapMaybeWithKey strat
                             . G.toStrictMap
 {-# INLINE zipWithStrategy #-}
 
 
--- | Zip two `Series` with a combining function. The value for keys which are missing from
--- either `Series` is replaced with the appropriate `mempty` value.
+-- | Zip two 'Series' with a combining function. The value for keys which are missing from
+-- either 'Series' is replaced with the appropriate 'mempty' value.
 --
 -- >>> import Data.Monoid ( Sum(..) )
 -- >>> let xs = Series.fromList [ ("2023-01-01", Sum (1::Int)), ("2023-01-02", Sum 2) ]
@@ -232,7 +234,7 @@ zipWithMonoid f left right
 {-# INLINE zipWithMonoid #-}
 
 
--- | Elementwise sum of two `Series`. Elements missing in one or the other `Series` is considered 0. 
+-- | Elementwise sum of two 'Series'. Elements missing in one or the other 'Series' is considered 0. 
 --
 -- >>> let xs = Series.fromList [ ("2023-01-01", (1::Int)), ("2023-01-02", 2) ]
 -- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
@@ -250,7 +252,7 @@ esum ls rs = G.map getSum $ zipWithMonoid (<>) (G.map Sum ls) (G.map Sum rs)
 {-# INLINE esum #-}
 
 
--- | Elementwise product of two `Series`. Elements missing in one or the other `Series` is considered 1. 
+-- | Elementwise product of two 'Series'. Elements missing in one or the other 'Series' is considered 1. 
 --
 -- >>> let xs = Series.fromList [ ("2023-01-01", (2::Int)), ("2023-01-02", 3) ]
 -- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]

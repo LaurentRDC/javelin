@@ -67,15 +67,15 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 
 
 -- | require a series with a new index.
--- Contrary to `select`, all keys in @Set k@ will be present in the re-indexed series.
+-- Contrary to 'select', all keys in @'Set' k@ will be present in the re-indexed series.
 require :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
 {-# INLINE require #-}
 require = requireWith (const Nothing) Just
 
 
--- | Generalization of `require`, which maps missing keys to values.
--- This is particularly useful for `Vector` instances which don't support `Maybe`, like "Data.Vector.Unboxed".
+-- | Generalization of 'require', which maps missing keys to values.
+-- This is particularly useful for 'Vector' instances which don't support 'Maybe', like "Data.Vector.Unboxed".
 requireWith :: (Vector v a, Vector v b, Ord k)
             => (k -> b)  -- ^ Function to apply to keys which are missing from the input series, but required in the input index
             -> (a -> b)  -- ^ Function to apply to values which are in the input series and input index.
@@ -119,16 +119,17 @@ dropna = G.map fromJust . filter isJust
 -- >>> 'a' `to` 'z'
 -- Range (from 'a' to 'z')
 --
--- A @Range@ can be used to efficiently select a sub-series with `select`.
+-- A 'Range' can be used to efficiently select a sub-series with 'select'.
 data Range k = MkRange k k
+    deriving (Eq)
 
 instance Show k => Show (Range k) where
     show :: Range k -> String
     show (MkRange start stop) = mconcat ["Range (from ", show start, " to ", show stop, ")"]
 
 
--- | Find the keys which are in range. In case of an empty `Series`,
--- the returned value is `Nothing`.
+-- | Find the keys which are in range. In case of an empty 'Series',
+-- the returned value is 'Nothing'.
 keysInRange :: Ord k => Series v k a -> Range k -> Maybe (k, k)
 {-# INLINE keysInRange #-}
 keysInRange (MkSeries ks _) (MkRange start stop)
@@ -140,27 +141,27 @@ keysInRange (MkSeries ks _) (MkRange start stop)
                             else Just (Set.findMin inRange, Set.findMax inRange)
 
 
--- | Create a @Range@ which can be used for slicing. This function
--- is expected to be used in conjunction with `select`: 
+-- | Create a 'Range' which can be used for slicing. This function
+-- is expected to be used in conjunction with 'select': 
 to :: Ord k => k -> k -> Range k
 to k1 k2 = MkRange (min k1 k2) (max k1 k2)
 
 
--- | Class for datatypes which can be used to select sub-series using `select`.
+-- | Class for datatypes which can be used to select sub-series using 'select'.
 --
--- There are two use-cases for `select`:
+-- There are two use-cases for 'select':
 --
---  * Bulk random-access (selecting from a @Set@ of keys);
---  * Bulk ordered access (selecting from a @Range@ of keys).
+--  * Bulk random-access (selecting from an 'Index' of keys);
+--  * Bulk ordered access (selecting from a 'Range' of keys).
 --
--- See the documentation for `select`.
+-- See the documentation for 'select'.
 class Selection s where
     -- | Select a subseries. There are two main ways to do this.
     --
     -- The first way to do this is to select a sub-series based on keys:
     --
     -- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
-    -- >>> xs `select` Index.fromList ['a', 'd']
+    -- >>> xs 'select' Index.fromList ['a', 'd']
     -- index | values
     -- ----- | ------
     --   'a' |     10
@@ -168,16 +169,16 @@ class Selection s where
     --
     -- The second way to select a sub-series is to select all keys in a range:
     --
-    -- >>> xs `select` 'b' `to` 'c'
+    -- >>> xs 'select' 'b' `to` 'c'
     -- index | values
     -- ----- | ------
     --   'b' |     20
     --   'c' |     30
     --
-    -- Note that with `select`, you'll always get a sub-series; if you ask for a key which is not
+    -- Note that with 'select', you'll always get a sub-series; if you ask for a key which is not
     -- in the series, it'll be ignored:
     --
-    -- >>> xs `select` Index.fromList ['a', 'd', 'e']
+    -- >>> xs 'select' Index.fromList ['a', 'd', 'e']
     -- index | values
     -- ----- | ------
     --   'a' |     10
@@ -188,7 +189,7 @@ class Selection s where
 
 
 instance Selection Index where
-    -- | Select all keys in `Index` from a series. Keys which are not
+    -- | Select all keys in 'Index' from a series. Keys which are not
     -- in the series are ignored.
     select :: (Vector v a, Ord k) => Series v k a -> Index k -> Series v k a
     {-# INLINE select #-}
@@ -203,8 +204,8 @@ instance Selection Index where
                                     $ Index.toAscVector selectedKeys
 
 
--- | Selecting a sub-series from a `Set` is a convenience
--- function. Internally, the `Set` is converted to an index first.
+-- | Selecting a sub-series from a 'Set' is a convenience
+-- function. Internally, the 'Set' is converted to an index first.
 instance Selection Set where
     select :: (Vector v a, Ord k) => Series v k a -> Set k -> Series v k a
     select xs = select xs . Index.fromSet
@@ -218,7 +219,7 @@ instance Selection [] where
 
 
 -- | Selecting a sub-series based on a @Range@ is most performant.
--- Constructing a @Range@ is most convenient using the `to` function.
+-- Constructing a @Range@ is most convenient using the 'to' function.
 instance Selection Range where
     select :: (Vector v a, Ord k) => Series v k a -> Range k -> Series v k a
     {-# INLINE select #-}

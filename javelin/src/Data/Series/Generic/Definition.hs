@@ -58,12 +58,12 @@ import qualified Prelude                as P
 -- | A @Series v k a@ is a labeled array of type @v@ filled with values of type @a@,
 -- indexed by keys of type @k@.
 --
--- Like @Data.Map@ and @Data.HashMap@, they support efficient:
+-- Like 'Data.Map.Strict.Map', they support efficient:
 --
 --      * random access by key ( \(O(\log n)\) );
 --      * slice by key ( \(O(\log n)\) ).
 --
--- Like @Data.Vector.Vector@, they support efficient:
+-- Like 'Data.Vector.Vector', they support efficient:
 --
 --      * random access by index ( \(O(1)\) );
 --      * slice by index ( \(O(1)\) );
@@ -72,24 +72,24 @@ import qualified Prelude                as P
 data Series v k a 
     -- The reason the index is a set of keys is that we *want* keys to be ordered.
     -- This allows for efficient slicing of the underlying values, because
-    -- if `k1 < k2`, then the values are also at indices `ix1 < ix2`.
+    -- if @k1 < k2@, then the values are also at indices @ix1 < ix2@.
     = MkSeries { index  :: Index k
                , values :: v a
                }
 
--- | \(O(n)\) Convert between two types of `Series`.
+-- | \(O(n)\) Convert between two types of 'Series'.
 convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
 {-# INLINE convert #-}
 convert (MkSeries ix vs) = MkSeries ix $ Vector.convert vs 
 
 
--- | Create a `Series` with a single element.
+-- | Create a 'Series' with a single element.
 singleton :: Vector v a => k -> a -> Series v k a
 {-# INLINE singleton #-}
 singleton k v = MkSeries (Index.singleton k) $ Vector.singleton v
 
 
--- | \(O(n)\) Generate a `Series` by mapping every element of its index.
+-- | \(O(n)\) Generate a 'Series' by mapping every element of its index.
 fromIndex :: (Vector v a) 
           => (k -> a) -> Index k -> Series v k a
 {-# INLINE fromIndex #-}
@@ -106,16 +106,16 @@ fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
 fromList = fromStrictMap . MS.fromList
 
 -- | Integer-like, non-negative number that specifies how many occurrences
--- of a key is present in a `Series`.
+-- of a key is present in a 'Series'.
 --
--- The easiest way to convert from an `Occurrence` to another integer-like type
--- is the `fromIntegral` function.
+-- The easiest way to convert from an 'Occurrence' to another integer-like type
+-- is the 'fromIntegral' function.
 newtype Occurrence = MkOcc Int
     deriving (Eq, Enum, Num, Ord, Integral, Real)
     deriving newtype (Show, U.Unbox) 
 
--- Occurrence needs to be an `Unbox` type
--- so that `fromVectorDuplicates` worhs with unboxed vectors
+-- Occurrence needs to be an 'U.Unbox' type
+-- so that 'fromVectorDuplicates' worhs with unboxed vectors
 -- and series.
 newtype instance UM.MVector s Occurrence = MV_Occ (UM.MVector s Int)
 newtype instance U.Vector Occurrence = V_Occ (U.Vector Int)
@@ -150,12 +150,12 @@ toList :: Vector v a => Series v k a -> [(k, a)]
 toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 
 
--- | Construct a `Series` from a `Vector` of key-value pairs. There is no
+-- | Construct a 'Series' from a 'Vector' of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
 -- need to handle duplicate keys, see 'fromVectorDuplicates'.
 --
 -- Note that due to differences in sorting,
--- 'Series.fromList' and 'Series.fromVector . Vector.fromList' 
+-- 'Series.fromList' and @'Series.fromVector' . 'Vector.fromList'@
 -- may not be equivalent if the input list contains duplicate keys.
 fromVector :: (Ord k, Vector v k, Vector v a, Vector v (k, a))
            => v (k, a) -> Series v k a
@@ -173,7 +173,7 @@ fromVector vec = let (indexVector, valuesVector)
 {-# INLINE fromVector #-}
 
 
--- | Construct a `Series` from a `Vector` of key-value pairs, where there may be duplicate keys. 
+-- | Construct a 'Series' from a 'Vector' of key-value pairs, where there may be duplicate keys. 
 -- There is no condition on the order of pairs.
 --
 -- Note that due to differences in sorting,
@@ -203,19 +203,19 @@ fromVectorDuplicates vec
 {-# INLINE fromVectorDuplicates #-}
 
 
--- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
+-- | Construct a 'Vector' of key-value pairs. The elements are in order sorted by key. 
 toVector :: (Vector v a, Vector v k, Vector v (k, a)) 
          => Series v k a -> v (k, a)
 toVector (MkSeries ks vs) = Vector.zip (Index.toAscVector ks) vs
 
 
--- | Convert a series into a lazy @Map@.
+-- | Convert a series into a lazy 'Data.Map.Lazy.Map'.
 toLazyMap :: (Vector v a) => Series v k a -> Map k a
 {-# INLINE toLazyMap #-}
 toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
--- | Construct a series from a lazy @Map@.
+-- | Construct a series from a lazy 'Data.Map.Lazy.Map'.
 fromLazyMap :: (Vector v a) => ML.Map k a -> Series v k a
 {-# INLINE fromLazyMap #-}
 fromLazyMap mp = let keys = ML.keysSet mp 
@@ -224,13 +224,13 @@ fromLazyMap mp = let keys = ML.keysSet mp
                               }
 
 
--- | Convert a series into a strict @Map@.
+-- | Convert a series into a strict 'Data.Map.Strict.Map'.
 toStrictMap :: (Vector v a) => Series v k a -> Map k a
 {-# INLINE toStrictMap #-}
 toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
--- | Construct a series from a strict @Map@.
+-- | Construct a series from a strict 'Data.Map.Strict.Map'.
 fromStrictMap :: (Vector v a) => MS.Map k a -> Series v k a
 {-# INLINE fromStrictMap #-}
 fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
@@ -253,7 +253,7 @@ take :: Vector v a => Int -> Series v k a -> Series v k a
 take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
 
 
--- | \(O(n)\) Returns the longest prefix (possibly empty) of the input `Series` that satisfy a predicate.
+-- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
 takeWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
 {-# INLINE takeWhile #-}
 takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
@@ -262,7 +262,7 @@ takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
                              }
 
 
--- | \(O(n)\) Returns the complement of `takeWhile`.
+-- | \(O(n)\) Returns the complement of 'takeWhile'.
 dropWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
 {-# INLINE dropWhile #-}
 dropWhile f (MkSeries ix vs) = let dropped = Vector.dropWhile f vs
@@ -271,14 +271,14 @@ dropWhile f (MkSeries ix vs) = let dropped = Vector.dropWhile f vs
                              }
 
 
--- | \(O(n)\) Map every element of a `Series`.
+-- | \(O(n)\) Map every element of a 'Series'.
 map :: (Vector v a, Vector v b) 
     => (a -> b) -> Series v k a -> Series v k b
 {-# INLINE map #-}
 map f (MkSeries ix xs) = MkSeries ix $ Vector.map f xs
 
 
--- | \(O(n)\) Map every element of a `Series`, possibly using the key as well.
+-- | \(O(n)\) Map every element of a 'Series', possibly using the key as well.
 mapWithKey :: (Vector v a, Vector v b) 
            => (k -> a -> b) -> Series v k a -> Series v k b
 {-# INLINE mapWithKey #-}

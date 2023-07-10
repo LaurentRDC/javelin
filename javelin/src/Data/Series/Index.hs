@@ -8,26 +8,26 @@
 -- Maintainer  :  Laurent P. René de Cotret
 -- Portability :  portable
 --
--- This module contains the definition of `Index`, a sequence of /unique/ and /sorted/
--- keys which can be used to efficient index a `Series`.
+-- This module contains the definition of 'Index', a sequence of /unique/ and /sorted/
+-- keys which can be used to efficient index a 'Series'.
 --
 -- = Construction
 --
--- Constructing an `Index` can be done from the usual list using `fromList`. Note that 
--- the `Index` length could be smaller than the input list, due to the requirement that
--- an `Index` be a sequence of unique keys.  A better way to construct an `Index` is 
--- to use a `Set` (`fromSet`)
+-- Constructing an 'Index' can be done from the usual list using `fromList`. Note that 
+-- the 'Index' length could be smaller than the input list, due to the requirement that
+-- an 'Index' be a sequence of unique keys.  A better way to construct an 'Index' is 
+-- to use a 'Set' (`fromSet`)
 --
--- For quick inline definitions of an `Index`, you can also make use of the @OverloadedLists@ extension:
+-- For quick inline definitions of an 'Index', you can also make use of the @OverloadedLists@ extension:
 -- 
 -- >>> :set -XOverloadedLists
 -- >>> let (ix :: Index Int) = [1,2,3,4,5,5,5]
 -- >>> ix
 -- Index [1,2,3,4,5] 
 --
--- Another useful function to construct an `Index` is `range`. This allows to build an `Index`
+-- Another useful function to construct an 'Index' is `range`. This allows to build an 'Index'
 -- from a starting value up to an ending value, with a custom step function. For example,
--- here's an `Index` with values from 1 to 10, in steps of 3:
+-- here's an 'Index' with values from 1 to 10, in steps of 3:
 --
 -- >>> range (+3) (1 :: Int) 10
 -- Index [1,4,7,10]
@@ -36,22 +36,22 @@
 --
 -- = Set operations
 -- 
--- Just like a `Set`, `Index` supports efficient `member`, `notMember`, `union`, `intersection`, and `difference` operations.
--- Like `Set`, the `Semigroup` and `Monoid` instance of `Index` are defined using the `union` operation:
+-- Just like a 'Set', 'Index' supports efficient `member`, `notMember`, `union`, `intersection`, and `difference` operations.
+-- Like 'Set', the `Semigroup` and `Monoid` instance of 'Index' are defined using the `union` operation:
 --
 -- >>> fromList ['a', 'b', 'c'] <> fromList ['b', 'c', 'd']
 -- Index "abcd"
 --
 -- = Mapping
 --
--- Because of the restriction that all keys be unique, an `Index` is not a true `Functor`; you can't use
--- `fmap` to map elements of an index. Instead, you can use the general-purpose function `map`. If you want
--- to map elements of an `Index` with a monotonic function (i.e. a function which will not re-order elements and won't
+-- Because of the restriction that all keys be unique, an 'Index' is not a true `Functor`; you can't use
+-- `fmap` to map elements of an index. Instead, you can use the general-purpose function 'map'. If you want
+-- to map elements of an 'Index' with a monotonic function (i.e. a function which will not re-order elements and won't
 -- create duplicate elements), you can use the `mapMonotonic` function which operates faster.
 --
 -- = Indexing
 --
--- One of the key operations for `Series` is to find the integer index of an element in an `Index`. For this purpose, you
+-- One of the key operations for 'Series' is to find the integer index of an element in an 'Index'. For this purpose, you
 -- can use `lookupIndex`:
 --
 -- >>> lookupIndex 'b' $ fromList ['a', 'b', 'c']
@@ -121,9 +121,9 @@ import           Prelude                hiding ( null, take, drop, map, filter )
 -- >>> import qualified Data.Vector as Vector
 
 -- | Representation of the index of a series.
--- An index is a sequence of sorted elements. All elements are unique, much like a `Set`.
+-- An index is a sequence of sorted elements. All elements are unique, much like a 'Set'.
 --
--- You can construct an `Index` from a set (`fromSet`) or from a list (`fromList`). You can 
+-- You can construct an 'Index' from a set ('fromSet'), from a list ('fromList'), or from a vector ('fromVector'). You can 
 -- also make use of the @OverloadedLists@ extension:
 --
 -- >>> :set -XOverloadedLists
@@ -131,8 +131,8 @@ import           Prelude                hiding ( null, take, drop, map, filter )
 -- >>> ix
 -- Index [1,2,3]
 --
--- Since keys in an `Index` are always sorted and unique, `Index` is not a `Functor`. To map a function
--- over an `Index`, use `map`.
+-- Since keys in an 'Index' are always sorted and unique, 'Index' is not a 'Functor'. To map a function
+-- over an 'Index', use 'map'.
 newtype Index k = MkIndex (Set k)
     deriving (Eq, Ord, Semigroup, Monoid, Foldable, NFData)
 
@@ -150,12 +150,12 @@ instance Show k => Show (Index k) where
     show (MkIndex s) = "Index " ++ show (Set.toList s)
 
 
--- | \(O(1)\)  Create a singleton `Index`.
+-- | \(O(1)\)  Create a singleton 'Index'.
 singleton :: k -> Index k
 singleton = MkIndex . Set.singleton 
 
 
--- | \(O(n \log n)\) Create an `Index` from a seed value. 
+-- | \(O(n \log n)\) Create an 'Index' from a seed value. 
 -- Note that the order in which elements are generated does not matter; elements are stored
 -- in order. See the example below.
 --
@@ -165,8 +165,8 @@ unfoldr :: Ord a => (b -> Maybe (a, b)) -> b -> Index a
 unfoldr f = fromList . List.unfoldr f
 
 
--- | \(O(n \log n)\) Create an `Index` as a range of values. @range f start end@ will generate 
--- an `Index` with values @[start, f start, f (f start), ... ]@ such that the largest element
+-- | \(O(n \log n)\) Create an 'Index' as a range of values. @range f start end@ will generate 
+-- an 'Index' with values @[start, f start, f (f start), ... ]@ such that the largest element
 -- less or equal to @end@ is included. See examples below.
 --
 -- >>> range (+3) (1 :: Int) 10
@@ -175,19 +175,19 @@ unfoldr f = fromList . List.unfoldr f
 -- Index [1,4,7,10]
 range :: Ord a 
       => (a -> a) -- ^ Function to generate the next element in the index
-      -> a        -- ^ Starting value of the `Index`
-      -> a        -- ^ Ending value of the `Index`, which may or may not be contained
+      -> a        -- ^ Starting value of the 'Index'
+      -> a        -- ^ Ending value of the 'Index', which may or may not be contained
       -> Index a
 range next start end 
     = unfoldr (\x -> guard (x <= end) $> (x, next x)) start
 
 
--- | \(O(1)\) Build an `Index` from a `Set`.
+-- | \(O(1)\) Build an 'Index' from a 'Set'.
 fromSet :: Set k -> Index k
 fromSet = MkIndex 
 
 
--- | \(O(n \log n)\) Build an `Index` from a list. Note that since an `Index` is
+-- | \(O(n \log n)\) Build an 'Index' from a list. Note that since an 'Index' is
 -- composed of unique elements, the length of the index may not be
 -- the same as the length of the input list:
 --
@@ -199,24 +199,24 @@ fromList :: Ord k => [k] -> Index k
 fromList = fromSet . Set.fromList
 
 
--- | \(O(n)\) Build an `Index` from a list of elements in ascending order. The precondition
+-- | \(O(n)\) Build an 'Index' from a list of elements in ascending order. The precondition
 -- that elements already be sorted is not checked.
 -- 
--- Note that since an `Index` is composed of unique elements, the length of 
+-- Note that since an 'Index' is composed of unique elements, the length of 
 -- the index may not be the same as the length of the input list.
 fromAscList :: Eq k => [k] -> Index k
 fromAscList = MkIndex . Set.fromAscList
 {-# INLINE fromAscList #-}
 
 
--- | \(O(n)\) Build an `Index` from a list of distinct elements in ascending order. The precondition
+-- | \(O(n)\) Build an 'Index' from a list of distinct elements in ascending order. The precondition
 -- that elements be unique and sorted is not checked.
 fromDistinctAscList :: [k] -> Index k
 {-# INLINE fromDistinctAscList #-}
 fromDistinctAscList = MkIndex . Set.fromDistinctAscList
 
 
--- | \(O(n \log n)\) Build an `Index` from a `Vector`. Note that since an `Index` is
+-- | \(O(n \log n)\) Build an 'Index' from a 'Vector'. Note that since an 'Index' is
 -- composed of unique elements, the length of the index may not be
 -- the same as the length of the input vector:
 --
@@ -224,15 +224,15 @@ fromDistinctAscList = MkIndex . Set.fromDistinctAscList
 -- >>> fromVector $ V.fromList ['c', 'a', 'b', 'b']
 -- Index "abc"
 --
--- If the `Vector` is already sorted, `fromAscVector` is generally faster.
+-- If the 'Vector' is already sorted, 'fromAscVector' is generally faster.
 fromVector :: (Vector v k, Ord k) => v k -> Index k
 fromVector = fromList . Vector.toList
 
 
--- | \(O(n \log n)\) Build an `Index` from a `Vector` of elements in ascending order. The precondition
+-- | \(O(n \log n)\) Build an 'Index' from a 'Vector' of elements in ascending order. The precondition
 -- that elements already be sorted is not checked. 
 --
--- Note that since an `Index` is composed of unique elements, 
+-- Note that since an 'Index' is composed of unique elements, 
 -- the length of the index may not be the same as the length of the input vector:
 --
 -- >>> import Data.Vector as V
@@ -243,22 +243,22 @@ fromAscVector = fromAscList . Vector.toList
 {-# INLINE fromAscVector #-}
 
 
--- | \(O(1)\) Convert an `Index` to a `Set`.
+-- | \(O(1)\) Convert an 'Index' to a 'Set'.
 toSet :: Index k -> Set k
 toSet (MkIndex s) = s
 
 
--- | \(O(n)\) Convert an `Index` to a list. Elements will be produced in ascending order.
+-- | \(O(n)\) Convert an 'Index' to a list. Elements will be produced in ascending order.
 toAscList :: Index k -> [k]
 toAscList (MkIndex s) = Set.toAscList s
 
 
--- | \(O(n)\) Convert an `Index` to a list. Elements will be produced in ascending order.
+-- | \(O(n)\) Convert an 'Index' to a list. Elements will be produced in ascending order.
 toAscVector :: Vector v k => Index k -> v k
 toAscVector ix = Vector.fromListN (size ix) $ toAscList ix
 
 
--- | \(O(1)\) Returns @True@ for an empty `Index`, and @False@ otherwise.
+-- | \(O(1)\) Returns 'True' for an empty 'Index', and @False@ otherwise.
 null :: Index k -> Bool
 null (MkIndex ix) = Set.null ix
 
@@ -273,13 +273,13 @@ notMember :: Ord k => k -> Index k -> Bool
 notMember k = not . member k
 
 
--- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Union of two `Index`, containing
+-- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Union of two 'Index', containing
 -- elements either in the left index, right right index, or both.
 union :: Ord k => Index k -> Index k -> Index k
 union = (<>)
 
 
--- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Intersection of two `Index`, containing
+-- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Intersection of two 'Index', containing
 -- elements which are in both the left index and the right index.
 intersection :: Ord k => Index k -> Index k -> Index k
 intersection (MkIndex ix) (MkIndex jx) = MkIndex $ ix `Set.intersection` jx
@@ -294,10 +294,10 @@ difference :: Ord k => Index k -> Index k -> Index k
 difference (MkIndex ix) (MkIndex jx) = MkIndex $ Set.difference ix jx
 
 
--- | \(O(n+m)\). The symmetric difference of two `Index`.
--- The first element of the tuple is an `Index` containing all elements which
--- are only found in the left `Index`, while the second element of the tuple is an `Index` containing
--- all elements which are only found in the right `Index`:
+-- | \(O(n+m)\). The symmetric difference of two 'Index'.
+-- The first element of the tuple is an 'Index' containing all elements which
+-- are only found in the left 'Index', while the second element of the tuple is an 'Index' containing
+-- all elements which are only found in the right 'Index':
 --
 -- >>> left = fromList ['a', 'b', 'c']
 -- >>> right = fromList ['c', 'd', 'e']
@@ -308,7 +308,7 @@ symmetricDifference left right = (left `difference` right, right `difference` le
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\).
--- @(ix1 \`contains\` ix2)@ indicates whether all keys in @ix2@ are also in @ix1@.
+-- @(ix1 \'contains\' ix2)@ indicates whether all keys in @ix2@ are also in @ix1@.
 contains :: Ord k => Index k -> Index k -> Bool
 contains (MkIndex ix1) (MkIndex ix2)= ix2 `Set.isSubsetOf` ix1
 
@@ -333,20 +333,20 @@ drop n (MkIndex ix) = MkIndex (Set.drop n ix)
 
 
 -- | \(O(n \log n)\) Map a function over keys in the index.
--- Note that since keys in an `Index` are unique, the length of the resulting
+-- Note that since keys in an 'Index' are unique, the length of the resulting
 -- index may not be the same as the input:
 --
 -- >>> map (\x -> if even x then 0::Int else 1) $ fromList [0::Int,1,2,3,4]
 -- Index [0,1]
 --
--- If the mapping is monotonic, see `mapMonotonic`, which has better performance
+-- If the mapping is monotonic, see 'mapMonotonic', which has better performance
 -- characteristics.
 map :: Ord g => (k -> g) -> Index k -> Index g
 map f (MkIndex ix) = MkIndex $ Set.map f ix
 
 
 -- | \(O(n)\) Map a monotonic function over keys in the index. /Monotonic/ means that if @a < b@, then @f a < f b@.
--- Using `mapMonononic` can be much faster than using `map` for a large `Index`.
+-- Using 'mapMonononic' can be much faster than using 'map' for a large 'Index'.
 -- Note that the precondiction that the function be monotonic is not checked.
 --
 -- >>> mapMonotonic (+1) $ fromList [0::Int,1,2,3,4,5]
@@ -364,7 +364,7 @@ filter p (MkIndex ix) = MkIndex $ Set.filter p ix
 
 
 -- | \(O(\log n)\). Returns the integer /index/ of a key. This function raises an exception
--- if the key is not in the `Index`; see `lookupIndex` for a safe version.
+-- if the key is not in the 'Index'; see 'lookupIndex' for a safe version.
 --
 -- >>> findIndex 'b' $ fromList ['a', 'b', 'c']
 -- 1
@@ -388,13 +388,13 @@ elemAt :: Int -> Index k -> k
 elemAt n (MkIndex ix) = Set.elemAt n ix
 
 
--- | \(O(\log n)\). Insert a key in an `Index`. If the key is already 
--- present, the `Index` will not change.
+-- | \(O(\log n)\). Insert a key in an 'Index'. If the key is already 
+-- present, the 'Index' will not change.
 insert :: Ord k => k -> Index k -> Index k
 insert k (MkIndex ix) = MkIndex $ k `Set.insert` ix
 
 
--- | \(O(\log n)\). Delete a key from an `Index`, if this key is present
+-- | \(O(\log n)\). Delete a key from an 'Index', if this key is present
 -- in the index.
 delete :: Ord k => k -> Index k -> Index k
 delete k (MkIndex ix) = MkIndex $ k `Set.delete` ix

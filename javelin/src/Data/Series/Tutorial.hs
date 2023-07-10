@@ -284,7 +284,7 @@ let's isolate the latitude of cities in the western hemisphere:
  "Buenos Aires" | -34.60
 "New York City" |  40.71
 
-Finally, we can summarize the `Series` by reducing all its values. 
+Finally, we can summarize the 'Series' by reducing all its values. 
 Let's average the latitude of cities in the western hemisphere:
 
 >>> import Data.Series.Generic ( mean )
@@ -467,7 +467,7 @@ In the example below, the key @\'d\'@ is repeated three times:
 ('d',1) |     -4
 ('d',2) |      7
 
-Note that the `Series` produced by 'Data.Series.fromListDuplicates' still has unique keys, but each key is a 
+Note that the 'Series' produced by 'Data.Series.fromListDuplicates' still has unique keys, but each key is a 
 composite of a character and an occurrence. This is reflected in the type:
 
 >>> :t Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
@@ -475,7 +475,7 @@ Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7
   :: Series (Char, Occurrence) Int
 
 Here, 'Data.Series.Occurrence' is a non-negative number, and can be converted to 
-other integer-like numbers using 'fromIntegral'. In practice, you should aim to aggregate your `Series` to remove duplicate keys, for example
+other integer-like numbers using 'fromIntegral'. In practice, you should aim to aggregate your 'Series' to remove duplicate keys, for example
 using 'Data.Series.groupBy' and grouping on the first element of the key ('fst'):
 
 >>> let xs = Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]

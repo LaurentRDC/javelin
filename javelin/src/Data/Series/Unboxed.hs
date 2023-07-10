@@ -6,7 +6,7 @@
 -- Maintainer  :  laurent.decotret@outlook.com
 -- Portability :  portable
 --
--- This module contains data structures and functions to work with `Series` capable of holding unboxed values,
+-- This module contains data structures and functions to work with 'Series' capable of holding unboxed values,
 -- i.e. values of types which are instances of `Unbox`.
 --
 -- = Why use unboxed series?
@@ -19,10 +19,10 @@
 --
 -- = Introduction to series
 --
--- A `Series` of type @Series k a@ is a labeled array of values of type @a@,
+-- A 'Series' of type @Series k a@ is a labeled array of values of type @a@,
 -- indexed by keys of type @k@.
 --
--- Like `Data.Map.Strict.Map` from the @containers@ package, `Series` support efficient:
+-- Like `Data.Map.Strict.Map` from the @containers@ package, 'Series' support efficient:
 --
 --      * random access by key ( \(O(\log n)\) );
 --      * slice by key ( \(O(\log n)\) ).
@@ -42,7 +42,7 @@
 module Data.Series.Unboxed (
     Series, index, values,
 
-    -- * Building/converting `Series`
+    -- * Building/converting 'Series'
     singleton, fromIndex,
     -- ** Lists
     fromList, toList,
@@ -54,13 +54,14 @@ module Data.Series.Unboxed (
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
     fromLazyMap, toLazyMap,
-    -- ** Conversion between `Series` types
+    -- ** Conversion between 'Series' types
     G.convert,
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, null, length,
-    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
     takeWhile, dropWhile, filter,
+    -- ** Mapping with effects
+    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
     -- * Combining series
     zipWithMatched, 
@@ -142,13 +143,13 @@ values :: Series k a -> Vector a
 values = G.values
 
 
--- | Create a `Series` with a single element.
+-- | Create a 'Series' with a single element.
 singleton :: Unbox a => k -> a -> Series k a
 {-# INLINE singleton #-}
 singleton = G.singleton
 
 
--- | \(O(n)\) Generate a `Series` by mapping every element of its index.
+-- | \(O(n)\) Generate a 'Series' by mapping every element of its index.
 --
 -- >>> fromIndex (const (0::Int)) $ Index.fromList ['a','b','c','d']
 -- index | values
@@ -218,13 +219,13 @@ toList :: Unbox a => Series k a -> [(k, a)]
 toList = G.toList
 
 
--- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
+-- | Construct a 'Vector' of key-value pairs. The elements are in order sorted by key. 
 toVector :: (Unbox a, Unbox k) => Series k a -> Vector (k, a)
 {-# INLINE toVector #-}
 toVector = G.toVector
 
 
--- | Construct a `Series` from a `Vector` of key-value pairs. There is no
+-- | Construct a 'Series' from a 'Vector' of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
 -- need to handle duplicate keys, see 'fromVectorDuplicates'.
 --
@@ -283,13 +284,13 @@ fromStrictMap :: (Unbox a) => MS.Map k a -> Series k a
 fromStrictMap = G.fromStrictMap
 
 
--- | \(O(n)\) Map every element of a `Series`.
+-- | \(O(n)\) Map every element of a 'Series'.
 map :: (Unbox a, Unbox b) => (a -> b) -> Series k a -> Series k b
 {-# INLINE map #-}
 map = G.map
 
 
--- | \(O(n)\) Map every element of a `Series`, possibly using the key as well.
+-- | \(O(n)\) Map every element of a 'Series', possibly using the key as well.
 mapWithKey :: (Unbox a, Unbox b) => (k -> a -> b) -> Series k a -> Series k b
 {-# INLINE mapWithKey #-}
 mapWithKey = G.mapWithKey
@@ -346,7 +347,7 @@ forWithKeyM_ :: (Unbox a, Monad m) => Series k a -> (k -> a -> m b) -> m ()
 forWithKeyM_ = G.forWithKeyM_
 
 
--- | \(O(n)\) Returns the longest prefix (possibly empty) of the input `Series` that satisfy a predicate.
+-- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
 -- >>> xs
@@ -397,17 +398,17 @@ dropWhile = G.dropWhile
 -- "alpha" |     10
 --  "beta" |     12
 --
--- To combine elements where keys are in either series, see `zipWith`.
+-- To combine elements where keys are in either series, see 'zipWith'.
 zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k) 
                => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
 
 
--- | Zip two `Series` with a combining function, applying a `ZipStrategy` when one key is present in one of the `Series` but not both.
+-- | Zip two 'Series' with a combining function, applying a 'ZipStrategy' when one key is present in one of the 'Series' but not both.
 --
--- In the example below, we want to set the value to @-100@ (via @`constStrategy` (-100)@) for keys which are only present 
--- in the left `Series`, and drop keys (via `skipStrategy`) which are only present in the `right `Series`  
+-- In the example below, we want to set the value to @-100@ (via @'constStrategy' (-100)@) for keys which are only present 
+-- in the left 'Series', and drop keys (via 'skipStrategy') which are only present in the `right 'Series'  
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
@@ -418,8 +419,8 @@ zipWithMatched = G.zipWithMatched
 --  "beta" |     12
 -- "gamma" |   -100
 --
--- Note that if you want to drop keys missing in either `Series`, it is faster to use @`zipWithMatched` f@ 
--- than using @`zipWithStrategy` f skipStrategy skipStrategy@.
+-- Note that if you want to drop keys missing in either 'Series', it is faster to use @'zipWithMatched' f@ 
+-- than using @'zipWithStrategy' f 'skipStrategy' 'skipStrategy'@.
 zipWithStrategy :: (Ord k, Unbox a, Unbox b, Unbox c) 
                 => (a -> b -> c)     -- ^ Function to combine values when present in both series
                 -> ZipStrategy k a c -- ^ Strategy for when the key is in the left series but not the right
@@ -431,8 +432,8 @@ zipWithStrategy :: (Ord k, Unbox a, Unbox b, Unbox c)
 zipWithStrategy = G.zipWithStrategy
 
 
--- | Zip two `Series` with a combining function. The value for keys which are missing from
--- either `Series` is replaced with the appropriate `mempty` value.
+-- | Zip two 'Series' with a combining function. The value for keys which are missing from
+-- either 'Series' is replaced with the appropriate `mempty` value.
 --
 -- >>> import Data.Monoid ( Sum(..) )
 -- >>> let xs = Series.fromList [ ("2023-01-01", Sum (1::Int)), ("2023-01-02", Sum 2) ]
@@ -455,7 +456,7 @@ zipWithMonoid = G.zipWithMonoid
 {-# INLINE zipWithMonoid #-}
 
 
--- | Elementwise sum of two `Series`. Elements missing in one or the other `Series` is considered 0. 
+-- | Elementwise sum of two 'Series'. Elements missing in one or the other 'Series' is considered 0. 
 --
 -- >>> let xs = Series.fromList [ ("2023-01-01", (1::Int)), ("2023-01-02", 2) ]
 -- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
@@ -473,7 +474,7 @@ esum = G.esum
 {-# INLINE esum #-}
 
 
--- | Elementwise product of two `Series`. Elements missing in one or the other `Series` is considered 1. 
+-- | Elementwise product of two 'Series'. Elements missing in one or the other 'Series' is considered 1. 
 --
 -- >>> let xs = Series.fromList [ ("2023-01-01", (2::Int)), ("2023-01-02", 3) ]
 -- >>> let ys = Series.fromList [ ("2023-01-01", (5::Int)), ("2023-01-03", 7) ]
@@ -713,7 +714,7 @@ replace = G.replace
 -- See the documentation for @groupBy@.
 type GroupBy = G.GroupBy Vector
 
--- | Group values in a `Series` by some function (@k -> g@).
+-- | Group values in a 'Series' by some function (@k -> g@).
 --
 -- This function is expected to be used in conjunction with `aggregateWith`:
 -- 

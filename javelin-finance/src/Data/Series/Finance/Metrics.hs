@@ -44,7 +44,7 @@ sharpeRatio returns = GSeries.mean returns
 -- | \(O(n)\) Calculate the Sortino ratio of excess returns.
 --
 -- We distinguish between two edge cases:
--- 1. If the input series is empty, the result is NaN;
+-- 1. If the input series is empty, the result is @NaN@;
 -- 2. if the input series is not empty, but there are no negative returns, the result is +infinity.
 --
 -- >>> let returns = Series.fromList $ zip [(0::Int)..] [ (1.0::Double), -2.0, 3.0, -1.0 ]

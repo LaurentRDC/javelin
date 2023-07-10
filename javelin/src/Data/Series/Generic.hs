@@ -4,7 +4,7 @@ module Data.Series.Generic (
     Series(index, values),
     convert,
 
-    -- * Building/converting `Series`
+    -- * Building/converting 'Series'
     singleton, fromIndex,
     -- ** Lists
     fromList, toList,
@@ -20,6 +20,7 @@ module Data.Series.Generic (
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter, null, length, sum, 
     take, takeWhile, dropWhile,
+    -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
     -- * Scans

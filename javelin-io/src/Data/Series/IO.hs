@@ -68,15 +68,15 @@ newtype City = MkCity String
 Second, we need to create an instance of `Data.Csv.FromNamedRecord` for our new types:
 
 @
-import `Data.Csv` ( `FromNamedRecord`, `(.:)` )
+import "Data.Csv" ( 'FromNamedRecord', '(.:)' )
 
-instance `FromNamedRecord` LatLong where
-    `parseNamedRecord` r = MkLatLong \<$\> r .: "latitude"
+instance 'FromNamedRecord' LatLong where
+    'parseNamedRecord' r = MkLatLong \<$\> r .: "latitude"
                                    \<*\> r .: "longitude"
 
 
-instance `FromNamedRecord` City where
-    `parseNamedRecord` r = MkCity \<$\> r .: "city"
+instance 'FromNamedRecord' City where
+    'parseNamedRecord' r = MkCity \<$\> r .: "city"
 @
 
 Finally, we're ready to read our stream:
@@ -88,7 +88,7 @@ import Data.Series.IO
 main :: IO ()
 main = do
     stream <- (...) -- Read the bytestring from somewhere
-    let (latlongs  :: `Series` City LatLong) = either (error . show) id \<$\> `readCSV` stream
+    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSV` stream
     print latlongs
 @
 -}
@@ -117,8 +117,8 @@ fromFile fp f
 
 {-|
 This is a helper function to read a CSV directly from a filepath.
-See the documentation for `readCSV` on hour to prepare your types.
-Then, for example, you can use `readCSVFromFile` as:
+See the documentation for 'readCSV' on how to prepare your types.
+Then, for example, you can use 'readCSVFromFile' as:
 
 @
 import Data.Series
@@ -127,7 +127,7 @@ import Data.Series.IO
 main :: IO ()
 main = do
     let fp = "path/to/my/file.csv"
-    let (latlongs  :: `Series` City LatLong) = either (error . show) id \<$\> `readCSVFromFile` fp
+    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSVFromFile` fp
     print latlongs
 @
 -}
