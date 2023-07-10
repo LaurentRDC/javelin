@@ -24,6 +24,7 @@ module Data.Series.Generic.View (
 
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
+import qualified Data.Series.Index.Internal as Index.Internal
 import           Data.Maybe             ( fromJust, isJust )
 import           Data.Series.Generic.Definition ( Series(..) )
 import qualified Data.Series.Generic.Definition as G
@@ -92,7 +93,7 @@ requireWith replacement f xs ss
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
 -- be indexed from 0.
 dropIndex :: Series v k a -> Series v Int a
-dropIndex (MkSeries ks vs) = MkSeries (Index.fromDistinctAscList [0..Index.size ks - 1]) vs
+dropIndex (MkSeries ks vs) = MkSeries (Index.Internal.fromDistinctAscList [0..Index.size ks - 1]) vs
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
@@ -102,7 +103,7 @@ filter :: (Vector v a, Vector v Int, Ord k)
 {-# INLINE filter #-}
 filter predicate xs@(MkSeries ks vs) 
     = let indicesToKeep = Vector.findIndices predicate vs
-          keysToKeep = Index.fromDistinctAscList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
+          keysToKeep = Index.Internal.fromDistinctAscList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
        in xs `select` keysToKeep
 
 
@@ -161,7 +162,7 @@ class Selection s where
     -- The first way to do this is to select a sub-series based on keys:
     --
     -- >>> let xs = Series.fromList [('a', 10::Int), ('b', 20), ('c', 30), ('d', 40)]
-    -- >>> xs 'select' Index.fromList ['a', 'd']
+    -- >>> xs `select` Index.fromList ['a', 'd']
     -- index | values
     -- ----- | ------
     --   'a' |     10
@@ -169,7 +170,7 @@ class Selection s where
     --
     -- The second way to select a sub-series is to select all keys in a range:
     --
-    -- >>> xs 'select' 'b' `to` 'c'
+    -- >>> xs `select` 'b' `to` 'c'
     -- index | values
     -- ----- | ------
     --   'b' |     20
@@ -178,7 +179,7 @@ class Selection s where
     -- Note that with 'select', you'll always get a sub-series; if you ask for a key which is not
     -- in the series, it'll be ignored:
     --
-    -- >>> xs 'select' Index.fromList ['a', 'd', 'e']
+    -- >>> xs `select` Index.fromList ['a', 'd', 'e']
     -- index | values
     -- ----- | ------
     --   'a' |     10

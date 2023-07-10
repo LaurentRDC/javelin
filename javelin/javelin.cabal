@@ -32,6 +32,7 @@ library
                       Data.Series.Generic
                       Data.Series.Generic.Internal
                       Data.Series.Index
+                      Data.Series.Index.Internal
                       Data.Series.Tutorial
                       Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
@@ -41,6 +42,7 @@ library
                       Data.Series.Generic.View
                       Data.Series.Generic.Windowing
                       Data.Series.Generic.Zip
+                      Data.Series.Index.Definition
     build-depends:    base  >=4.15.0.0 && <5,
                       containers,
                       deepseq,

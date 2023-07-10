@@ -2,6 +2,7 @@
 module Test.Data.Series.Index (tests) where
 
 import qualified Data.Series.Index    as Index
+import qualified Data.Series.Index.Internal as Index
 import qualified Data.Set             as Set
 import qualified Data.Vector          as Vector
 

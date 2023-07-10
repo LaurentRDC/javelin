@@ -42,6 +42,7 @@ import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as MS
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
+import qualified Data.Series.Index.Internal as Index.Internal
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Algorithms.Intro ( sortUniqBy, sortBy )
@@ -73,9 +74,10 @@ data Series v k a
     -- The reason the index is a set of keys is that we *want* keys to be ordered.
     -- This allows for efficient slicing of the underlying values, because
     -- if @k1 < k2@, then the values are also at indices @ix1 < ix2@.
-    = MkSeries { index  :: Index k
-               , values :: v a
+    = MkSeries { index  :: Index k -- ^ The 'Index' of a series, which contains its (unique) keys in ascending order.
+               , values :: v a     -- ^ The values of a series, in the order of its (unique) keys.
                }
+
 
 -- | \(O(n)\) Convert between two types of 'Series'.
 convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
@@ -169,7 +171,7 @@ fromVector vec = let (indexVector, valuesVector)
                             pure (Vector.force v)
                   in MkSeries (fromDistinctAscVector indexVector) valuesVector
     where
-        fromDistinctAscVector = Index.fromDistinctAscList . Vector.toList
+        fromDistinctAscVector = Index.Internal.fromDistinctAscList . Vector.toList
 {-# INLINE fromVector #-}
 
 
@@ -188,10 +190,8 @@ fromVectorDuplicates vec
                 sortBy (compare `on` fst) mv
                 v <- Vector.freeze mv
                 pure (Vector.force v)
-        in MkSeries (fromDistinctAscVector (occurences indexVector)) valuesVector
+        in MkSeries (Index.Internal.fromDistinctAscVector (occurences indexVector)) valuesVector
     where
-        fromDistinctAscVector = Index.fromDistinctAscList . Vector.toList
-
         occurences vs 
             | Vector.null vs        = Vector.empty
             | Vector.length vs == 1 = Vector.map (,0) vs
