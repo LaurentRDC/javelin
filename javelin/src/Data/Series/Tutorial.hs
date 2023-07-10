@@ -43,7 +43,7 @@ module Data.Series.Tutorial (
 
 ) where
 
-import           Data.Series     ( Series, Occ, at, iat, select, to, require
+import           Data.Series     ( Series, Occurrence, at, iat, select, to, require
                                  , groupBy, aggregateWith, (<-|), (|->)
                                  )
 import qualified Data.Series     as Series
@@ -454,7 +454,8 @@ to use than 'Series.zipWith' and 'Series.zipWithMatched'.
 
 {- $duplicates
 
-If you must build a 'Series' with duplicate keys, you can use the 'Data.Series.fromListDuplicates' function. 
+If you must build a 'Series' with duplicate keys, you can use the 'Data.Series.fromListDuplicates' or 
+'Data.Series.fromVectorDuplicates' functions. 
 In the example below, the key @\'d\'@ is repeated three times:
 
 >>> Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
@@ -471,9 +472,9 @@ composite of a character and an occurrence. This is reflected in the type:
 
 >>> :t Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
 Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
-  :: Series (Char, Occ) Int
+  :: Series (Char, Occurrence) Int
 
-Here, 'Data.Series.Occ' is short for __occurrence__. It is a non-negative number similar to a 'Natural' number, and can be converted to 
+Here, 'Data.Series.Occurrence' is a non-negative number, and can be converted to 
 other integer-like numbers using 'fromIntegral'. In practice, you should aim to aggregate your `Series` to remove duplicate keys, for example
 using 'Data.Series.groupBy' and grouping on the first element of the key ('fst'):
 

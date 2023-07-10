@@ -7,9 +7,11 @@ module Data.Series.Generic (
     -- * Building/converting `Series`
     singleton, fromIndex,
     -- ** Lists
-    fromList, Occ, fromListDuplicates, toList,
+    fromList, toList,
     -- ** Vectors
     fromVector, toVector,
+    -- ** Handling duplicates
+    Occurrence, fromListDuplicates, fromVectorDuplicates,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -53,9 +55,9 @@ module Data.Series.Generic (
 ) where
 
 import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldGroupsWith )
-import Data.Series.Generic.Definition   ( Series(index, values), Occ, convert, singleton, fromIndex, fromStrictMap
+import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
-                                        , fromVector, toVector
+                                        , fromVector, fromVectorDuplicates, toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile
                                         , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_
                                         )

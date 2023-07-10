@@ -37,9 +37,11 @@ module Data.Series (
     -- * Building/converting `Series`
     singleton, fromIndex,
     -- ** Lists
-    fromList, fromListDuplicates, Occ, toList,
+    fromList, toList,
     -- ** Vectors
     fromVector, toVector,
+    -- ** Handling duplicates
+    Occurrence, fromListDuplicates, fromVectorDuplicates,
     -- ** Strict Maps
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
@@ -81,7 +83,7 @@ module Data.Series (
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occ, to )
+import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occurrence, to )
 import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
@@ -160,7 +162,7 @@ fromList = G.fromList
 
 -- | Construct a series from a list of key-value pairs.
 -- Contrary to `fromList`, values at duplicate keys are preserved. To keep each
--- key unique, an `Occ` (short for occurrence) number counts up.
+-- key unique, an `Occurrence` number counts up.
 --
 -- >>> let xs = fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
 -- >>> xs
@@ -171,7 +173,11 @@ fromList = G.fromList
 -- ('d',0) |      1
 -- ('d',1) |     -4
 -- ('d',2) |      7
-fromListDuplicates :: Ord k => [(k, a)] -> Series (k, Occ) a
+--
+-- Note that due to differences in sorting,
+-- 'fromVectorDuplicates' and 'fromListDuplicates' may return results in 
+-- a different order.
+fromListDuplicates :: Ord k => [(k, a)] -> Series (k, Occurrence) a
 {-# INLINE fromListDuplicates #-}
 fromListDuplicates = G.fromListDuplicates
 
@@ -198,16 +204,39 @@ toVector :: Series k a -> Vector (k, a)
 toVector = G.toVector
 
 
--- | Construct a `Series` from a `Vector` of key-value pairs. There is no
+-- | Construct a 'Series' from a 'Vector' of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
--- need to handle duplicate keys, see `fromListDuplicates`.
+-- need to handle duplicate keys, see 'fromVectorDuplicates'.
 --
 -- Note that due to differences in sorting,
--- @Series.fromList@ and @Series.fromVector . Vector.fromList@ 
+-- @'Series.fromList'@ and @'Series.fromVector' . 'Vector.fromList'@ 
 -- may not be equivalent if the input list contains duplicate keys.
 fromVector :: Ord k => Vector (k, a) -> Series k a
 {-# INLINE fromVector #-}
 fromVector = G.fromVector
+
+
+-- | Construct a series from a 'Vector' of key-value pairs.
+-- Contrary to 'fromVector', values at duplicate keys are preserved. To keep each
+-- key unique, an 'Occurrence' number counts up.
+--
+-- >>> import qualified Data.Vector as Vector
+-- >>> let xs = fromVectorDuplicates $ Vector.fromList [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
+-- >>> xs
+--   index | values
+--   ----- | ------
+-- ('a',0) |      5
+-- ('b',0) |      0
+-- ('d',0) |      1
+-- ('d',1) |     -4
+-- ('d',2) |      7
+--
+-- Note that due to differences in sorting,
+-- 'fromVectorDuplicates' and 'fromListDuplicates' may return results in 
+-- a different order.
+fromVectorDuplicates :: Ord k => Vector (k, a) -> Series (k, Occurrence) a
+{-# INLINE fromVectorDuplicates #-}
+fromVectorDuplicates = G.fromVectorDuplicates
 
 
 -- | Convert a series into a lazy @Map@.

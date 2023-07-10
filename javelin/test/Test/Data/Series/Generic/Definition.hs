@@ -5,7 +5,7 @@ import           Data.Function        ( on )
 import           Data.List            ( nubBy, sortOn )
 import qualified Data.Map.Strict      as MS
 import qualified Data.Map.Lazy        as ML
-import           Data.Series.Generic  ( Series, Occ, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, fromVector, toVector )
+import           Data.Series.Generic  ( Series, Occurrence, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, fromVector, toVector )
 import qualified Data.Series.Generic  as Series
 import           Data.Vector          ( Vector )
 import qualified Data.Vector          as Vector
@@ -28,6 +28,7 @@ tests = testGroup "Data.Series.Generic.Definition" [ testMappend
                                                    , testPropRoundtripConversionWithLazyMap
                                                    , testPropRoundtripConversionWithList
                                                    , testPropFromListDuplicatesNeverDrops
+                                                   , testPropFromVectorDuplicatesNeverDrops
                                                    , testPropRoundtripConversionWithVector
                                                    , testPropVectorVsList
                                                    , testFromLazyMap
@@ -115,7 +116,14 @@ testPropFromListDuplicatesNeverDrops :: TestTree
 testPropFromListDuplicatesNeverDrops
     = testProperty "fromListDuplicates never drops elements" $ property $ do
         xs <- forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
-        Series.length (Series.fromListDuplicates xs :: Series Vector (Int, Occ) Char) === length xs
+        Series.length (Series.fromListDuplicates xs :: Series Vector (Int, Occurrence) Char) === length xs
+
+
+testPropFromVectorDuplicatesNeverDrops :: TestTree
+testPropFromVectorDuplicatesNeverDrops
+    = testProperty "fromVectorDuplicates never drops elements" $ property $ do
+        xs <- fmap Vector.fromList $ forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
+        Series.length (Series.fromVectorDuplicates xs :: Series Vector (Int, Occurrence) Char) === length xs
 
 
 testPropRoundtripConversionWithVector :: TestTree

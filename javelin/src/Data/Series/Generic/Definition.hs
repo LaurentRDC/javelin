@@ -21,11 +21,12 @@ module Data.Series.Generic.Definition (
     toLazyMap,
     -- * Conversion to/from list
     fromList,
-    fromListDuplicates, Occ,
     toList,
     -- * Conversion to/from vectors
     fromVector,
     toVector,
+    -- * Handling duplicates
+    Occurrence, fromListDuplicates, fromVectorDuplicates
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
@@ -43,12 +44,13 @@ import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Set               as Set
 import qualified Data.Vector            as Boxed
-import           Data.Vector.Algorithms.Intro ( sortUniqBy )
+import           Data.Vector.Algorithms.Intro ( sortUniqBy, sortBy )
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
+import qualified Data.Vector.Generic.Mutable as GM
+import qualified Data.Vector.Unboxed         as U
+import qualified Data.Vector.Unboxed.Mutable as UM
  
-import           Numeric.Natural        ( Natural )
-
 import           Prelude                hiding ( take, takeWhile, dropWhile, map, foldMap, sum, length, null )
 import qualified Prelude                as P
 
@@ -96,9 +98,9 @@ fromIndex f ix = MkSeries ix $ Vector.convert
                              $ Index.toAscVector ix
 
 
--- | Construct a `Series` from a list of key-value pairs. There is no
+-- | Construct a 'Series' from a list of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
--- need to handle duplicate keys, see `fromListDuplicates`.
+-- need to handle duplicate keys, see 'fromListDuplicates'.
 fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
@@ -106,21 +108,32 @@ fromList = fromStrictMap . MS.fromList
 -- | Integer-like, non-negative number that specifies how many occurrences
 -- of a key is present in a `Series`.
 --
--- The easiest way to convert from an `Occ` to another integer-like type
+-- The easiest way to convert from an `Occurrence` to another integer-like type
 -- is the `fromIntegral` function.
-newtype Occ = MkOcc Natural
+newtype Occurrence = MkOcc Int
     deriving (Eq, Enum, Num, Ord, Integral, Real)
-    deriving newtype Show 
+    deriving newtype (Show, U.Unbox) 
 
+-- Occurrence needs to be an `Unbox` type
+-- so that `fromVectorDuplicates` worhs with unboxed vectors
+-- and series.
+newtype instance UM.MVector s Occurrence = MV_Occ (UM.MVector s Int)
+newtype instance U.Vector Occurrence = V_Occ (U.Vector Int)
+deriving instance GM.MVector UM.MVector Occurrence
+deriving instance Vector U.Vector Occurrence 
 
 -- | Construct a series from a list of key-value pairs.
--- Contrary to `fromList`, aalues at duplicate keys are preserved. To keep each
--- key unique, an `Occ` (short for occurrence) number counts up.
-fromListDuplicates :: (Vector v a, Ord k) => [(k, a)] -> Series v (k, Occ) a
+-- Contrary to 'fromList', aalues at duplicate keys are preserved. To keep each
+-- key unique, an 'Occurrence' number counts up.
+--
+-- Note that due to differences in sorting,
+-- 'fromVectorDuplicates' and 'fromListDuplicates' may return results in 
+-- a different order.
+fromListDuplicates :: (Vector v a, Ord k) => [(k, a)] -> Series v (k, Occurrence) a
 {-# INLINE fromListDuplicates #-}
 fromListDuplicates = fromStrictMap . toOccMap
     where
-        toOccMap :: Ord k => [(k, a)] -> Map (k, Occ) a
+        toOccMap :: Ord k => [(k, a)] -> Map (k, Occurrence) a
         toOccMap xs = go xs mempty
             where
                 go []                  acc = acc
@@ -139,17 +152,18 @@ toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 
 -- | Construct a `Series` from a `Vector` of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
--- need to handle duplicate keys, see `fromListDuplicates`.
+-- need to handle duplicate keys, see 'fromVectorDuplicates'.
 --
 -- Note that due to differences in sorting,
--- @Series.fromList@ and @Series.fromVector . Vector.fromList@ 
+-- 'Series.fromList' and 'Series.fromVector . Vector.fromList' 
 -- may not be equivalent if the input list contains duplicate keys.
 fromVector :: (Ord k, Vector v k, Vector v a, Vector v (k, a))
            => v (k, a) -> Series v k a
 fromVector vec = let (indexVector, valuesVector) 
                         = Vector.unzip $ runST $ do
                             mv <- Vector.thaw vec
-                            -- Note that we're using this particular flavor of `sortU
+                            -- Note that we're using this particular flavor of `sortUniqBy`
+                            -- because it both sorts AND removes duplicate keys
                             destMV <- sortUniqBy (compare `on` fst) mv
                             v <- Vector.freeze destMV
                             pure (Vector.force v)
@@ -157,6 +171,36 @@ fromVector vec = let (indexVector, valuesVector)
     where
         fromDistinctAscVector = Index.fromDistinctAscList . Vector.toList
 {-# INLINE fromVector #-}
+
+
+-- | Construct a `Series` from a `Vector` of key-value pairs, where there may be duplicate keys. 
+-- There is no condition on the order of pairs.
+--
+-- Note that due to differences in sorting,
+-- 'Series.fromVectorDuplicates' and 'Series.fromListDuplicates' may return results in 
+-- a different order.
+fromVectorDuplicates :: (Ord k, Vector v k, Vector v a, Vector v (k, a), Vector v (k, Occurrence))
+                     => v (k, a) -> Series v (k, Occurrence) a
+fromVectorDuplicates vec 
+    = let (indexVector, valuesVector) 
+            = Vector.unzip $ runST $ do
+                mv <- Vector.thaw vec
+                sortBy (compare `on` fst) mv
+                v <- Vector.freeze mv
+                pure (Vector.force v)
+        in MkSeries (fromDistinctAscVector (occurences indexVector)) valuesVector
+    where
+        fromDistinctAscVector = Index.fromDistinctAscList . Vector.toList
+
+        occurences vs 
+            | Vector.null vs        = Vector.empty
+            | Vector.length vs == 1 = Vector.map (,0) vs
+            | otherwise             = Vector.scanl f (Vector.head vs, 0) (Vector.tail vs)
+            where
+                f (lastKey, lastOcc) newKey 
+                    | lastKey == newKey = (newKey, lastOcc + 1)
+                    | otherwise         = (newKey, 0)
+{-# INLINE fromVectorDuplicates #-}
 
 
 -- | Construct a `Vector` of key-value pairs. The elements are in order sorted by key. 
