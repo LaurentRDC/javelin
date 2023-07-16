@@ -45,7 +45,6 @@ library
     build-depends:    base  >=4.15.0.0 && <5,
                       containers,
                       deepseq,
-                      time,
                       vector,
                       vector-algorithms
 
@@ -73,7 +72,6 @@ test-suite javelin-test
                       tasty-hedgehog,
                       tasty-hspec,
                       tasty-hunit,
-                      time,
                       vector
 
 

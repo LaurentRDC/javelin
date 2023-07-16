@@ -74,8 +74,7 @@ module Data.Series (
 
     -- * Grouping and windowing operations
     groupBy, foldGroups, 
-    Windowing(..), windowing, rollingForwards, rollingBackwards,
-    expanding,
+    windowing, expanding,
 
     -- * Numerical aggregation
     mean, var, std, 
@@ -86,7 +85,7 @@ module Data.Series (
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic ( Windowing(..), Range, Selection, ZipStrategy, Occurrence, to )
+import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occurrence, to )
 import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
@@ -773,27 +772,26 @@ foldGroups = G.foldGroups
 
 -- | Expanding window aggregation.
 --
--- >>> import Data.Time.Calendar (Day)
 -- >>> import qualified Data.Series as Series 
 -- >>> :{ 
---     let (xs :: Series.Series Day Integer) 
---          = Series.fromList [ (read "2023-01-01", 0)
---                            , (read "2023-01-02", 1)
---                            , (read "2023-01-03", 2)
---                            , (read "2023-01-04", 3)
---                            , (read "2023-01-05", 4)
---                            , (read "2023-01-06", 5)
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 3)
+--                            , (5, 4)
+--                            , (6, 5)
 --                            ]
---     in (xs `expanding` sum) :: Series.Series Day Integer 
+--     in (xs `expanding` sum) :: Series.Series Int Int 
 -- :}
---      index | values
---      ----- | ------
--- 2023-01-01 |      0
--- 2023-01-02 |      1
--- 2023-01-03 |      3
--- 2023-01-04 |      6
--- 2023-01-05 |     10
--- 2023-01-06 |     15
+-- index | values
+-- ----- | ------
+--     1 |      0
+--     2 |      1
+--     3 |      3
+--     4 |      6
+--     5 |     10
+--     6 |     15
 expanding :: Series k a        -- ^ Series vector
           -> (Series k a -> b) -- ^ Aggregation function
           -> Series k b        -- ^ Resulting vector
@@ -803,27 +801,26 @@ expanding = G.expanding
 
 -- | General-purpose window aggregation.
 --
--- >>> import Data.Time.Calendar (Day, addDays)
 -- >>> import qualified Data.Series as Series 
 -- >>> :{ 
---     let (xs :: Series.Series Day Integer) 
---          = Series.fromList [ (read "2023-01-01", 0)
---                            , (read "2023-01-02", 1)
---                            , (read "2023-01-03", 2)
---                            , (read "2023-01-04", 3)
---                            , (read "2023-01-05", 4)
---                            , (read "2023-01-06", 5)
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 3)
+--                            , (5, 4)
+--                            , (6, 5)
 --                            ]
---     in windowing (\k -> k `to` addDays 2 k) sum xs
+--     in windowing (\k -> k `to` (k+2)) sum xs
 -- :}
---      index | values
---      ----- | ------
--- 2023-01-01 |      3
--- 2023-01-02 |      6
--- 2023-01-03 |      9
--- 2023-01-04 |     12
--- 2023-01-05 |      9
--- 2023-01-06 |      5
+-- index | values
+-- ----- | ------
+--     1 |      3
+--     2 |      6
+--     3 |      9
+--     4 |     12
+--     5 |      9
+--     6 |      5
 windowing :: Ord k
           => (k -> Range k)
           -> (Series k a -> b)
@@ -831,68 +828,6 @@ windowing :: Ord k
           -> Series k b
 {-# INLINE windowing #-}
 windowing = G.windowing
-
-
--- | Rolling forwards window aggregation.
---
--- >>> import Data.Time.Calendar (Day)
--- >>> :{ 
---     let (xs :: Series.Series Day Integer) 
---          = Series.fromList [ (read "2023-01-01", 0)
---                            , (read "2023-01-02", 1)
---                            , (read "2023-01-03", 2)
---                            , (read "2023-01-04", 3)
---                            , (read "2023-01-05", 4)
---                            , (read "2023-01-06", 5)
---                            ]
---     in (rollingForwards 2 Series.mean xs) :: Series.Series Day Double 
--- :}
---      index | values
---      ----- | ------
--- 2023-01-01 |    1.0
--- 2023-01-02 |    2.0
--- 2023-01-03 |    3.0
--- 2023-01-04 |    4.0
--- 2023-01-05 |    4.5
--- 2023-01-06 |    5.0
-rollingForwards :: (Windowing k, Ord k) 
-                => Delta k
-                -> (Series k a -> b)
-                -> Series k a
-                -> Series k b
-{-# INLINE rollingForwards #-}
-rollingForwards = G.rollingForwards
-
-
--- | Rolling backwards window aggregation.
---
--- >>> import Data.Time.Calendar (Day)
--- >>> :{ 
---     let (xs :: Series.Series Day Integer) 
---          = Series.fromList [ (read "2023-01-01", 0)
---                            , (read "2023-01-02", 1)
---                            , (read "2023-01-03", 2)
---                            , (read "2023-01-04", 3)
---                            , (read "2023-01-05", 4)
---                            , (read "2023-01-06", 5)
---                            ]
---     in (rollingBackwards 2 Series.mean xs) :: Series.Series Day Double 
--- :}
---      index | values
---      ----- | ------
--- 2023-01-01 |    0.0
--- 2023-01-02 |    0.5
--- 2023-01-03 |    1.0
--- 2023-01-04 |    2.0
--- 2023-01-05 |    3.0
--- 2023-01-06 |    4.0
-rollingBackwards :: (Windowing k, Ord k) 
-                 => Delta k
-                 -> (Series k a -> b)
-                 -> Series k a
-                 -> Series k b
-{-# INLINE rollingBackwards #-}
-rollingBackwards = G.rollingBackwards
 
 
 -- | Compute the mean of the values in the series.

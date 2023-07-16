@@ -25,6 +25,9 @@ module Data.Series.Tutorial (
     -- * Grouping
     -- $grouping
 
+    -- * Window aggregation
+    -- $windowing
+
     -- * Combining 'Series' together
     -- $zipping
     
@@ -44,7 +47,7 @@ module Data.Series.Tutorial (
 ) where
 
 import           Data.Series     ( Series, Occurrence, at, iat, select, to, require
-                                 , groupBy, (<-|), (|->)
+                                 , groupBy, (<-|), (|->), Range, windowing
                                  )
 import qualified Data.Series     as Series
 import qualified Data.Series.Generic as Series (mean, std)
@@ -364,6 +367,70 @@ to find the monthly average Apple closing price, rounded to the nearest cent:
 "2021-11" | 154.21
 "2021-12" | 173.55
 "2022-01" | 176.16
+
+-}
+
+{- $windowing
+
+Windowing aggregation refers to the practice of aggregating values in a window around every key.
+
+General-purpose windowing is done using the 'windowing' function. Let's look at its
+type signature:
+
+>>> :t windowing
+windowing
+  :: Ord k =>
+     (k -> Range k) -> (Series k a -> b) -> Series k a -> Series k b
+
+Here, @`windowing` window aggfunc xs@ is a new series @'Series' k b@ where
+for every key @k@, the values in the range @window k@ are aggregated by @aggfunc@
+and placed in the resulting series at key @k@. Here's an example where
+for every key @k@, we add the values at @k@ and @k+1@:
+
+>>> :{ 
+let (xs :: Series Int Int) 
+      = Series.fromList [ (1, 0)
+                        , (2, 1)
+                        , (3, 2)
+                        , (4, 3)
+                        , (5, 4)
+                        , (6, 5)
+                        ]
+in windowing (\k -> k `to` (k + 1)) sum xs
+:}
+index | values
+----- | ------
+    1 |      1
+    2 |      3
+    3 |      5
+    4 |      7
+    5 |      9
+    6 |      5
+
+'windowing' can be used to compute so-called rolling aggregations. An example of
+this is to compute the rolling mean of the last 3 keys:
+
+>>> import Data.Series ( mean )
+>>> :{ 
+let rollingMean = windowing (\k -> (k-3) `to` k) mean
+    (xs :: Series Int Int) 
+      = Series.fromList [ (1, 0)
+                        , (2, 1)
+                        , (3, 2)
+                        , (4, 3)
+                        , (5, 4)
+                        , (6, 5)
+                        ]
+ in (rollingMean xs) :: Series Int Double
+:}
+index | values
+----- | ------
+    1 |    0.0
+    2 |    0.5
+    3 |    1.0
+    4 |    1.5
+    5 |    2.5
+    6 |    3.5
 
 -}
 

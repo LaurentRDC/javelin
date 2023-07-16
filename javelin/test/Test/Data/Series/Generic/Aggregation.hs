@@ -3,8 +3,7 @@ module Test.Data.Series.Generic.Aggregation (tests) where
 
 import qualified Data.Map.Strict      as MS
 import qualified Data.Series.Generic  as Series
-import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, foldGroups, windowing, to, rollingForwards, rollingBackwards, expanding)
-import           Data.Time.Calendar   ( Day, addDays )
+import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, foldGroups, windowing, to, expanding)
 import           Data.Vector          ( Vector )
 
 import           Hedgehog             ( property, forAll, (===) )
@@ -20,8 +19,8 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 tests :: TestTree
 tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
                                                     , testWindowing
-                                                    , testRollingForwards
-                                                    , testRollingBackwards
+                                                    , testWindowingRollingForwards
+                                                    , testWindowingRollingBackwards
                                                     , testPropaggregateVsfoldGroups
                                                     , testExpanding
                                                     ]
@@ -47,26 +46,26 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
 testWindowing :: TestTree
 testWindowing = testCase "Data.Series.Generic.windowing" $ do
 
-    let (xs :: Series Vector Day Integer) 
-         = Series.fromList [ (read "2023-01-01", 0)
-                           , (read "2023-01-02", 1)
-                           , (read "2023-01-03", 2)
-                           , (read "2023-01-04", 3)
-                           , (read "2023-01-05", 4)
-                           , (read "2023-01-06", 5)
+    let (xs :: Series Vector Int Int) 
+         = Series.fromList [ (1, 0)
+                           , (2, 1)
+                           , (3, 2)
+                           , (4, 3)
+                           , (5, 4)
+                           , (6, 5)
                            ]
-        expectation = Series.fromList [ (read "2023-01-01", 3)
-                                      , (read "2023-01-02", 6)
-                                      , (read "2023-01-03", 9)
-                                      , (read "2023-01-04", 12)
-                                      , (read "2023-01-05", 9)
-                                      , (read "2023-01-06", 5)
+        expectation = Series.fromList [ (1, 3)
+                                      , (2, 6)
+                                      , (3, 9)
+                                      , (4, 12)
+                                      , (5, 9)
+                                      , (6, 5)
                                       ]
-    assertEqual mempty expectation $ windowing (\k -> k `to` addDays 2 k) sum xs
+    assertEqual mempty expectation $ windowing (\k -> k `to` (k+2)) sum xs
 
 
-testRollingForwards :: TestTree
-testRollingForwards = testGroup "Data.Series.Generic.rollingForwards" [ test1, test2 ]
+testWindowingRollingForwards :: TestTree
+testWindowingRollingForwards = testGroup "Data.Series.Generic.windowing" [ test1, test2 ]
     where
         test1 = testCase "rollingForwards" $ do
             let (series :: Series Vector Int Int) = fromStrictMap $ MS.fromList [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
@@ -77,7 +76,7 @@ testRollingForwards = testGroup "Data.Series.Generic.rollingForwards" [ test1, t
                                                           , (5, 5)
                                                           ]
             
-            assertEqual mempty expectation $ rollingForwards 1 (Series.sum :: Series Vector Int Int -> Int) series
+            assertEqual mempty expectation $ windowing (\k -> k `to` (k + 1)) (Series.sum :: Series Vector Int Int -> Int) series
 
         test2 = testCase "rollingForwards" $ do
             let (series :: Series Vector Int Int) = fromStrictMap $ MS.fromList [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
@@ -88,11 +87,11 @@ testRollingForwards = testGroup "Data.Series.Generic.rollingForwards" [ test1, t
                                                           , (5, 5)
                                                           ]
             
-            assertEqual mempty expectation $ rollingForwards 2 (Series.sum :: Series Vector Int Int -> Int) series
+            assertEqual mempty expectation $ windowing (\k -> k `to` (k + 2)) (Series.sum :: Series Vector Int Int -> Int) series
 
 
-testRollingBackwards :: TestTree
-testRollingBackwards = testGroup "Data.Series.Generic.rollingBackwards" [ test1, test2 ]
+testWindowingRollingBackwards :: TestTree
+testWindowingRollingBackwards = testGroup "Data.Series.Generic.windowing" [ test1, test2 ]
     where
         test1 = testCase "rollingForwards" $ do
             let (series :: Series Vector Int Int) = fromStrictMap $ MS.fromList [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
@@ -103,7 +102,7 @@ testRollingBackwards = testGroup "Data.Series.Generic.rollingBackwards" [ test1,
                                                           , (5, 4+5)
                                                           ]
             
-            assertEqual mempty expectation $ rollingBackwards 1 (Series.sum :: Series Vector Int Int -> Int) series
+            assertEqual mempty expectation $ windowing (\k -> (k-1) `to` k) (Series.sum :: Series Vector Int Int -> Int) series
 
         test2 = testCase "rollingForwards" $ do
             let (series :: Series Vector Int Int) = fromStrictMap $ MS.fromList [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
@@ -114,12 +113,12 @@ testRollingBackwards = testGroup "Data.Series.Generic.rollingBackwards" [ test1,
                                                           , (5, 3+4+5)
                                                           ]
             
-            assertEqual mempty expectation $ rollingBackwards 2 (Series.sum :: Series Vector Int Int -> Int) series
+            assertEqual mempty expectation $ windowing (\k -> (k-2) `to` k)  (Series.sum :: Series Vector Int Int -> Int) series
 
 
 testPropaggregateVsfoldGroups :: TestTree
 testPropaggregateVsfoldGroups 
-    = testProperty "check that groupBy and testRollingForwards are equivalent" $ property $ do
+    = testProperty "check that groupBy and testWindowingRollingForwards are equivalent" $ property $ do
         ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500) 
         let (xs :: Series Vector Int Double) = Series.fromList (zip [0::Int ..] ms)
 
