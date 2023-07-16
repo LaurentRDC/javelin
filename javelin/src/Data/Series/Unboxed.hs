@@ -80,8 +80,10 @@ module Data.Series.Unboxed (
     -- * Replacement
     replace, (|->), (<-|),
 
-    -- * Grouping operations
-    GroupBy, groupBy, aggregateWith, foldGroupsWith,
+    -- * Grouping and windowing operations
+    groupBy, foldGroups, 
+    Windowing(..), rollingForwards, rollingBackwards,
+    expanding,
 
     -- * Folds
     -- ** General folds
@@ -100,7 +102,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to )
-import           Data.Series.Generic ( ZipStrategy, Occurrence, skipStrategy, mapStrategy, constStrategy )
+import           Data.Series.Generic ( Windowing(..), ZipStrategy, Occurrence, skipStrategy, mapStrategy, constStrategy )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -710,57 +712,136 @@ replace = G.replace
 (<-|) = (G.<-|)
 
 
--- | Data type representing groups of @Series k a@, indexed by keys of type @g@.
--- See the documentation for @groupBy@.
-type GroupBy = G.GroupBy Vector
-
--- | Group values in a 'Series' by some function (@k -> g@).
+-- | Group values in a 'Series' by some grouping function (@k -> g@).
+-- The provided grouping function is guaranteed to operate on a non-empty 'Series'.
 --
--- This function is expected to be used in conjunction with `aggregateWith`:
+-- This function is expected to be used in conjunction with @aggregate@:
 -- 
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
 -- >>> :{ 
---     let (xs :: Series Date Int) 
---              = Series.fromList [ ((2020, "January"),  0)
---                                , ((2021, "January"), -5)
---                                , ((2020, "June")   , 20)
---                                , ((2021, "June")   , 25) 
---                                ]
---      in xs `groupBy` month `aggregateWith` Series.minimum
+--     let xs = Series.fromList [ ((2020, "January") :: Date,  0 :: Int)
+--                              , ((2021, "January"), -5)
+--                              , ((2020, "June")   , 20)
+--                              , ((2021, "June")   , 25) 
+--                              ]
+--      in groupBy month minimum xs
 -- :}
 --     index | values
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: Series k a       -- ^ Input series
-        -> (k -> g)         -- ^ Grouping function
-        -> GroupBy g k a    -- ^ Grouped series
+groupBy :: (Ord k, Ord g, Unbox a, Unbox b) 
+        => (k -> g)           -- ^ Grouping function
+        -> (Series k a -> b)
+        -> Series k a       -- ^ Input series
+        -> Series g b    -- ^ Grouped series
 {-# INLINE groupBy #-}
 groupBy = G.groupBy
 
 
--- | Aggregate each group in a `GroupBy` using a binary function.
--- While this is not as expressive as `aggregateWith`, users looking for maximum
--- performance should use `foldGroupsWith` as much as possible.
-foldGroupsWith :: (Ord g, Unbox a) 
-               => GroupBy g k a 
-               -> (a -> a -> a) 
-               -> Series g a
-{-# INLINE foldGroupsWith #-}
-foldGroupsWith = G.foldGroupsWith
+-- | Aggregate each group in a 'GroupBy' using a binary function.
+-- While this is not as expressive as 'aggregate', users looking for maximum
+-- performance should use 'foldGroups' as much as possible.
+foldGroups :: (Ord g, Unbox a) 
+           => (k -> g)
+           -> (a -> a -> a) 
+           -> Series k a
+           -> Series g a
+{-# INLINE foldGroups #-}
+foldGroups = G.foldGroups
 
 
--- | General-purpose aggregation for a `GroupBy`,
+-- | Expanding window aggregation.
 --
--- If you can express your aggregation as a binary function @a -> a -> a@, then 
--- using `foldGroupsWith` can be an order of magnitude faster. 
-aggregateWith :: (Ord k, Ord g, Unbox a, Unbox b) 
-              => GroupBy g k a 
-              -> (Series k a -> b) 
-              ->  Series g b
-{-# INLINE aggregateWith #-}
-aggregateWith = G.aggregateWith
+-- >>> import Data.Time.Calendar (Day)
+-- >>> :{ 
+--     let (xs :: Series Day Int) 
+--          = fromList [ (read "2023-01-01", 0)
+--                     , (read "2023-01-02", 1)
+--                     , (read "2023-01-03", 2)
+--                     , (read "2023-01-04", 3)
+--                     , (read "2023-01-05", 4)
+--                     , (read "2023-01-06", 5)
+--                     ]
+--     in (xs `expanding` sum) :: Series Day Int 
+-- :}
+--      index | values
+--      ----- | ------
+-- 2023-01-01 |      0
+-- 2023-01-02 |      1
+-- 2023-01-03 |      3
+-- 2023-01-04 |      6
+-- 2023-01-05 |     10
+-- 2023-01-06 |     15
+expanding :: (Unbox a, Unbox b) 
+          => Series k a        -- ^ Series vector
+          -> (Series k a -> b) -- ^ Aggregation function
+          -> Series k b        -- ^ Resulting vector
+{-# INLINE expanding #-}
+expanding = G.expanding
+
+
+-- | Rolling forwards window aggregation.
+--
+-- >>> import Data.Time.Calendar (Day)
+-- >>> :{ 
+--     let (xs :: Series.Series Day Int) 
+--          = Series.fromList [ (read "2023-01-01", 0)
+--                            , (read "2023-01-02", 1)
+--                            , (read "2023-01-03", 2)
+--                            , (read "2023-01-04", 3)
+--                            , (read "2023-01-05", 4)
+--                            , (read "2023-01-06", 5)
+--                            ]
+--     in (rollingForwards 2 Series.mean xs) :: Series.Series Day Double 
+-- :}
+--      index | values
+--      ----- | ------
+-- 2023-01-01 |    1.0
+-- 2023-01-02 |    2.0
+-- 2023-01-03 |    3.0
+-- 2023-01-04 |    4.0
+-- 2023-01-05 |    4.5
+-- 2023-01-06 |    5.0
+rollingForwards :: (Windowing k, Ord k, Unbox a, Unbox b) 
+                => Delta k
+                -> (Series k a -> b)
+                -> Series k a
+                -> Series k b
+{-# INLINE rollingForwards #-}
+rollingForwards = G.rollingForwards
+
+
+-- | Rolling backwards window aggregation.
+--
+-- >>> import Data.Time.Calendar (Day)
+-- >>> :{ 
+--     let (xs :: Series.Series Day Int) 
+--          = Series.fromList [ (read "2023-01-01", 0)
+--                            , (read "2023-01-02", 1)
+--                            , (read "2023-01-03", 2)
+--                            , (read "2023-01-04", 3)
+--                            , (read "2023-01-05", 4)
+--                            , (read "2023-01-06", 5)
+--                            ]
+--     in (rollingBackwards 2 Series.mean xs) :: Series.Series Day Double 
+-- :}
+--      index | values
+--      ----- | ------
+-- 2023-01-01 |    0.0
+-- 2023-01-02 |    0.5
+-- 2023-01-03 |    1.0
+-- 2023-01-04 |    2.0
+-- 2023-01-05 |    3.0
+-- 2023-01-06 |    4.0
+rollingBackwards :: (Windowing k, Ord k, Unbox a, Unbox b) 
+                 => Delta k
+                 -> (Series k a -> b)
+                 -> Series k a
+                 -> Series k b
+{-# INLINE rollingBackwards #-}
+rollingBackwards = G.rollingBackwards
 
 
 -- | /O(n)/ Map each element of the structure to a monoid and combine

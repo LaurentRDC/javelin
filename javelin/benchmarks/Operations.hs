@@ -49,4 +49,4 @@ select ks s = foldl' go 0 ks
 groupby :: Set Int -> Series Int Int -> Int
 groupby ks s = foldl' go 0 ks
     where
-        go n k = n + product (s `Series.groupBy` (`mod` (k + 1)) `Series.aggregateWith` sum)
+        go n k = n + product (Series.groupBy (`mod` (k + 1)) sum s)

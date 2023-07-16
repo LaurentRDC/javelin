@@ -30,22 +30,22 @@ library
     hs-source-dirs:   src
     exposed-modules:  Data.Series
                       Data.Series.Generic
-                      Data.Series.Generic.Internal
                       Data.Series.Index
-                      Data.Series.Index.Internal
                       Data.Series.Tutorial
                       Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Definition
+                      Data.Series.Generic.Internal
                       Data.Series.Generic.Numeric
                       Data.Series.Generic.Scans
                       Data.Series.Generic.View
-                      Data.Series.Generic.Windowing
                       Data.Series.Generic.Zip
                       Data.Series.Index.Definition
+                      Data.Series.Index.Internal
     build-depends:    base  >=4.15.0.0 && <5,
                       containers,
                       deepseq,
+                      time,
                       vector,
                       vector-algorithms
 
@@ -60,20 +60,20 @@ test-suite javelin-test
                       Test.Data.Series.Generic.Definition
                       Test.Data.Series.Generic.Numeric
                       Test.Data.Series.Generic.View
-                      Test.Data.Series.Generic.Windowing
                       Test.Data.Series.Generic.Zip
                       Test.Utils
     build-depends:    base,
                       containers,
                       hedgehog,
+                      HUnit,
                       ieee754,
                       javelin,
                       statistics,
                       tasty,
                       tasty-hedgehog,
-                      tasty-hunit,
-                      HUnit,
                       tasty-hspec,
+                      tasty-hunit,
+                      time,
                       vector
 
 

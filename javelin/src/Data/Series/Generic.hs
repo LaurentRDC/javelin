@@ -42,20 +42,22 @@ module Data.Series.Generic (
 
     -- * Replacement
     replace, (|->), (<-|),
-
-    -- * Grouping operations
-    GroupBy, groupBy, aggregateWith, foldGroupsWith,
+   
     
     -- * Numerical aggregations
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
 
-    -- * Windowing operations
-    windows, iwindows, expanding, irolling,
+    -- * Grouping and windowing operations
+    groupBy, foldGroups, 
+    Windowing(..), rollingForwards, rollingBackwards,
+    expanding,
 ) where
 
-import Data.Series.Generic.Aggregation  ( GroupBy, groupBy, aggregateWith, foldGroupsWith )
+import Data.Series.Generic.Aggregation  ( groupBy, foldGroups
+                                        , Windowing(..), rollingForwards, rollingBackwards, expanding 
+                                        )
 import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
@@ -65,7 +67,6 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
-import Data.Series.Generic.Windowing    ( windows, iwindows, expanding, irolling )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, replace, (|->), (<-|), zipWithStrategy, ZipStrategy, skipStrategy, mapStrategy, constStrategy
                                         , zipWithMonoid, esum, eproduct
                                         )
