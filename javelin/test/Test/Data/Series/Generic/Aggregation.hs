@@ -3,7 +3,8 @@ module Test.Data.Series.Generic.Aggregation (tests) where
 
 import qualified Data.Map.Strict      as MS
 import qualified Data.Series.Generic  as Series
-import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, foldGroups, rollingForwards, rollingBackwards, expanding)
+import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, foldGroups, windowing, to, rollingForwards, rollingBackwards, expanding)
+import           Data.Time.Calendar   ( Day, addDays )
 import           Data.Vector          ( Vector )
 
 import           Hedgehog             ( property, forAll, (===) )
@@ -18,6 +19,7 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
 tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
+                                                    , testWindowing
                                                     , testRollingForwards
                                                     , testRollingBackwards
                                                     , testPropaggregateVsfoldGroups
@@ -39,6 +41,28 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
                 expectation = fromStrictMap $ MS.fromList [(True, 0+2), (False, 1+3)]
             
             assertEqual mempty expectation $ groupBy even (Series.sum :: Series Vector Int Int -> Int) series
+
+
+
+testWindowing :: TestTree
+testWindowing = testCase "Data.Series.Generic.windowing" $ do
+
+    let (xs :: Series Vector Day Integer) 
+         = Series.fromList [ (read "2023-01-01", 0)
+                           , (read "2023-01-02", 1)
+                           , (read "2023-01-03", 2)
+                           , (read "2023-01-04", 3)
+                           , (read "2023-01-05", 4)
+                           , (read "2023-01-06", 5)
+                           ]
+        expectation = Series.fromList [ (read "2023-01-01", 3)
+                                      , (read "2023-01-02", 6)
+                                      , (read "2023-01-03", 9)
+                                      , (read "2023-01-04", 12)
+                                      , (read "2023-01-05", 9)
+                                      , (read "2023-01-06", 5)
+                                      ]
+    assertEqual mempty expectation $ windowing (\k -> k `to` addDays 2 k) sum xs
 
 
 testRollingForwards :: TestTree

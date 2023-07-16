@@ -51,12 +51,12 @@ module Data.Series.Generic (
 
     -- * Grouping and windowing operations
     groupBy, foldGroups, 
-    Windowing(..), rollingForwards, rollingBackwards,
+    Windowing(..), windowing, rollingForwards, rollingBackwards,
     expanding,
 ) where
 
 import Data.Series.Generic.Aggregation  ( groupBy, foldGroups
-                                        , Windowing(..), rollingForwards, rollingBackwards, expanding 
+                                        , Windowing(..), windowing, rollingForwards, rollingBackwards, expanding 
                                         )
 import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList

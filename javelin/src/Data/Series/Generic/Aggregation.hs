@@ -6,6 +6,7 @@ module Data.Series.Generic.Aggregation (
 
     -- * Windowing
     expanding,
+    windowing,
     Windowing(..),
     rollingForwards,
     rollingBackwards,
@@ -15,7 +16,7 @@ module Data.Series.Generic.Aggregation (
 import qualified Data.Map.Strict                as Map
 import           Data.Series.Generic.Definition ( Series(..), fromStrictMap, toList )
 import qualified Data.Series.Generic.Definition as GSeries
-import           Data.Series.Generic.View       ( slice, select, to )
+import           Data.Series.Generic.View       ( Range, slice, select, to )
 import           Data.Time.Calendar             ( Day, addDays )
 import           Data.Time.Calendar.Quarter     ( Quarter, addQuarters )
 import           Data.Time.Clock                ( UTCTime, NominalDiffTime, DiffTime, addUTCTime )
@@ -116,11 +117,45 @@ expanding :: (Vector v a, Vector v b)
           => Series v k a        -- ^ Series vector
           -> (Series v k a -> b) -- ^ Aggregation function
           -> Series v k b        -- ^ Resulting vector
+{-# INLINE expanding #-}
 expanding vs f = MkSeries (index vs) $ Vector.unfoldrExactN (GSeries.length vs) go 0
     where
         -- Recall that `slice` does NOT include the right index
         go ix = (f $ slice 0 (ix + 1) vs, ix + 1)
-{-# INLINE expanding #-}
+
+
+-- | General-purpose window aggregation.
+--
+-- >>> import Data.Time.Calendar (Day, addDays)
+-- >>> import qualified Data.Series as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Day Integer) 
+--          = Series.fromList [ (read "2023-01-01", 0)
+--                            , (read "2023-01-02", 1)
+--                            , (read "2023-01-03", 2)
+--                            , (read "2023-01-04", 3)
+--                            , (read "2023-01-05", 4)
+--                            , (read "2023-01-06", 5)
+--                            ]
+--     in windowing (\k -> k `to` addDays 2 k) sum xs
+-- :}
+--      index | values
+--      ----- | ------
+-- 2023-01-01 |      3
+-- 2023-01-02 |      6
+-- 2023-01-03 |      9
+-- 2023-01-04 |     12
+-- 2023-01-05 |      9
+-- 2023-01-06 |      5
+windowing :: (Ord k, Vector v a, Vector v b)
+          => (k -> Range k)
+          -> (Series v k a -> b)
+          -> Series v k a
+          -> Series v k b
+{-# INLINE windowing #-}
+windowing range agg series 
+    = GSeries.mapWithKey (\k _ -> agg $ series `select` range k) series
+
 
 -- | Rolling forwards window aggregation.
 --
@@ -150,8 +185,8 @@ rollingForwards :: (Windowing k, Ord k, Vector v a, Vector v b)
                 -> Series v k a
                 -> Series v k b
 {-# INLINE rollingForwards #-}
-rollingForwards windowSize f series
-    = GSeries.mapWithKey (\k _ -> f $ series `select` (k `to` (k |+| windowSize))) series
+rollingForwards windowSize 
+    = windowing (\k -> k `to` (k |+| windowSize))
 
 
 -- | Rolling backwards window aggregation.
@@ -182,8 +217,8 @@ rollingBackwards :: (Windowing k, Ord k, Vector v a, Vector v b)
                  -> Series v k a
                  -> Series v k b
 {-# INLINE rollingBackwards #-}
-rollingBackwards windowSize f series
-    = GSeries.mapWithKey (\k _ -> f $ series `select` (k `to` (k |-| windowSize))) series
+rollingBackwards windowSize
+    = windowing (\k -> k `to` (k |-| windowSize))
 
 
 -- | The 'Windowing' class represents a class of keys which can be shifted

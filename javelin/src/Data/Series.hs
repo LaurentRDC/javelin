@@ -74,7 +74,7 @@ module Data.Series (
 
     -- * Grouping and windowing operations
     groupBy, foldGroups, 
-    Windowing(..), rollingForwards, rollingBackwards,
+    Windowing(..), windowing, rollingForwards, rollingBackwards,
     expanding,
 
     -- * Numerical aggregation
@@ -799,6 +799,38 @@ expanding :: Series k a        -- ^ Series vector
           -> Series k b        -- ^ Resulting vector
 {-# INLINE expanding #-}
 expanding = G.expanding
+
+
+-- | General-purpose window aggregation.
+--
+-- >>> import Data.Time.Calendar (Day, addDays)
+-- >>> import qualified Data.Series as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Day Integer) 
+--          = Series.fromList [ (read "2023-01-01", 0)
+--                            , (read "2023-01-02", 1)
+--                            , (read "2023-01-03", 2)
+--                            , (read "2023-01-04", 3)
+--                            , (read "2023-01-05", 4)
+--                            , (read "2023-01-06", 5)
+--                            ]
+--     in windowing (\k -> k `to` addDays 2 k) sum xs
+-- :}
+--      index | values
+--      ----- | ------
+-- 2023-01-01 |      3
+-- 2023-01-02 |      6
+-- 2023-01-03 |      9
+-- 2023-01-04 |     12
+-- 2023-01-05 |      9
+-- 2023-01-06 |      5
+windowing :: Ord k
+          => (k -> Range k)
+          -> (Series k a -> b)
+          -> Series k a
+          -> Series k b
+{-# INLINE windowing #-}
+windowing = G.windowing
 
 
 -- | Rolling forwards window aggregation.
