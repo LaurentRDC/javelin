@@ -1,7 +1,7 @@
 module Test.Data.Series.Generic.View (tests) where
 
 import qualified Data.Map.Strict      as MS
-import           Data.Series.Generic  ( Series, index, fromStrictMap, fromList, to, select, selectWhere, require, mapIndex )
+import           Data.Series.Generic  ( Series, index, fromStrictMap, fromList, to, select, selectWhere, require, mapIndex, argmax, argmin, )
 import qualified Data.Series.Index    as Index
 import           Data.Vector          ( Vector )
 
@@ -22,6 +22,8 @@ tests = testGroup "Data.Series.Generic.View" [ testSelectRange
                                              , testSelectWhere
                                              , testPropRequire
                                              , testMapIndex
+                                             , testArgmax
+                                             , testArgmin
                                              ]
 
 
@@ -96,3 +98,18 @@ testMapIndex = testCase "mapIndex" $ do
         expectation = fromList [('a', 1), ('b', 3), ('c', 5)]
     
     assertEqual mempty expectation subSeries
+
+
+testArgmax :: TestTree
+testArgmax = testCase "argmax" $ do
+    let (series :: Series Vector String Int) = fromList [("aa", 1), ("ab", 2), ("bb", 10), ("bc", 4), ("c", 5)]
+        expectation = Just "bb"
+    
+    assertEqual mempty expectation (argmax series)
+
+testArgmin :: TestTree
+testArgmin = testCase "argmin" $ do
+    let (series :: Series Vector String Int) = fromList [("aa", 1), ("ab", 2), ("bb", -10), ("bc", 4), ("c", 5)]
+        expectation = Just "bb"
+    
+    assertEqual mempty expectation (argmin series)

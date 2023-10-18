@@ -75,7 +75,9 @@ module Data.Series.Unboxed (
     -- ** Bulk access
     select, selectWhere, Range, to, Selection, 
     -- ** Single-element access
-    at, iat, 
+    at, iat,
+    -- ** Finding indices based on values
+    argmax, argmin,
 
     -- * Replacement
     replace, (|->), (<-|),
@@ -641,6 +643,53 @@ at = G.at
 iat :: Unbox a => Series k a -> Int -> Maybe a
 {-# INLINE iat #-}
 iat = G.iat
+
+
+-- | \(O(n)\) Find the index of the maximum element in the input series.
+-- If the input series is empty, @Nothing@ is returned.
+--
+-- The index of the first occurrence of the maximum element is returned.
+--
+-- >>> import qualified Data.Series.Unboxed as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 7)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmax xs 
+-- :}
+-- Just 4
+argmax :: (Ord a, Unbox a)
+       => Series k a
+       -> Maybe k
+argmax = G.argmax
+
+
+-- | \(O(n)\) Find the index of the minimum element in the input series.
+-- If the input series is empty, @Nothing@ is returned.
+--
+-- The index of the first occurrence of the minimum element is returned.
+-- >>> import qualified Data.Series.Unboxed as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 1)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 0)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmin xs 
+-- :}
+-- Just 4
+argmin :: (Ord a, Unbox a)
+       => Series k a
+       -> Maybe k
+argmin = G.argmin
 
 
 -- | Replace values in the right series from values in the left series at matching keys.

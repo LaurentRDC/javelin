@@ -38,7 +38,9 @@ module Data.Series.Generic (
     -- ** Bulk access
     select, selectWhere, Range, to, Selection, 
     -- ** Single-element access
-    at, iat, 
+    at, iat,
+    -- ** Finding indices based on values
+    argmax, argmin,
 
     -- * Replacement
     replace, (|->), (<-|),
@@ -65,7 +67,7 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl )
-import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex )
+import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, filter, require, requireWith, dropna, dropIndex, argmax, argmin, )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, replace, (|->), (<-|), zipWithStrategy, ZipStrategy, skipStrategy, mapStrategy, constStrategy
                                         , zipWithMonoid, esum, eproduct
                                         )

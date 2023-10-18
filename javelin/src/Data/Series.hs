@@ -67,7 +67,9 @@ module Data.Series (
     -- ** Bulk access
     select, selectWhere, Range, to, Selection, 
     -- ** Single-element access
-    at, iat, 
+    at, iat,
+    -- ** Finding indices based on values
+    argmax, argmin,
 
     -- * Replacing values
     replace, (|->), (<-|),
@@ -660,6 +662,47 @@ at = G.at
 iat :: Series k a -> Int -> Maybe a
 {-# INLINE iat #-}
 iat = G.iat
+
+
+-- | \(O(n)\) Find the index of the maximum element in the input series.
+-- If the input series is empty, @Nothing@ is returned.
+--
+-- The index of the first occurrence of the maximum element is returned.
+--
+-- >>> :{ 
+--     let (xs :: Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 7)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmax xs 
+-- :}
+-- Just 4
+argmax :: Ord a => Series k a -> Maybe k
+argmax = G.argmax
+
+
+-- | \(O(n)\) Find the index of the minimum element in the input series.
+-- If the input series is empty, @Nothing@ is returned.
+--
+-- The index of the first occurrence of the minimum element is returned.
+-- >>> :{ 
+--     let (xs :: Series Int Int) 
+--          = Series.fromList [ (1, 1)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 0)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmin xs 
+-- :}
+-- Just 4
+argmin :: Ord a => Series k a -> Maybe k
+argmin = G.argmin
 
 
 -- | Replace values in the right series from values in the left series at matching keys.
