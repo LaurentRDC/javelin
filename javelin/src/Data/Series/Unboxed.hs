@@ -64,7 +64,7 @@ module Data.Series.Unboxed (
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
     -- * Combining series
-    zipWithMatched, zipWithIndex,
+    zipWithMatched, zipWithKey,
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
     zipWithMonoid, esum, eproduct,
 
@@ -415,17 +415,17 @@ zipWithMatched = G.zipWithMatched
 -- >>> import Data.Char ( ord )
 -- >>> let xs = Series.fromList [ ('a', 0::Int), ('b', 1), ('c', 2) ]
 -- >>> let ys = Series.fromList [ ('a', 10::Int), ('b', 11), ('d', 13) ]
--- >>> zipWithIndex (\k x y -> ord k + x + y) xs ys
+-- >>> zipWithKey (\k x y -> ord k + x + y) xs ys
 -- index | values
 -- ----- | ------
 --   'a' |    107
 --   'b' |    110
 --
 -- To combine elements where keys are in either series, see 'zipWith'
-zipWithIndex :: (Unbox a, Unbox b, Unbox c, Unbox k, Ord k)  
-             => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
-{-# INLINE zipWithIndex #-}
-zipWithIndex = G.zipWithIndex
+zipWithKey :: (Unbox a, Unbox b, Unbox c, Unbox k, Ord k)  
+           => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
+{-# INLINE zipWithKey #-}
+zipWithKey = G.zipWithKey
 
 
 -- | Zip two 'Series' with a combining function, applying a 'ZipStrategy' when one key is present in one of the 'Series' but not both.

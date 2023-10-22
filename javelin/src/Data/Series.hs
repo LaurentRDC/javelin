@@ -56,7 +56,7 @@ module Data.Series (
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
     -- * Combining series
-    zipWith, zipWithMatched, zipWithIndex,
+    zipWith, zipWithMatched, zipWithKey,
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
     zipWithMonoid, esum, eproduct,
 
@@ -414,17 +414,17 @@ zipWithMatched = G.zipWithMatched
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
--- >>> zipWithIndex (\k x y -> length k + x + y) xs ys
+-- >>> zipWithKey (\k x y -> length k + x + y) xs ys
 --   index | values
 --   ----- | ------
 -- "alpha" |     15
 --  "beta" |     16
 --
 -- To combine elements where keys are in either series, see 'zipWith'
-zipWithIndex :: (Ord k) 
-             => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
-{-# INLINE zipWithIndex #-}
-zipWithIndex = G.zipWithIndex
+zipWithKey :: (Ord k) 
+           => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
+{-# INLINE zipWithKey #-}
+zipWithKey = G.zipWithKey
 
 
 -- | Zip two 'Series' with a combining function, applying a `ZipStrategy` when one key is present in one of the 'Series' but not both.
