@@ -666,7 +666,7 @@ iat = G.iat
 
 
 -- | \(O(n)\) Find the index of the maximum element in the input series.
--- If the input series is empty, @Nothing@ is returned.
+-- If the input series is empty, 'Nothing' is returned.
 --
 -- The index of the first occurrence of the maximum element is returned.
 --
@@ -690,7 +690,7 @@ argmax = G.argmax
 
 
 -- | \(O(n)\) Find the index of the minimum element in the input series.
--- If the input series is empty, @Nothing@ is returned.
+-- If the input series is empty, 'Nothing' is returned.
 --
 -- The index of the first occurrence of the minimum element is returned.
 -- >>> import qualified Data.Series.Unboxed as Series 

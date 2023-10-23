@@ -52,7 +52,7 @@ infixl 1 `select`
 -- | \(O(1)\). Extract a single value from a series, by index. 
 -- An exception is thrown if the index is out-of-bounds.
 --
--- A safer alternative is @iat@, which returns @Nothing@ if the index is
+-- A safer alternative is @iat@, which returns 'Nothing' if the index is
 -- out-of-bounds.
 (!) :: Vector v a => Series v k a -> Int -> a
 (MkSeries _ vs) ! ix = (Vector.!) vs ix
@@ -260,7 +260,7 @@ slice start stop (MkSeries ks vs)
 
 
 -- | \(O(n)\) Find the index of the maximum element in the input series.
--- If the input series is empty, @Nothing@ is returned.
+-- If the input series is empty, 'Nothing' is returned.
 --
 -- The index of the first occurrence of the maximum element is returned.
 --
@@ -292,9 +292,10 @@ argmax xs | G.null xs = Nothing
 
 
 -- | \(O(n)\) Find the index of the minimum element in the input series.
--- If the input series is empty, @Nothing@ is returned.
+-- If the input series is empty, 'Nothing' is returned.
 --
 -- The index of the first occurrence of the minimum element is returned.
+--
 -- >>> import qualified Data.Series as Series 
 -- >>> :{ 
 --     let (xs :: Series.Series Int Int) 

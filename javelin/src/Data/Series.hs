@@ -74,6 +74,9 @@ module Data.Series (
     -- * Replacing values
     replace, (|->), (<-|),
 
+    -- * Scans
+    forwardFill,
+
     -- * Grouping and windowing operations
     groupBy, foldGroups, 
     windowing, expanding,
@@ -372,7 +375,7 @@ dropWhile = G.dropWhile
 
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. For keys present only in the left or right series, 
--- the value @Nothing@ is returned.
+-- the value 'Nothing' is returned.
 --
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
@@ -684,7 +687,7 @@ iat = G.iat
 
 
 -- | \(O(n)\) Find the index of the maximum element in the input series.
--- If the input series is empty, @Nothing@ is returned.
+-- If the input series is empty, 'Nothing' is returned.
 --
 -- The index of the first occurrence of the maximum element is returned.
 --
@@ -705,7 +708,7 @@ argmax = G.argmax
 
 
 -- | \(O(n)\) Find the index of the minimum element in the input series.
--- If the input series is empty, @Nothing@ is returned.
+-- If the input series is empty, 'Nothing' is returned.
 --
 -- The index of the first occurrence of the minimum element is returned.
 -- >>> :{ 
@@ -790,6 +793,49 @@ replace = G.replace
 (<-|) :: (Ord k) => Series k a -> Series k a -> Series k a
 {-# INLINE (<-|) #-}
 (<-|) = (G.<-|)
+
+
+-- | /O(n)/ Replace all instances of 'Nothing' with the last previous
+-- value which was not 'Nothing'.
+--
+-- >>> let xs = Series.fromList (zip [0..] [Just 1, Just 2,Nothing, Just 3]) :: Series Int (Maybe Int)
+-- >>> xs
+-- index |  values
+-- ----- |  ------
+--     0 |  Just 1
+--     1 |  Just 2
+--     2 | Nothing
+--     3 |  Just 3
+-- >>> forwardFill 0 xs
+-- index | values
+-- ----- | ------
+--     0 |      1
+--     1 |      2
+--     2 |      2
+--     3 |      3
+--
+-- If the first entry of the series is missing, the first input to 'forwardFill' will be used:
+--
+-- >>> let ys = Series.fromList (zip [0..] [Nothing, Just 2,Nothing, Just 3]) :: Series Int (Maybe Int)
+-- >>> ys
+-- index |  values
+-- ----- |  ------
+--     0 | Nothing
+--     1 |  Just 2
+--     2 | Nothing
+--     3 |  Just 3
+-- >>> forwardFill 0 ys
+-- index | values
+-- ----- | ------
+--     0 |      0
+--     1 |      2
+--     2 |      2
+--     3 |      3
+forwardFill :: a -- ^ Until the first non-'Nothing' is found, 'Nothing' will be filled with this value.
+            -> Series v (Maybe a)
+            -> Series v a
+{-# INLINE forwardFill #-}
+forwardFill = G.forwardFill
 
 
 -- | Group values in a 'Series' by some grouping function (@k -> g@).
