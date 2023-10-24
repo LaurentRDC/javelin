@@ -21,7 +21,7 @@ module Data.Series.Generic (
     map, mapWithKey, mapIndex, filter, null, length, sum, 
     take, takeWhile, dropWhile,
     -- ** Mapping with effects
-    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
+    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
     -- * Scans
     postscanl, forwardFill,
@@ -63,7 +63,7 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile
-                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_
+                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl, forwardFill )

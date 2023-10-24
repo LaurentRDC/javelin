@@ -47,6 +47,7 @@ module Data.Series.Index.Definition (
     map,
     mapMonotonic,
     filter,
+    traverse,
     
     -- * Indexing
     findIndex,
@@ -64,11 +65,12 @@ import           Data.Functor           ( ($>) )
 import qualified Data.List              as List
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
+import qualified Data.Traversable       as Traversable
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
 import           GHC.Exts               ( IsList )
 import qualified GHC.Exts               as Exts
-import           Prelude                hiding ( null, take, drop, map, filter )
+import           Prelude                as P hiding ( null, take, drop, map, filter, traverse )
 
 -- $setup
 -- >>> import Data.Series.Index
@@ -360,3 +362,12 @@ insert k (MkIndex ix) = MkIndex $ k `Set.insert` ix
 -- in the index.
 delete :: Ord k => k -> Index k -> Index k
 delete k (MkIndex ix) = MkIndex $ k `Set.delete` ix
+
+
+-- | \(O(\log n)\). Map each element of an 'Index' to an applicative action, 
+-- evaluate these actions from left to right, and collect the results.
+--
+-- Note that the data type 'Index' is not a member of 'Traversable'
+-- because it is not a 'Functor'.
+traverse :: (Applicative f, Ord b) => (k -> f b) -> Index k -> f (Index b)
+traverse f = fmap fromList . Traversable.traverse f . toAscList

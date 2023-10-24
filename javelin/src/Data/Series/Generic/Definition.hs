@@ -12,6 +12,7 @@ module Data.Series.Generic.Definition (
     foldMap, bifoldMap, sum, length, null,
     takeWhile, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
+    traverseWithKey,
 
     fromIndex,
     -- * Conversion to/from Maps
@@ -460,3 +461,14 @@ forWithKeyM = flip mapWithKeyM
 forWithKeyM_ :: (Vector v a, Monad m) => Series v k a -> (k -> a -> m b) -> m ()
 {-# INLINE forWithKeyM_ #-}
 forWithKeyM_ = flip mapWithKeyM_
+
+
+-- | /O(n)/ Traverse a 'Series' with an Applicative action, taking into account both keys and values. 
+traverseWithKey :: (Applicative t, Ord k, Traversable v, Vector v a, Vector v b, Vector v k, Vector v (k, a),  Vector v (k, b))
+                => (k -> a -> t b) 
+                -> Series v k a 
+                -> t (Series v k b)
+{-# INLINE traverseWithKey #-}
+traverseWithKey f = fmap fromVector 
+                  . traverse (\(k, x) -> (k,) <$> f k x) 
+                  . toVector

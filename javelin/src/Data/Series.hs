@@ -53,7 +53,7 @@ module Data.Series (
     map, mapWithKey, mapIndex, 
     takeWhile, dropWhile, filter,
     -- ** Mapping with effects
-    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
+    mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
     -- * Combining series
     zipWith, zipWithMatched, zipWithKey,
@@ -331,6 +331,15 @@ forWithKeyM = G.forWithKeyM
 forWithKeyM_ :: Monad m => Series k a -> (k -> a -> m b) -> m ()
 {-# INLINE forWithKeyM_ #-}
 forWithKeyM_ = G.forWithKeyM_
+
+
+-- | /O(n)/ Traverse a 'Series' with an Applicative action, taking into account both keys and values. 
+traverseWithKey :: (Applicative t, Ord k)
+                => (k -> a -> t b) 
+                -> Series k a 
+                -> t (Series k b)
+{-# INLINE traverseWithKey #-}
+traverseWithKey = G.traverseWithKey
 
 
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
