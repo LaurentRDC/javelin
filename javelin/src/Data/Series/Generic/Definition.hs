@@ -118,12 +118,13 @@ newtype Occurrence = MkOcc Int
     deriving newtype (Show, U.Unbox) 
 
 -- Occurrence needs to be an 'U.Unbox' type
--- so that 'fromVectorDuplicates' worhs with unboxed vectors
+-- so that 'fromVectorDuplicates' works with unboxed vectors
 -- and series.
 newtype instance UM.MVector s Occurrence = MV_Occ (UM.MVector s Int)
 newtype instance U.Vector Occurrence = V_Occ (U.Vector Int)
 deriving instance GM.MVector UM.MVector Occurrence
 deriving instance Vector U.Vector Occurrence 
+
 
 -- | Construct a series from a list of key-value pairs.
 -- Contrary to 'fromList', aalues at duplicate keys are preserved. To keep each
@@ -162,6 +163,7 @@ toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 -- may not be equivalent if the input list contains duplicate keys.
 fromVector :: (Ord k, Vector v k, Vector v a, Vector v (k, a))
            => v (k, a) -> Series v k a
+{-# INLINE fromVector #-}
 fromVector vec = let (indexVector, valuesVector) 
                         = Vector.unzip $ runST $ do
                             mv <- Vector.thaw vec
@@ -173,7 +175,6 @@ fromVector vec = let (indexVector, valuesVector)
                   in MkSeries (fromDistinctAscVector indexVector) valuesVector
     where
         fromDistinctAscVector = Index.Internal.fromDistinctAscList . Vector.toList
-{-# INLINE fromVector #-}
 
 
 -- | Construct a 'Series' from a 'Vector' of key-value pairs, where there may be duplicate keys. 
@@ -184,6 +185,7 @@ fromVector vec = let (indexVector, valuesVector)
 -- a different order.
 fromVectorDuplicates :: (Ord k, Vector v k, Vector v a, Vector v (k, a), Vector v (k, Occurrence))
                      => v (k, a) -> Series v (k, Occurrence) a
+{-# INLINE fromVectorDuplicates #-}
 fromVectorDuplicates vec 
     = let (indexVector, valuesVector) 
             = Vector.unzip $ runST $ do
@@ -201,12 +203,12 @@ fromVectorDuplicates vec
                 f (lastKey, lastOcc) newKey 
                     | lastKey == newKey = (newKey, lastOcc + 1)
                     | otherwise         = (newKey, 0)
-{-# INLINE fromVectorDuplicates #-}
 
 
 -- | Construct a 'Vector' of key-value pairs. The elements are in order sorted by key. 
 toVector :: (Vector v a, Vector v k, Vector v (k, a)) 
          => Series v k a -> v (k, a)
+{-# INLINE toVector #-}
 toVector (MkSeries ks vs) = Vector.zip (Index.toAscVector ks) vs
 
 
@@ -363,6 +365,7 @@ instance (Foldable v) => Bifoldable (Series v) where
 
 
 instance (Traversable v) => Traversable (Series v k) where
+    {-# INLINE traverse #-}
     traverse :: Applicative f
              => (a -> f b) -> Series v k a -> f (Series v k b)
     traverse f (MkSeries ix vs) = MkSeries ix <$> traverse f vs

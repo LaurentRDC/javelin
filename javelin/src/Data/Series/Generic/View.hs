@@ -190,7 +190,7 @@ class Selection s where
     --   'a' |     10
     --   'd' |     40
     --
-    -- See @require@ if you want to ensure that all keys are present.
+    -- See 'require' if you want to ensure that all keys are present.
     select :: (Vector v a, Ord k) => Series v k a -> s k -> Series v k a
 
 
