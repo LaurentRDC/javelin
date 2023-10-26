@@ -1,6 +1,5 @@
 module Test.Data.Series.Generic.View (tests) where
 
-import           Control.Monad        ( guard )
 import qualified Data.Map.Strict      as MS
 import           Data.Series.Generic  ( Series, index, fromStrictMap, fromList, to, from, upto, select
                                       , selectWhere, require, mapIndex, argmax, argmin, )
@@ -52,14 +51,16 @@ testSelectUnboundedRange = testCase "from and upto" $ do
 
 
 testSelectUnboundedRangeEquivalence :: TestTree
-testSelectUnboundedRangeEquivalence = testProperty "Combining unbounded ranges is equivalent to a bounded range" $ property $ do
-    m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
-    start <- forAll Gen.alpha
-    end   <- forAll Gen.alpha
-    guard $ start <= end
-    let (xs :: Series Vector Char Int) = fromStrictMap m1
+testSelectUnboundedRangeEquivalence 
+    = testProperty "Combining unbounded ranges is equivalent to a bounded range" 
+    $ property $ do
+        m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+        (b1, b2) <- (,) <$> forAll Gen.alpha <*> forAll Gen.alpha
+        let start = min b1 b2
+            end = max b1 b2
+            (xs :: Series Vector Char Int) = fromStrictMap m1
 
-    (xs `select` start `to` end) === ( (xs `select` from start) `select` upto end)
+        (xs `select` start `to` end) === ( (xs `select` from start) `select` upto end)
 
 
 testPropSelectRangeSubseries :: TestTree
