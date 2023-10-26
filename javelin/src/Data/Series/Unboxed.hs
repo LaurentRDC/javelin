@@ -73,7 +73,7 @@ module Data.Series.Unboxed (
 
     -- * Accessors
     -- ** Bulk access
-    select, selectWhere, Range, to, Selection, 
+    select, selectWhere, Range, to, from, upto, Selection, 
     -- ** Single-element access
     at, iat,
     -- ** Finding indices based on values
@@ -102,7 +102,7 @@ import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
-                                     ( Range, Selection, to )
+                                     ( Range, Selection, to, from, upto )
 import           Data.Series.Generic ( ZipStrategy, Occurrence, skipStrategy, mapStrategy, constStrategy )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )

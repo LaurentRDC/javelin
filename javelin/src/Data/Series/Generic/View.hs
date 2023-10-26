@@ -24,6 +24,8 @@ module Data.Series.Generic.View (
     -- * Creating and accessing ranges
     Range(..),
     to,
+    from,
+    upto,
 ) where
 
 import           Data.Ord               (Down(..))
@@ -119,38 +121,69 @@ dropna :: (Vector v a, Vector v (Maybe a), Vector v Int, Ord k)
 dropna = G.map fromJust . filter isJust
 
 
--- | Datatype representing an /inclusive/ range of keys.
--- The canonical way to construct a @Range@ is to use @to@:
+-- | Datatype representing an /inclusive/ range of keys, which can either be bounded
+-- or unbounded. The canonical ways to construct a 'Range' are to use 'to', 'from', and 'upto':
 --
 -- >>> 'a' `to` 'z'
 -- Range (from 'a' to 'z')
+-- >>> from 'd'
+-- Range (from 'd')
+-- >>> upto 'q'
+-- Range (up to 'q')
 --
 -- A 'Range' can be used to efficiently select a sub-series with 'select'.
-data Range k = MkRange k k
+data Range k 
+    = BoundedRange k k
+    | From k
+    | UpTo k
     deriving (Eq)
+
 
 instance Show k => Show (Range k) where
     show :: Range k -> String
-    show (MkRange start stop) = mconcat ["Range (from ", show start, " to ", show stop, ")"]
+    show (BoundedRange start stop) = mconcat ["Range (from ", show start, " to ", show stop, ")"]
+    show (From start) = mconcat ["Range (from ", show start, ")"]
+    show (UpTo stop) = mconcat ["Range (up to ", show stop, ")"]
 
 
 -- | Find the keys which are in range. In case of an empty 'Series',
 -- the returned value is 'Nothing'.
 keysInRange :: Ord k => Series v k a -> Range k -> Maybe (k, k)
 {-# INLINE keysInRange #-}
-keysInRange (MkSeries ks _) (MkRange start stop)
-    | Index.null ks = Nothing
-    | otherwise     = let (_, afterStart) = Set.spanAntitone (< start) $ Index.toSet ks
-                          inRange         = Set.takeWhileAntitone (<= stop) afterStart
-                       in if Set.null inRange 
-                            then Nothing
-                            else Just (Set.findMin inRange, Set.findMax inRange)
+keysInRange (MkSeries ks _) rng
+    = let inrange = inRange rng
+       in if Set.null inrange 
+            then Nothing
+            else Just (Set.findMin inrange, Set.findMax inrange)
+    where
+        inRange (BoundedRange start stop)  = Set.takeWhileAntitone (<= stop) 
+                                           $ Set.dropWhileAntitone (< start) $ Index.toSet ks
+        inRange (From start)               = Set.dropWhileAntitone (< start) $ Index.toSet ks
+        inRange (UpTo stop)                = Set.takeWhileAntitone (<= stop) $ Index.toSet ks
 
 
--- | Create a 'Range' which can be used for slicing. This function
--- is expected to be used in conjunction with 'select': 
+-- | Create a bounded 'Range' which can be used for slicing. This function
+-- is expected to be used in conjunction with 'select'.
+--
+-- For unbound ranges, see 'from' and 'upto'.
 to :: Ord k => k -> k -> Range k
-to k1 k2 = MkRange (min k1 k2) (max k1 k2)
+to k1 k2 = BoundedRange (min k1 k2) (max k1 k2)
+
+
+-- | Create an unbounded 'Range' which can be used for slicing. 
+-- This function is expected to be used in conjunction with 'select'. 
+--
+-- For bound ranges, see 'to'.
+from :: k -> Range k
+from = From
+
+
+-- | Create an unbounded 'Range' which can be used for slicing. This function
+-- is expected to be used in conjunction with 'select'. 
+--
+-- For bound ranges, see 'to'.
+upto :: k -> Range k
+upto = UpTo
 
 
 -- | Class for datatypes which can be used to select sub-series using 'select'.
@@ -180,6 +213,20 @@ class Selection s where
     -- ----- | ------
     --   'b' |     20
     --   'c' |     30
+    --
+    -- Such ranges can also be unbounded. (i.e. all keys smaller or larger than some key), like so:
+    --
+    -- >>> xs `select` upto 'c'
+    -- index | values
+    -- ----- | ------
+    --   'a' |     10
+    --   'b' |     20
+    --   'c' |     30
+    -- >>> xs `select` from 'c'
+    -- index | values
+    -- ----- | ------
+    --   'c' |     30
+    --   'd' |     40
     --
     -- Note that with 'select', you'll always get a sub-series; if you ask for a key which is not
     -- in the series, it'll be ignored:

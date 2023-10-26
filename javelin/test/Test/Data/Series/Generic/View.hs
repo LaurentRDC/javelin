@@ -1,7 +1,9 @@
 module Test.Data.Series.Generic.View (tests) where
 
+import           Control.Monad        ( guard )
 import qualified Data.Map.Strict      as MS
-import           Data.Series.Generic  ( Series, index, fromStrictMap, fromList, to, select, selectWhere, require, mapIndex, argmax, argmin, )
+import           Data.Series.Generic  ( Series, index, fromStrictMap, fromList, to, from, upto, select
+                                      , selectWhere, require, mapIndex, argmax, argmin, )
 import qualified Data.Series.Index    as Index
 import           Data.Vector          ( Vector )
 
@@ -15,6 +17,8 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
 tests = testGroup "Data.Series.Generic.View" [ testSelectRange
+                                             , testSelectUnboundedRange
+                                             , testSelectUnboundedRangeEquivalence
                                              , testSelectRangeEmptyRange
                                              , testPropSelectRangeSubseries
                                              , testSelectSet 
@@ -33,6 +37,29 @@ testSelectRange = testCase "from ... to ..." $ do
         subSeries = series `select` ('b' `to` 'd')
         expectation = fromStrictMap $ MS.fromList [('b', 2), ('c', 3), ('d', 4)]
     assertEqual mempty expectation subSeries
+
+
+testSelectUnboundedRange :: TestTree
+testSelectUnboundedRange = testCase "from and upto" $ do
+    let (series :: Series Vector Char Int) = fromStrictMap $ MS.fromList [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
+        openLeftsubSeries = series `select` from 'b'
+        openLeftExpectation = fromStrictMap $ MS.fromList [('b', 2), ('c', 3), ('d', 4), ('e', 5)]
+    assertEqual mempty openLeftExpectation openLeftsubSeries
+
+    let openRightsubSeries = series `select` upto 'b'
+        openRightExpectation = fromStrictMap $ MS.fromList [('a', 1), ('b', 2)]
+    assertEqual mempty openRightExpectation openRightsubSeries
+
+
+testSelectUnboundedRangeEquivalence :: TestTree
+testSelectUnboundedRangeEquivalence = testProperty "Combining unbounded ranges is equivalent to a bounded range" $ property $ do
+    m1 <- forAll $ Gen.map (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.int (Range.linear 0 1000))
+    start <- forAll Gen.alpha
+    end   <- forAll Gen.alpha
+    guard $ start <= end
+    let (xs :: Series Vector Char Int) = fromStrictMap m1
+
+    (xs `select` start `to` end) === ( (xs `select` from start) `select` upto end)
 
 
 testPropSelectRangeSubseries :: TestTree

@@ -65,7 +65,7 @@ module Data.Series (
 
     -- * Accessors
     -- ** Bulk access
-    select, selectWhere, Range, to, Selection, 
+    select, selectWhere, Range, to, from, upto, Selection, 
     -- ** Single-element access
     at, iat,
     -- ** Finding indices based on values
@@ -90,7 +90,7 @@ module Data.Series (
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occurrence, to )
+import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occurrence, to, from, upto )
 import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
