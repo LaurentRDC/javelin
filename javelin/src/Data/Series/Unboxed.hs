@@ -65,6 +65,7 @@ module Data.Series.Unboxed (
 
     -- * Combining series
     zipWithMatched, zipWithKey,
+    zipWithMatched3, zipWithKey3,
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
     zipWithMonoid, esum, eproduct,
 
@@ -393,19 +394,39 @@ dropWhile = G.dropWhile
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. Keys present only in the left or right series are dropped.
 --
--- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
--- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> let xs = Series.fromList [ ('a', 0::Int),  ('b', 1),  ('g', 2) ]
+-- >>> let ys = Series.fromList [ ('a', 10::Int), ('b', 11), ('d', 13) ]
 -- >>> zipWithMatched (+) xs ys
---   index | values
---   ----- | ------
--- "alpha" |     10
---  "beta" |     12
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'b' |     12
 --
 -- To combine elements where keys are in either series, see 'zipWith'.
 zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k) 
                => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
+
+
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. Keys not present in all three series are dropped.
+--
+-- >>> let xs = Series.fromList [ ('a', 0::Int),  ('b', 1),   ('g', 2) ]
+-- >>> let ys = Series.fromList [ ('a', 10::Int), ('b', 11),  ('d', 13) ]
+-- >>> let zs = Series.fromList [ ('a', 20::Int), ('d', 13), ('e', 6) ]
+-- >>> zipWithMatched3 (\x y z -> x + y + z) xs ys zs
+-- index | values
+-- ----- | ------
+--   'a' |     30
+zipWithMatched3 :: (Unbox a, Unbox b, Unbox c, Unbox d, Ord k) 
+                => (a -> b -> c -> d) 
+                -> Series k a 
+                -> Series k b 
+                -> Series k c
+                -> Series k d
+{-# INLINE zipWithMatched3 #-}
+zipWithMatched3 = G.zipWithMatched3
 
 
 -- | Apply a function elementwise to two series, matching elements
@@ -428,19 +449,43 @@ zipWithKey :: (Unbox a, Unbox b, Unbox c, Unbox k, Ord k)
 zipWithKey = G.zipWithKey
 
 
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. Keys present only in the left or right series are dropped.
+-- 
+-- >>> import Data.Char ( ord )
+-- >>> let xs = Series.fromList [ ('a', 0::Int), ('b', 1), ('g', 2) ]
+-- >>> let ys = Series.fromList [ ('a', 10::Int), ('b', 11), ('d', 13) ]
+-- >>> let zs = Series.fromList [ ('a', 20::Int), ('b', 7), ('d', 5) ]
+-- >>> zipWithKey3 (\k x y z -> ord k + x + y + z) xs ys zs
+-- index | values
+-- ----- | ------
+--   'a' |    127
+--   'b' |    117
+--
+-- To combine elements where keys are in either series, see 'zipWith'
+zipWithKey3 :: (Unbox a, Unbox b, Unbox c, Unbox d, Unbox k, Ord k) 
+            => (k -> a -> b -> c -> d) 
+            -> Series k a 
+            -> Series k b 
+            -> Series k c
+            -> Series k d
+{-# INLINE zipWithKey3 #-}
+zipWithKey3 = G.zipWithKey3
+
+
 -- | Zip two 'Series' with a combining function, applying a 'ZipStrategy' when one key is present in one of the 'Series' but not both.
 --
 -- In the example below, we want to set the value to @-100@ (via @'constStrategy' (-100)@) for keys which are only present 
 -- in the left 'Series', and drop keys (via 'skipStrategy') which are only present in the `right 'Series'  
 --
--- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
--- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> let xs = Series.fromList [ ('a', 0::Int),  ('b', 1),  ('g', 2) ]
+-- >>> let ys = Series.fromList [ ('a', 10::Int), ('b', 11), ('d', 13) ]
 -- >>> zipWithStrategy (+) (constStrategy (-100)) skipStrategy  xs ys
---   index | values
---   ----- | ------
--- "alpha" |     10
---  "beta" |     12
--- "gamma" |   -100
+-- index | values
+-- ----- | ------
+--   'a' |     10
+--   'b' |     12
+--   'g' |   -100
 --
 -- Note that if you want to drop keys missing in either 'Series', it is faster to use @'zipWithMatched' f@ 
 -- than using @'zipWithStrategy' f 'skipStrategy' 'skipStrategy'@.

@@ -57,6 +57,7 @@ module Data.Series (
 
     -- * Combining series
     zipWith, zipWithMatched, zipWithKey,
+    zipWith3, zipWithMatched3, zipWithKey3,
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
     zipWithMonoid, esum, eproduct,
 
@@ -95,7 +96,7 @@ import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, zipWith, filter, takeWhile, dropWhile, last)
+import           Prelude             hiding (map, zipWith, zipWith3, filter, takeWhile, dropWhile, last)
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -403,6 +404,34 @@ zipWith = G.zipWith
 {-# INLINE zipWith #-}
 
 
+
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. For keys present only in the left or right series, 
+-- the value 'Nothing' is returned.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int),  ("beta", 1),   ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11),  ("delta", 13) ]
+-- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("delta", 13), ("epsilon", 6) ]
+-- >>> zipWith3 (\x y z -> x + y + z) xs ys zs
+--     index |  values
+--     ----- |  ------
+--   "alpha" | Just 30
+--    "beta" | Nothing
+--   "delta" | Nothing
+-- "epsilon" | Nothing
+--   "gamma" | Nothing
+--
+-- To only combine elements where keys are in all series, see 'zipWithMatched3'
+zipWith3 :: (Ord k) 
+         => (a -> b -> c -> d) 
+         -> Series k a 
+         -> Series k b 
+         -> Series k c 
+         -> Series k (Maybe d)
+{-# INLINE zipWith3 #-}
+zipWith3 = G.zipWith3
+
+
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. Keys present only in the left or right series are dropped.
 --
@@ -418,6 +447,26 @@ zipWith = G.zipWith
 zipWithMatched :: Ord k => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
+
+
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. Keys not present in all three series are dropped.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int),  ("beta", 1),   ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11),  ("delta", 13) ]
+-- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("delta", 13), ("epsilon", 6) ]
+-- >>> zipWithMatched3 (\x y z -> x + y + z) xs ys zs
+--   index | values
+--   ----- | ------
+-- "alpha" |     30
+zipWithMatched3 :: (Ord k) 
+                => (a -> b -> c -> d) 
+                -> Series k a 
+                -> Series k b 
+                -> Series k c
+                -> Series k d
+{-# INLINE zipWithMatched3 #-}
+zipWithMatched3 = G.zipWithMatched3
 
 
 -- | Apply a function elementwise to two series, matching elements
@@ -437,6 +486,29 @@ zipWithKey :: (Ord k)
            => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithKey #-}
 zipWithKey = G.zipWithKey
+
+
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. Keys present only in the left or right series are dropped.
+-- 
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("beta", 7), ("delta", 5) ]
+-- >>> zipWithKey3 (\k x y z -> length k + x + y + z) xs ys zs
+--   index | values
+--   ----- | ------
+-- "alpha" |     35
+--  "beta" |     23
+--
+-- To combine elements where keys are in either series, see 'zipWith'
+zipWithKey3 :: (Ord k) 
+            => (k -> a -> b -> c -> d) 
+            -> Series k a 
+            -> Series k b 
+            -> Series k c
+            -> Series k d
+{-# INLINE zipWithKey3 #-}
+zipWithKey3 = G.zipWithKey3
 
 
 -- | Zip two 'Series' with a combining function, applying a `ZipStrategy` when one key is present in one of the 'Series' but not both.

@@ -1,5 +1,6 @@
 module Data.Series.Generic.Zip (
     zipWith, zipWithMatched, zipWithKey,
+    zipWith3, zipWithMatched3, zipWithKey3,
     replace, (|->), (<-|),
     
     -- * Generalized zipping with strategies
@@ -22,7 +23,7 @@ import           Data.Series.Generic.View       ( select, requireWith )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
-import           Prelude                        hiding ( zipWith ) 
+import           Prelude                        hiding ( zipWith, zipWith3 ) 
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -56,6 +57,40 @@ zipWith f left right
 {-# INLINE zipWith #-}
 
 
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. For keys present only in the left or right series, 
+-- the value 'Nothing' is returned.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int),  ("beta", 1),   ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11),  ("delta", 13) ]
+-- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("delta", 13), ("epsilon", 6) ]
+-- >>> zipWith3 (\x y z -> x + y + z) xs ys zs
+--     index |  values
+--     ----- |  ------
+--   "alpha" | Just 30
+--    "beta" | Nothing
+--   "delta" | Nothing
+-- "epsilon" | Nothing
+--   "gamma" | Nothing
+--
+-- To only combine elements where keys are in all series, see 'zipWithMatched3'
+zipWith3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Vector v (Maybe d), Ord k) 
+         => (a -> b -> c -> d) 
+         -> Series v k a 
+         -> Series v k b 
+         -> Series v k c 
+         -> Series v k (Maybe d)
+zipWith3 f left center right
+    = let matched       = zipWithMatched3 f left center right
+          matchedKeys   = index matched
+          allKeys       = index left `Index.union` index center `Index.union` index right
+          unmatchedKeys = allKeys `Index.difference` matchedKeys
+          unmatched     = MkSeries unmatchedKeys (Vector.replicate (Index.size unmatchedKeys) Nothing)
+       in G.map Just matched <> unmatched
+{-# INLINE zipWith3 #-}
+
+
+
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. Keys present only in the left or right series are dropped.
 --
@@ -67,7 +102,8 @@ zipWith f left right
 -- "alpha" |     10
 --  "beta" |     12
 --
--- To combine elements where keys are in either series, see 'zipWith'
+-- To combine elements where keys are in either series, see 'zipWith'. To combine
+-- three series, see 'zipWithMatched3'.
 zipWithMatched :: (Vector v a, Vector v b, Vector v c, Ord k) 
                => (a -> b -> c) -> Series v k a -> Series v k b -> Series v k c
 zipWithMatched f left right
@@ -78,6 +114,33 @@ zipWithMatched f left right
           -- The following construction relies on the fact that keys are always sorted
        in MkSeries matchedKeys $ Vector.zipWith f xs ys
 {-# INLINE zipWithMatched #-}
+
+
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. Keys not present in all three series are dropped.
+--
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int),  ("beta", 1),   ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11),  ("delta", 13) ]
+-- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("delta", 13), ("epsilon", 6) ]
+-- >>> zipWithMatched3 (\x y z -> x + y + z) xs ys zs
+--   index | values
+--   ----- | ------
+-- "alpha" |     30
+zipWithMatched3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Ord k) 
+                => (a -> b -> c -> d) 
+                -> Series v k a 
+                -> Series v k b 
+                -> Series v k c
+                -> Series v k d
+zipWithMatched3 f left center right
+    = let matchedKeys   = index left `Index.intersection` index center `Index.intersection` index right
+
+          (MkSeries _ xs) = left   `select` matchedKeys
+          (MkSeries _ ys) = center `select` matchedKeys
+          (MkSeries _ zs) = right  `select` matchedKeys
+          -- The following construction relies on the fact that keys are always sorted
+       in MkSeries matchedKeys $ Vector.zipWith3 f xs ys zs
+{-# INLINE zipWithMatched3 #-}
 
 
 -- | Apply a function elementwise to two series, matching elements
@@ -103,6 +166,37 @@ zipWithKey f left right
           -- The following construction relies on the fact that keys are always sorted
        in  MkSeries matchedKeys $ Vector.zipWith3 f ks xs ys
 {-# INLINE zipWithKey #-}
+
+
+-- | Apply a function elementwise to three series, matching elements
+-- based on their keys. Keys present only in the left or right series are dropped.
+-- 
+-- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
+-- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
+-- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("beta", 7), ("delta", 5) ]
+-- >>> zipWithKey3 (\k x y z -> length k + x + y + z) xs ys zs
+--   index | values
+--   ----- | ------
+-- "alpha" |     35
+--  "beta" |     23
+--
+-- To combine elements where keys are in either series, see 'zipWith'
+zipWithKey3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Vector v k, Ord k) 
+            => (k -> a -> b -> c -> d) 
+            -> Series v k a 
+            -> Series v k b 
+            -> Series v k c
+            -> Series v k d
+zipWithKey3 f left center right
+    = let matchedKeys   = index left `Index.intersection` index right
+
+          (MkSeries _ xs) = left   `select` matchedKeys
+          (MkSeries _ ys) = center `select` matchedKeys
+          (MkSeries _ zs) = right  `select` matchedKeys
+          ks              = Index.toAscVector matchedKeys
+          -- The following construction relies on the fact that keys are always sorted
+       in  MkSeries matchedKeys $ Vector.zipWith4 f ks xs ys zs
+{-# INLINE zipWithKey3 #-}
 
 
 -- | Replace values from the right series with values from the left series at matching keys.
