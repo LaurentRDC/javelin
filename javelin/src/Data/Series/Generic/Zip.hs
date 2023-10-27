@@ -5,6 +5,7 @@ module Data.Series.Generic.Zip (
     
     -- * Generalized zipping with strategies
     zipWithStrategy,
+    zipWithStrategy3,
     ZipStrategy,
     skipStrategy,
     mapStrategy,
@@ -316,6 +317,40 @@ zipWithStrategy f whenLeft whenRight left right
                             . Map.mapMaybeWithKey strat
                             . G.toStrictMap
 {-# INLINE zipWithStrategy #-}
+
+
+-- | Zip three 'Series' with a combining function, applying a 'ZipStrategy' when one key is 
+-- present in one of the 'Series' but not all of the others.
+--
+-- Note that if you want to drop keys missing in either 'Series', it is faster to use @'zipWithMatched3' f@ 
+-- than using @'zipWithStrategy3' f skipStrategy skipStrategy skipStrategy@.
+zipWithStrategy3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Ord k) 
+                => (a -> b -> c -> d) -- ^ Function to combine values when present in all series
+                -> ZipStrategy k a d  -- ^ Strategy for when the key is in the left series but not in all the others
+                -> ZipStrategy k b d  -- ^ Strategy for when the key is in the center series but not in all the others
+                -> ZipStrategy k c d  -- ^ Strategy for when the key is in the right series but not in all the others
+                -> Series v k a
+                -> Series v k b 
+                -> Series v k c
+                -> Series v k d
+zipWithStrategy3 f whenLeft whenCenter whenRight left center right 
+    = let onlyLeftKeys  = index left    `Index.difference` (index center `Index.union` index right)
+          onlyCenterKeys = index center `Index.difference` (index left   `Index.union` index right)
+          onlyRightKeys = index right   `Index.difference` (index center `Index.union` index left)
+
+          leftZip =  applyStrategy whenLeft  $ left     `select` onlyLeftKeys
+          centerZip = applyStrategy whenCenter $ center `select` onlyCenterKeys
+          rightZip = applyStrategy whenRight $ right    `select` onlyRightKeys
+          
+        in zipWithMatched3 f left center right <> leftZip <> centerZip <> rightZip
+    where
+        -- Application of the 'ZipStrategy' is done on a `Map` rather than
+        -- the 'Series' directly to keep the type contraints of `zipWithStrategy` to
+        -- a minimum. Recall that unboxed 'Series' cannot contain `Maybe a`.  
+        applyStrategy strat = G.fromStrictMap 
+                            . Map.mapMaybeWithKey strat
+                            . G.toStrictMap
+{-# INLINE zipWithStrategy3 #-}
 
 
 -- | Zip two 'Series' with a combining function. The value for keys which are missing from

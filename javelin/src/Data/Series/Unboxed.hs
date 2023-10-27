@@ -66,7 +66,7 @@ module Data.Series.Unboxed (
     -- * Combining series
     zipWithMatched, zipWithKey,
     zipWithMatched3, zipWithKey3,
-    ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy,
+    ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy, zipWithStrategy3,
     zipWithMonoid, esum, eproduct,
 
     -- * Index manipulation
@@ -498,6 +498,24 @@ zipWithStrategy :: (Ord k, Unbox a, Unbox b, Unbox c)
                 -> Series k c
 {-# INLINE zipWithStrategy #-}
 zipWithStrategy = G.zipWithStrategy
+
+
+-- | Zip three 'Series' with a combining function, applying a 'ZipStrategy' when one key is 
+-- present in one of the 'Series' but not all of the others.
+--
+-- Note that if you want to drop keys missing in either 'Series', it is faster to use @'zipWithMatched3' f@ 
+-- than using @'zipWithStrategy3' f skipStrategy skipStrategy skipStrategy@.
+zipWithStrategy3 :: (Ord k, Unbox a, Unbox b, Unbox c, Unbox d) 
+                => (a -> b -> c -> d) -- ^ Function to combine values when present in all series
+                -> ZipStrategy k a d  -- ^ Strategy for when the key is in the left series but not in all the others
+                -> ZipStrategy k b d  -- ^ Strategy for when the key is in the center series but not in all the others
+                -> ZipStrategy k c d  -- ^ Strategy for when the key is in the right series but not in all the others
+                -> Series k a
+                -> Series k b 
+                -> Series k c
+                -> Series k d
+zipWithStrategy3 = G.zipWithStrategy3
+{-# INLINE zipWithStrategy3 #-}
 
 
 -- | Zip two 'Series' with a combining function. The value for keys which are missing from
