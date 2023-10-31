@@ -25,6 +25,9 @@ module Data.Series.Index.Internal(
     fromAscVector,
     fromDistinctAscVector,
 
+    -- * Functions with unchecked pre-conditions
+    mapMonotonic,
+
 ) where
 
-import Data.Series.Index.Definition (Index(..), fromAscList, fromDistinctAscList, fromAscVector, fromDistinctAscVector)
+import Data.Series.Index.Definition (Index(..), fromAscList, fromDistinctAscList, fromAscVector, fromDistinctAscVector, mapMonotonic)

@@ -24,6 +24,7 @@ import           Data.Series.Generic.View       ( select, requireWith )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
+import qualified Data.Series.Index.Internal     as InternalIndex
 import           Prelude                        hiding ( zipWith, zipWith3 ) 
 
 -- $setup
@@ -207,7 +208,7 @@ replace :: (Vector v a, Vector v Int, Ord k)
 {-# INLINE replace #-}
 xs `replace` ys 
     = let keysToReplace = index xs `Index.intersection` index ys
-          iixs          = Index.toAscVector $ Index.mapMonotonic (\k -> Index.findIndex k (index ys)) keysToReplace
+          iixs          = Index.toAscVector $ InternalIndex.mapMonotonic (\k -> Index.findIndex k (index ys)) keysToReplace
        in MkSeries (index ys) $ Vector.update_ (values ys) iixs (values (xs `select` keysToReplace))
 
 

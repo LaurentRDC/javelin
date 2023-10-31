@@ -88,7 +88,6 @@ module Data.Series.Index (
 
     -- * Mapping and filtering
     map,
-    mapMonotonic,
     filter,
     traverse,
     
@@ -104,7 +103,7 @@ module Data.Series.Index (
 
 import Data.Series.Index.Definition ( Index, singleton, unfoldr, range, fromSet, fromList, fromVector, toSet
                                     , toAscList, toAscVector, null, member, notMember, union, intersection
-                                    , difference, symmetricDifference, contains, size, take, drop, map, mapMonotonic
+                                    , difference, symmetricDifference, contains, size, take, drop, map
                                     , filter, traverse, findIndex, lookupIndex, elemAt, insert, delete 
                                     )
 import Prelude hiding ( null, take, drop, map, filter, traverse )
