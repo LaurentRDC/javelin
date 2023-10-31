@@ -46,7 +46,7 @@ module Data.Series.Tutorial (
 
 ) where
 
-import           Data.Series     ( Series, Occurrence, at, iat, select, to, require
+import           Data.Series     ( Series, Occurrence, at, iat, select, to, from, upto, require
                                  , groupBy, (<-|), (|->), Range, windowing
                                  )
 import qualified Data.Series     as Series
@@ -210,6 +210,28 @@ For example, we can query for a contiguous range of keys by using 'to':
 "2010-01-06" | 6.4592
 "2010-01-07" | 6.4472
 "2010-01-08" | 6.4901
+
+You can also request unbounded ranges. For example all dates up to @"2010-01-08"@ using 'upto':
+
+>>> aapl_close `select` upto "2010-01-08"
+       index | values
+       ----- | ------
+"2010-01-04" | 6.5522
+"2010-01-05" | 6.5636
+"2010-01-06" | 6.4592
+"2010-01-07" | 6.4472
+"2010-01-08" | 6.4901
+
+There's also the other unbound range, 'from':
+
+>>> aapl_close `select` from "2010-01-11"
+       index | values
+       ----- | ------
+"2010-01-11" | 6.5152
+"2010-01-12" | 6.4047
+"2010-01-13" | 6.3642
+"2010-01-14" | 6.4328
+"2010-01-15" | 6.4579
 
 Note that the bounds may contain less data than you think! For example, 
 let's look at a 5-day range:

@@ -100,6 +100,7 @@ requireWith replacement f xs ss
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
 -- be indexed from 0.
 dropIndex :: Series v k a -> Series v Int a
+{-# INLINE dropIndex #-}
 dropIndex (MkSeries ks vs) = MkSeries (Index.Internal.fromDistinctAscList [0..Index.size ks - 1]) vs
 
 
@@ -261,6 +262,7 @@ instance Selection Index where
 -- function. Internally, the 'Set' is converted to an index first.
 instance Selection Set where
     select :: (Vector v a, Ord k) => Series v k a -> Set k -> Series v k a
+    {-# INLINE select #-}
     select xs = select xs . Index.fromSet
 
 
@@ -268,6 +270,7 @@ instance Selection Set where
 -- function. Internally, the list is converted to an index first.
 instance Selection [] where
     select :: (Vector v a, Ord k) => Series v k a -> [k] -> Series v k a
+    {-# INLINE select #-}
     select xs = select xs . Index.fromList
 
 
@@ -327,6 +330,7 @@ slice start stop (MkSeries ks vs)
 argmax :: (Ord a, Vector v a)
        => Series v k a
        -> Maybe k
+{-# INLINE argmax #-}
 argmax xs | G.null xs = Nothing
           | otherwise = Just 
                       . fst 
@@ -359,4 +363,5 @@ argmax xs | G.null xs = Nothing
 argmin :: (Ord a, Vector v a, Vector v (Down a))
        => Series v k a
        -> Maybe k
+{-# INLINE argmin #-}
 argmin = argmax . G.map Down
