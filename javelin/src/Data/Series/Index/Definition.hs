@@ -108,7 +108,8 @@ instance Show k => Show (Index k) where
 
 -- | \(O(1)\)  Create a singleton 'Index'.
 singleton :: k -> Index k
-singleton = MkIndex . Set.singleton 
+singleton = MkIndex . Set.singleton
+{-# INLINE singleton #-}
 
 
 -- | \(O(n \log n)\) Create an 'Index' from a seed value. 
@@ -119,6 +120,7 @@ singleton = MkIndex . Set.singleton
 -- Index [1,2,3,4,5,6,7]
 unfoldr :: Ord a => (b -> Maybe (a, b)) -> b -> Index a
 unfoldr f = fromList . List.unfoldr f
+{-# INLINE unfoldr #-}
 
 
 -- | \(O(n \log n)\) Create an 'Index' as a range of values. @range f start end@ will generate 
@@ -136,11 +138,13 @@ range :: Ord a
       -> Index a
 range next start end 
     = unfoldr (\x -> guard (x <= end) $> (x, next x)) start
+{-# INLINE range #-}
 
 
 -- | \(O(1)\) Build an 'Index' from a 'Set'.
 fromSet :: Set k -> Index k
-fromSet = MkIndex 
+fromSet = MkIndex
+{-# INLINE fromSet #-}
 
 
 -- | \(O(n \log n)\) Build an 'Index' from a list. Note that since an 'Index' is
@@ -153,6 +157,7 @@ fromSet = MkIndex
 -- If the list is already sorted, `fromAscList` is generally faster.
 fromList :: Ord k => [k] -> Index k
 fromList = fromSet . Set.fromList
+{-# INLINE fromList #-}
 
 
 -- | \(O(n)\) Build an 'Index' from a list of elements in ascending order. The precondition
@@ -210,43 +215,51 @@ fromDistinctAscVector = fromDistinctAscList . Vector.toList
 -- | \(O(1)\) Convert an 'Index' to a 'Set'.
 toSet :: Index k -> Set k
 toSet (MkIndex s) = s
+{-# INLINE toSet #-}
 
 
 -- | \(O(n)\) Convert an 'Index' to a list. Elements will be produced in ascending order.
 toAscList :: Index k -> [k]
 toAscList (MkIndex s) = Set.toAscList s
+{-# INLINE toAscList #-}
 
 
 -- | \(O(n)\) Convert an 'Index' to a list. Elements will be produced in ascending order.
 toAscVector :: Vector v k => Index k -> v k
 toAscVector ix = Vector.fromListN (size ix) $ toAscList ix
+{-# INLINE toAscVector #-}
 
 
 -- | \(O(1)\) Returns 'True' for an empty 'Index', and @False@ otherwise.
 null :: Index k -> Bool
 null (MkIndex ix) = Set.null ix
+{-# INLINE null #-}
 
 
 -- | \(O(n \log n)\) Check whether the element is in the index.
 member :: Ord k => k -> Index k -> Bool
 member k (MkIndex ix) = k `Set.member` ix
+{-# INLINE member #-}
 
 
 -- | \(O(n \log n)\) Check whether the element is NOT in the index.
 notMember :: Ord k => k -> Index k -> Bool
 notMember k = not . member k
+{-# INLINE notMember #-}
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Union of two 'Index', containing
 -- elements either in the left index, right right index, or both.
 union :: Ord k => Index k -> Index k -> Index k
 union = (<>)
+{-# INLINE union #-}
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Intersection of two 'Index', containing
 -- elements which are in both the left index and the right index.
 intersection :: Ord k => Index k -> Index k -> Index k
 intersection (MkIndex ix) (MkIndex jx) = MkIndex $ ix `Set.intersection` jx
+{-# INLINE intersection #-}
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Returns the elements of the first index 
@@ -256,6 +269,7 @@ intersection (MkIndex ix) (MkIndex jx) = MkIndex $ ix `Set.intersection` jx
 -- Index "a"
 difference :: Ord k => Index k -> Index k -> Index k
 difference (MkIndex ix) (MkIndex jx) = MkIndex $ Set.difference ix jx
+{-# INLINE difference #-}
 
 
 -- | \(O(n+m)\). The symmetric difference of two 'Index'.
@@ -269,17 +283,20 @@ difference (MkIndex ix) (MkIndex jx) = MkIndex $ Set.difference ix jx
 -- (Index "ab",Index "de")
 symmetricDifference :: Ord k => Index k -> Index k -> (Index k, Index k)
 symmetricDifference left right = (left `difference` right, right `difference` left)
+{-# INLINE symmetricDifference #-}
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\).
 -- @(ix1 \'contains\' ix2)@ indicates whether all keys in @ix2@ are also in @ix1@.
 contains :: Ord k => Index k -> Index k -> Bool
 contains (MkIndex ix1) (MkIndex ix2)= ix2 `Set.isSubsetOf` ix1
+{-# INLINE contains #-}
 
 
 -- | \(O(1)\) Returns the number of keys in the index.
 size :: Index k -> Int
 size (MkIndex ix) = Set.size ix
+{-# INLINE size #-}
 
 
 -- | \(O(\log n)\). Take @n@ elements from the index, in ascending order.
@@ -288,12 +305,14 @@ size (MkIndex ix) = Set.size ix
 -- >>> take 10 $ fromList [1::Int,2,3]
 -- Index [1,2,3]
 take :: Int -> Index k -> Index k
-take n (MkIndex ix) = MkIndex (Set.take n ix) 
+take n (MkIndex ix) = MkIndex (Set.take n ix)
+{-# INLINE take #-}
 
 
 -- | \(O(\log n)\). Drop @n@ elements from the index, in ascending order.
 drop :: Int -> Index k -> Index k
-drop n (MkIndex ix) = MkIndex (Set.drop n ix) 
+drop n (MkIndex ix) = MkIndex (Set.drop n ix)
+{-# INLINE drop #-}
 
 
 -- | \(O(n \log n)\) Map a function over keys in the index.
@@ -307,6 +326,7 @@ drop n (MkIndex ix) = MkIndex (Set.drop n ix)
 -- characteristics.
 map :: Ord g => (k -> g) -> Index k -> Index g
 map f (MkIndex ix) = MkIndex $ Set.map f ix
+{-# INLINE map #-}
 
 
 -- | \(O(n)\) Map a monotonic function over keys in the index. /Monotonic/ means that if @a < b@, then @f a < f b@.
@@ -317,6 +337,7 @@ map f (MkIndex ix) = MkIndex $ Set.map f ix
 -- Index [1,2,3,4,5,6]
 mapMonotonic :: (k -> g) -> Index k -> Index g
 mapMonotonic f (MkIndex ix) = MkIndex $ Set.mapMonotonic f ix
+{-# INLINE mapMonotonic #-}
 
 
 -- | \(O(n)\) Filter elements satisfying a predicate.
@@ -325,6 +346,7 @@ mapMonotonic f (MkIndex ix) = MkIndex $ Set.mapMonotonic f ix
 -- Index [2,4]
 filter :: (k -> Bool) -> Index k -> Index k
 filter p (MkIndex ix) = MkIndex $ Set.filter p ix
+{-# INLINE filter #-}
 
 
 -- | \(O(\log n)\). Returns the integer /index/ of a key. This function raises an exception
@@ -334,6 +356,7 @@ filter p (MkIndex ix) = MkIndex $ Set.filter p ix
 -- 1
 findIndex :: Ord k => k -> Index k -> Int
 findIndex e (MkIndex ix) = Set.findIndex e ix 
+{-# INLINE findIndex #-}
 
 
 -- | \(O(\log n)\). Returns the integer /index/ of a key, if the key is in the index.
@@ -343,31 +366,36 @@ findIndex e (MkIndex ix) = Set.findIndex e ix
 -- >>> lookupIndex 'd' $ fromList ['a', 'b', 'c']
 -- Nothing
 lookupIndex :: Ord k => k -> Index k -> Maybe Int
-lookupIndex e (MkIndex ix) = Set.lookupIndex e ix 
+lookupIndex e (MkIndex ix) = Set.lookupIndex e ix
+{-# INLINE lookupIndex #-}
 
 
 -- | \(O(\log n)\) Returns the element at some integer index. This function raises
 -- an exception if the integer index is out-of-bounds.
 elemAt :: Int -> Index k -> k
 elemAt n (MkIndex ix) = Set.elemAt n ix
+{-# INLINE elemAt #-}
 
 
 -- | \(O(\log n)\). Insert a key in an 'Index'. If the key is already 
 -- present, the 'Index' will not change.
 insert :: Ord k => k -> Index k -> Index k
 insert k (MkIndex ix) = MkIndex $ k `Set.insert` ix
+{-# INLINE insert #-}
 
 
 -- | \(O(\log n)\). Delete a key from an 'Index', if this key is present
 -- in the index.
 delete :: Ord k => k -> Index k -> Index k
 delete k (MkIndex ix) = MkIndex $ k `Set.delete` ix
+{-# INLINE delete #-}
 
 
--- | \(O(\log n)\). Map each element of an 'Index' to an applicative action, 
+-- | \(O(n \log n)\). Map each element of an 'Index' to an applicative action, 
 -- evaluate these actions from left to right, and collect the results.
 --
 -- Note that the data type 'Index' is not a member of 'Traversable'
 -- because it is not a 'Functor'.
 traverse :: (Applicative f, Ord b) => (k -> f b) -> Index k -> f (Index b)
 traverse f = fmap fromList . Traversable.traverse f . toAscList
+{-# INLINE traverse #-}
