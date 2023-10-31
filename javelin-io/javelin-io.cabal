@@ -12,8 +12,8 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files: test/data/*.csv
                     test/data/*.json
-tested-with:        GHC ==9.6.1
-                     || ==9.4.5  
+tested-with:        GHC ==9.6.3
+                     || ==9.4.7  
 
 common common
     default-language: GHC2021
@@ -30,7 +30,7 @@ library
     import:           common
     hs-source-dirs:   src
     exposed-modules:  Data.Series.IO
-    build-depends:    aeson >= 2.0 && < 2.2,
+    build-depends:    aeson >= 2.0 && < 2.3,
                       base  >=4.15.0.0,
                       bytestring,
                       cassava,

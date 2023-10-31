@@ -9,8 +9,8 @@ maintainer:         laurent.decotret@outlook.com
 category:           Finance
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
-tested-with:        GHC ==9.6.1
-                     || ==9.4.5
+tested-with:        GHC ==9.6.3
+                     || ==9.4.7
 
 common common
     default-language: GHC2021
