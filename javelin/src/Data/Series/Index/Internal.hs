@@ -28,6 +28,12 @@ module Data.Series.Index.Internal(
     -- * Functions with unchecked pre-conditions
     mapMonotonic,
 
+    -- * Unsafe indexing
+    elemAt,
+    findIndex,
+
 ) where
 
-import Data.Series.Index.Definition (Index(..), fromAscList, fromDistinctAscList, fromAscVector, fromDistinctAscVector, mapMonotonic)
+import Data.Series.Index.Definition ( Index(..), fromAscList, fromDistinctAscList, fromAscVector
+                                    , fromDistinctAscVector, mapMonotonic, elemAt, findIndex
+                                    )

@@ -211,7 +211,7 @@ replace :: (Vector v a, Vector v Int, Ord k)
 {-# INLINE replace #-}
 xs `replace` ys 
     = let keysToReplace = index xs `Index.intersection` index ys
-          iixs          = Index.toAscVector $ Index.Internal.mapMonotonic (\k -> Index.findIndex k (index ys)) keysToReplace
+          iixs          = Index.toAscVector $ Index.Internal.mapMonotonic (\k -> Index.Internal.findIndex k (index ys)) keysToReplace
        in MkSeries (index ys) $ Vector.update_ (values ys) iixs (values (xs `select` keysToReplace))
 
 

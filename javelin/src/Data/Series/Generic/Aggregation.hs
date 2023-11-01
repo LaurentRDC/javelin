@@ -19,6 +19,7 @@ import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Vector                    as Boxed
 import qualified Data.Series.Index              as Index
+import qualified Data.Series.Index.Internal     as Index.Internal
 import           Prelude                        hiding ( last )
 
 -- $setup
@@ -96,7 +97,7 @@ aggregateWith (MkGrouping xs by) f
             selectSubset (MkSeries ks vs) ss 
                 = MkSeries ss $ Boxed.convert
                             $ Boxed.map (Vector.unsafeIndex vs)
-                            $ Boxed.map (`Index.findIndex` ks) 
+                            $ Boxed.map (`Index.Internal.findIndex` ks) 
                             $ Index.toAscVector ss
 
 

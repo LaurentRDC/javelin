@@ -113,7 +113,7 @@ filter :: (Vector v a, Vector v Int, Ord k)
 {-# INLINE filter #-}
 filter predicate xs@(MkSeries ks vs) 
     = let indicesToKeep = Vector.findIndices predicate vs
-          keysToKeep = Index.Internal.fromDistinctAscList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
+          keysToKeep = Index.Internal.fromDistinctAscList [Index.Internal.elemAt ix ks | ix <- Vector.toList indicesToKeep]
        in xs `select` keysToKeep
 
 
@@ -266,7 +266,7 @@ instance Selection Index where
             -- for large Series
            in MkSeries selectedKeys $ Vector.convert
                                     $ Boxed.map (Vector.unsafeIndex vs) 
-                                    $ Boxed.map (`Index.findIndex` ks) 
+                                    $ Boxed.map (`Index.Internal.findIndex` ks) 
                                     $ Index.toAscVector selectedKeys
 
 
@@ -293,7 +293,7 @@ instance Selection Range where
     {-# INLINE select #-}
     select series rng = case keysInRange series rng of 
         Nothing              -> mempty
-        Just (kstart, kstop) -> let indexOf xs k = Index.findIndex k (index xs)
+        Just (kstart, kstop) -> let indexOf xs k = Index.Internal.findIndex k (index xs)
                                  in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
 
 
@@ -304,7 +304,7 @@ selectWhere xs ys = xs `select` Index.fromSet keysWhereTrue
     where
         (MkSeries _ cond) = ys `select` index xs
         whereValuesAreTrue = Set.fromDistinctAscList $ Vector.toList (Vector.findIndices id cond)
-        keysWhereTrue = Set.mapMonotonic (`Index.elemAt` index xs) whereValuesAreTrue
+        keysWhereTrue = Set.mapMonotonic (`Index.Internal.elemAt` index xs) whereValuesAreTrue
 
 
 -- | Yield a subseries based on indices. The end index is not included.

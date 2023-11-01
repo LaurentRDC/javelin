@@ -285,7 +285,7 @@ mapIndex (MkSeries index values) f
     -- Note that the order in which items are kept appears to be backwards;
     -- See the examples for Data.Map.Strict.fromListWith
     = let mapping   = MS.fromListWith (\_ x -> x) $ [(f k, k) | k <- Index.toAscList index]
-          newvalues = fmap (\k -> values Vector.! Index.findIndex k index) mapping
+          newvalues = fmap (\k -> values Vector.! Index.Internal.findIndex k index) mapping
        in fromStrictMap newvalues
 
 
@@ -309,7 +309,7 @@ instance (Vector v a, Ord k) => Semigroup (Series v k a) where
                     -- Not safe but we know `k` is either in `ks1` or `ks2`
                     -- Note that this choice makes (<>) left-biased: if there are duplicate keys,
                     -- the value from the left series is preferred.
-                    Nothing -> Right $ k `Index.findIndex` ks2
+                    Nothing -> Right $ k `Index.Internal.findIndex` ks2
 
 
 instance (Vector v a, Ord k) => Monoid (Series v k a) where
