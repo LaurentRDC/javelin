@@ -59,7 +59,7 @@ module Data.Series.Unboxed (
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, null, length,
-    takeWhile, dropWhile, filter,
+    takeWhile, dropWhile, filter, filterWithKey,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
@@ -640,7 +640,7 @@ dropIndex = G.dropIndex
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
--- Notice that the filtering is done on the values, not on the keys
+-- Notice that the filtering is done on the values, not on the keys.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
 -- >>> xs
@@ -653,9 +653,21 @@ dropIndex = G.dropIndex
 --    index | values
 --    ----- | ------
 -- "Lisbon" |      4
+--
+-- See also 'filterWithKey'.
 filter :: (Unbox a, Ord k) => (a -> Bool) -> Series k a -> Series k a
 {-# INLINE filter #-}
 filter = G.filter
+
+
+-- | Filter elements, taking into account the corresponding key. Only elements for which 
+-- the predicate is @True@ are kept. 
+filterWithKey :: (Unbox a, Ord k) 
+              => (k -> a -> Bool) 
+              -> Series k a 
+              -> Series k a
+{-# INLINE filterWithKey #-}
+filterWithKey = G.filterWithKey
 
 
 -- | Select a subseries. There are a few ways to do this.

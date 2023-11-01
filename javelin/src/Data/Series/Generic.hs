@@ -18,7 +18,7 @@ module Data.Series.Generic (
     fromLazyMap, toLazyMap,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, filter, null, length, sum, 
+    map, mapWithKey, mapIndex, filter, filterWithKey, null, length, sum, 
     take, takeWhile, dropWhile,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
@@ -68,7 +68,7 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl, forwardFill )
-import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, require, requireWith
+import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, filterWithKey, require, requireWith
                                         , catMaybes, dropIndex, argmax, argmin
                                         )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, zipWithKey, zipWith3, zipWithMatched3, zipWithKey3, replace

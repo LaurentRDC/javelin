@@ -14,6 +14,7 @@ module Data.Series.Generic.View (
     require,
     requireWith,
     filter,
+    filterWithKey,
     catMaybes,
     dropIndex,
 
@@ -105,7 +106,8 @@ dropIndex (MkSeries ks vs) = MkSeries (Index.Internal.fromDistinctAscList [0..In
 
 
 -- | Filter elements. Only elements for which the predicate is @True@ are kept. 
--- Notice that the filtering is done on the values, not on the keys
+-- Notice that the filtering is done on the values, not on the keys; see 'filterWithKey'
+-- to filter while taking keys into account.
 filter :: (Vector v a, Vector v Int, Ord k) 
        => (a -> Bool) -> Series v k a -> Series v k a
 {-# INLINE filter #-}
@@ -113,6 +115,16 @@ filter predicate xs@(MkSeries ks vs)
     = let indicesToKeep = Vector.findIndices predicate vs
           keysToKeep = Index.Internal.fromDistinctAscList [Index.elemAt ix ks | ix <- Vector.toList indicesToKeep]
        in xs `select` keysToKeep
+
+
+-- | Filter elements, taking into account the corresponding key. Only elements for which 
+-- the predicate is @True@ are kept. 
+filterWithKey :: (Vector v a, Vector v Int, Vector v Bool, Ord k) 
+              => (k -> a -> Bool) 
+              -> Series v k a 
+              -> Series v k a
+{-# INLINE filterWithKey #-}
+filterWithKey predicate xs = xs `selectWhere` G.mapWithKey predicate xs
 
 
 -- | \(O(n)\) Only keep elements which are @'Just' v@. 
