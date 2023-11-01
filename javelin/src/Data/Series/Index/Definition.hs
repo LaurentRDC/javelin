@@ -39,6 +39,7 @@ module Data.Series.Index.Definition (
     intersection,
     difference,
     symmetricDifference,
+    cartesianProduct,
     contains,
     size,
     take,
@@ -72,11 +73,12 @@ import qualified Data.Vector.Generic    as Vector
 import           GHC.Exts               ( IsList )
 import qualified GHC.Exts               as Exts
 import           GHC.Stack              ( HasCallStack )
-import           Prelude                as P hiding ( null, take, drop, map, filter, traverse )
+import           Prelude                as P hiding ( null, take, drop, map, filter, traverse, product )
 
 -- $setup
 -- >>> import Data.Series.Index
 -- >>> import qualified Data.Vector as Vector
+-- attempting to use module `javelin-0.1.0.0:Data.Series.Index' (c:\Users\laure\OneDrive\Code\javelin\javelin\src\Data\Series\Index.hs) which is not loaded
 
 -- | Representation of the index of a series.
 -- An index is a sequence of sorted elements. All elements are unique, much like a 'Set'.
@@ -286,6 +288,16 @@ difference (MkIndex ix) (MkIndex jx) = MkIndex $ Set.difference ix jx
 symmetricDifference :: Ord k => Index k -> Index k -> (Index k, Index k)
 symmetricDifference left right = (left `difference` right, right `difference` left)
 {-# INLINE symmetricDifference #-}
+
+
+-- | \(O(n m)\) Take the cartesian product of two 'Index':
+--
+-- >>> (range (+1) (1 :: Int) 2) `cartesianProduct` (range (+1) (3 :: Int) 4)
+-- Index [(1,3),(1,4),(2,3),(2,4)]
+cartesianProduct :: Index k -> Index g -> Index (k, g)
+cartesianProduct (MkIndex xs) (MkIndex ys) 
+    = MkIndex $ Set.cartesianProduct xs ys
+{-# INLINE cartesianProduct #-}
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\).
