@@ -1,7 +1,9 @@
 module Data.Series.Generic.Aggregation ( 
     -- * Grouping
+    Grouping,
     groupBy,
-    foldGroups,
+    aggregateWith,
+    foldWith,
 
     -- * Windowing
     expanding,
@@ -18,7 +20,6 @@ import qualified Data.Vector.Generic            as Vector
 import qualified Data.Vector                    as Boxed
 import qualified Data.Series.Index              as Index
 import           Prelude                        hiding ( last )
-
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -37,19 +38,50 @@ import           Prelude                        hiding ( last )
 --                              , ((2020, "June")   , 20)
 --                              , ((2021, "June")   , 25) 
 --                              ]
---      in groupBy month minimum xs
+--      in xs `groupBy` month `aggregateWith` minimum
 -- :}
 --     index | values
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Ord k, Ord g, Vector v a, Vector v b) 
-        => (k -> g)           -- ^ Grouping function
-        -> (Series v k a -> b)
-        -> Series v k a       -- ^ Input series
-        -> Series v g b    -- ^ Grouped series
+groupBy :: Series v k a       -- ^ Input series
+        -> (k -> g)           -- ^ Grouping function
+        -> Grouping k g v a   -- ^ Grouped series
 {-# INLINE groupBy #-}
-groupBy by f xs 
+groupBy = MkGrouping
+
+
+-- | Representation of a 'Series' being grouped.
+data Grouping k g v a 
+    = MkGrouping (Series v k a)  (k -> g)
+
+
+-- | Aggregate groups resulting from a call to 'groupBy':
+-- 
+-- >>> type Date = (Int, String)
+-- >>> month :: (Date -> String) = snd
+-- >>> :{ 
+--     let xs = Series.fromList [ ((2020, "January") :: Date,  0 :: Int)
+--                              , ((2021, "January"), -5)
+--                              , ((2020, "June")   , 20)
+--                              , ((2021, "June")   , 25) 
+--                              ]
+--      in xs `groupBy` month `aggregateWith` minimum
+-- :}
+--     index | values
+--     ----- | ------
+-- "January" |     -5
+--    "June" |     20
+--
+-- If you want to aggregate groups using a binary function, see 'foldWith' which
+-- may be much faster.
+aggregateWith :: (Ord k, Ord g, Vector v a, Vector v b) 
+              => Grouping k g v a 
+              -> (Series v k a -> b) 
+              -> Series v g b
+{-# INLINE aggregateWith #-}
+aggregateWith (MkGrouping xs by) f
+
     = fromStrictMap $ Map.map f $ selectSubset xs <$> groupedKeys
         where
             groupedKeys
@@ -68,17 +100,31 @@ groupBy by f xs
                             $ Index.toAscVector ss
 
 
--- | Aggregate each group in a 'GroupBy' using a binary function.
--- While this is not as expressive as 'aggregate', users looking for maximum
--- performance should use 'foldGroups' as much as possible.
-foldGroups :: (Ord g, Vector v a) 
-               => (k -> g)
-               -> (a -> a -> a) 
-               -> Series v k a
-               -> Series v g a
-{-# INLINE foldGroups #-}
-foldGroups grouping f xs 
-    = fromStrictMap $ Map.unionsWith f [Map.singleton (grouping k) v | (k, v) <- toList xs]
+-- | Fold over each group in a 'Grouping' using a binary function.
+-- While this is not as expressive as 'aggregateWith', users looking for maximum
+-- performance should use 'foldWith' as much as possible.
+--
+-- >>> type Date = (Int, String)
+-- >>> month :: (Date -> String) = snd
+-- >>> :{ 
+--     let xs = Series.fromList [ ((2020, "January") :: Date,  0 :: Int)
+--                              , ((2021, "January"), -5)
+--                              , ((2020, "June")   , 20)
+--                              , ((2021, "June")   , 25) 
+--                              ]
+--      in xs `groupBy` month `foldWith` min
+-- :}
+--     index | values
+--     ----- | ------
+-- "January" |     -5
+--    "June" |     20
+foldWith :: (Ord g, Vector v a) 
+         => Grouping k g v a
+         -> (a -> a -> a)
+         -> Series v g a
+{-# INLINE foldWith #-}
+foldWith (MkGrouping xs by) f 
+    = fromStrictMap $ Map.unionsWith f [Map.singleton (by k) v | (k, v) <- toList xs]
 
 
 -- | Expanding window aggregation.

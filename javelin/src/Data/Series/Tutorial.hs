@@ -47,7 +47,7 @@ module Data.Series.Tutorial (
 ) where
 
 import           Data.Series     ( Series, Occurrence, at, iat, select, to, from, upto, require
-                                 , groupBy, (<-|), (|->), Range, windowing
+                                 , groupBy, aggregateWith, (<-|), (|->), Range, windowing
                                  )
 import qualified Data.Series     as Series
 import qualified Data.Series.Generic as Series (mean, std)
@@ -345,7 +345,7 @@ it simple for this tutorial.
 Grouping involves two steps:
 
   (1) Grouping keys in some way using 'groupBy';
-  (2) Aggregating the values in each group using 'aggregate'.
+  (2) Aggregating the values in each group using 'aggregateWith' or other variants.
 
 Let's find the highest closing price of each month. First, we need to define
 our grouping function:
@@ -361,7 +361,7 @@ our grouping function:
 
 Then, we can group keys by month and take the 'maximum' of each group:
 
->>> groupBy month maximum aapl_closing
+>>> aapl_closing `groupBy` month `aggregateWith` maximum
     index | values
     ----- | ------
 "1980-12" | 0.1261
@@ -379,7 +379,7 @@ to find the monthly average Apple closing price, rounded to the nearest cent:
 
 >>> import Data.Series (mean)
 >>> let (roundToCent :: Double -> Double) = \x -> fromIntegral ((round $ x * 100) :: Int) / 100
->>> groupBy  month (roundToCent . mean) aapl_closing
+>>> aapl_closing `groupBy` month `aggregateWith` (roundToCent . mean)
     index | values
     ----- | ------
 "1980-12" |   0.11
@@ -568,7 +568,7 @@ other integer-like numbers using 'fromIntegral'. In practice, you should aim to 
 using 'Data.Series.groupBy' and grouping on the first element of the key ('fst'):
 
 >>> let xs = Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
->>> groupBy fst sum xs
+>>> xs `groupBy` fst `aggregateWith` sum
 index | values
 ----- | ------
   'a' |      5

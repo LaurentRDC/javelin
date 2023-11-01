@@ -53,11 +53,11 @@ module Data.Series.Generic (
     meanAndVariance,
 
     -- * Grouping and windowing operations
-    groupBy, foldGroups, 
+    groupBy, Grouping, aggregateWith, foldWith, 
     windowing, expanding,
 ) where
 
-import Data.Series.Generic.Aggregation  ( groupBy, foldGroups
+import Data.Series.Generic.Aggregation  ( groupBy, Grouping, aggregateWith, foldWith
                                         , windowing, expanding 
                                         )
 import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, convert, singleton, fromIndex, fromStrictMap

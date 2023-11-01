@@ -3,7 +3,7 @@ module Test.Data.Series.Generic.Aggregation (tests) where
 
 import qualified Data.Map.Strict      as MS
 import qualified Data.Series.Generic  as Series
-import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, foldGroups, windowing, to, expanding)
+import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, aggregateWith, foldWith, windowing, to, expanding)
 import           Data.Vector          ( Vector )
 
 import           Hedgehog             ( property, forAll, (===) )
@@ -21,7 +21,7 @@ tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
                                                     , testWindowing
                                                     , testWindowingRollingForwards
                                                     , testWindowingRollingBackwards
-                                                    , testPropaggregateVsfoldGroups
+                                                    , testPropaggregateVsfoldWith
                                                     , testExpanding
                                                     ]
 
@@ -33,13 +33,13 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
             let (series :: Series Vector String Int) = fromStrictMap $ MS.fromList [("aa", 1), ("ab", 2), ("c", 3), ("dc", 4), ("ae", 5)]
                 expectation = fromStrictMap $ MS.fromList [('a', 1+2+5), ('c', 3), ('d', 4)]
             
-            assertEqual mempty expectation $ groupBy head (Series.sum :: Series Vector String Int -> Int) series
+            assertEqual mempty expectation $ series `groupBy` head `aggregateWith` (Series.sum :: Series Vector String Int -> Int)
 
         testGroupBy2 = testCase "groupBy" $ do
             let (series :: Series Vector Int Int) = fromStrictMap $ MS.fromList $ zip [0,1,2,3] [0,1,2,3]
                 expectation = fromStrictMap $ MS.fromList [(True, 0+2), (False, 1+3)]
             
-            assertEqual mempty expectation $ groupBy even (Series.sum :: Series Vector Int Int -> Int) series
+            assertEqual mempty expectation $ series `groupBy` even `aggregateWith` (Series.sum :: Series Vector Int Int -> Int)
 
 
 
@@ -116,13 +116,13 @@ testWindowingRollingBackwards = testGroup "Data.Series.Generic.windowing" [ test
             assertEqual mempty expectation $ windowing (\k -> (k-2) `to` k)  (Series.sum :: Series Vector Int Int -> Int) series
 
 
-testPropaggregateVsfoldGroups :: TestTree
-testPropaggregateVsfoldGroups 
+testPropaggregateVsfoldWith :: TestTree
+testPropaggregateVsfoldWith 
     = testProperty "check that groupBy and testWindowingRollingForwards are equivalent" $ property $ do
         ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500) 
         let (xs :: Series Vector Int Double) = Series.fromList (zip [0::Int ..] ms)
 
-        groupBy (`mod` 5) (Series.sum :: Series Vector Int Double -> Double) xs === foldGroups (`mod` 5) (+) xs
+        xs `groupBy` (`mod` 5) `aggregateWith` (Series.sum :: Series Vector Int Double -> Double) === xs `groupBy` (`mod` 5) `foldWith` (+)
 
 
 testExpanding :: TestTree

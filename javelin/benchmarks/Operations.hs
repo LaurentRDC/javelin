@@ -24,7 +24,8 @@ main = do
         [ bench "at" $ whnf (at elems_even) srs
         , bench "iat" $ whnf (iat elems_even) srs
         , bench "select" $ whnf (select elems_odd) srs
-        , bench "group by ... aggregate with ..." $ whnf (groupby small) srs
+        , bench "group by ... aggregate with ..." $ whnf (groupbyagg small) srs
+        , bench "group by ... fold with ..." $ whnf (groupbyfold small) srs
         ]
 
 at :: Set Int -> Series Int Int -> Int
@@ -46,7 +47,12 @@ select ks s = foldl' go 0 ks
     where
         go n k = n + length (s `Series.select` ((k-100) `Series.to` (k+100)))
 
-groupby :: Set Int -> Series Int Int -> Int
-groupby ks s = foldl' go 0 ks
+groupbyagg :: Set Int -> Series Int Int -> Int
+groupbyagg ks s = foldl' go 0 ks
     where
-        go n k = n + product (Series.groupBy (`mod` (k + 1)) sum s)
+        go n k = n + product (s `Series.groupBy` (`mod` (k + 1)) `Series.aggregateWith` sum)
+
+groupbyfold :: Set Int -> Series Int Int -> Int
+groupbyfold ks s = foldl' go 0 ks
+    where
+        go n k = n + product (s `Series.groupBy` (`mod` (k + 1)) `Series.foldWith` (+))

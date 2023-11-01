@@ -79,7 +79,7 @@ module Data.Series (
     forwardFill,
 
     -- * Grouping and windowing operations
-    groupBy, foldGroups, 
+    groupBy, Grouping, aggregateWith, foldWith, 
     windowing, expanding,
 
     -- * Numerical aggregation
@@ -950,31 +950,58 @@ forwardFill = G.forwardFill
 --                              , ((2020, "June")   , 20)
 --                              , ((2021, "June")   , 25) 
 --                              ]
---      in groupBy month minimum xs
+--      in xs `groupBy` month `aggregateWith` minimum
 -- :}
 --     index | values
 --     ----- | ------
 -- "January" |     -5
 --    "June" |     20
-groupBy :: (Ord k, Ord g) 
-        => (k -> g)           -- ^ Grouping function
-        -> (Series k a -> b)
-        -> Series k a       -- ^ Input series
-        -> Series g b    -- ^ Grouped series
+groupBy :: Series k a      -- ^ Grouping function
+        ->(k -> g)         -- ^ Input series
+        -> Grouping k g a  -- ^ Grouped series
 {-# INLINE groupBy #-}
 groupBy = G.groupBy
 
+-- | Representation of a 'Series' being grouped.
+type Grouping k g a = G.Grouping k g Vector a
 
--- | Aggregate each group in a 'GroupBy' using a binary function.
+
+-- | Aggregate groups resulting from a call to 'groupBy':
+-- 
+-- >>> type Date = (Int, String)
+-- >>> month :: (Date -> String) = snd
+-- >>> :{ 
+--     let xs = Series.fromList [ ((2020, "January") :: Date,  0 :: Int)
+--                              , ((2021, "January"), -5)
+--                              , ((2020, "June")   , 20)
+--                              , ((2021, "June")   , 25) 
+--                              ]
+--      in xs `groupBy` month `aggregateWith` minimum
+-- :}
+--     index | values
+--     ----- | ------
+-- "January" |     -5
+--    "June" |     20
+--
+-- If you want to aggregate groups using a binary function, see 'foldWith' which
+-- may be much faster.
+aggregateWith :: (Ord k, Ord g) 
+              => Grouping k g a 
+              -> (Series k a -> b) 
+              -> Series g b
+{-# INLINE aggregateWith #-}
+aggregateWith = G.aggregateWith
+
+
+-- | Aggregate each group in a 'Grouping' using a binary function.
 -- While this is not as expressive as 'aggregate', users looking for maximum
--- performance should use 'foldGroups' as much as possible.
-foldGroups :: (Ord g) 
-           => (k -> g)
-           -> (a -> a -> a) 
-           -> Series k a
-           -> Series g a
-{-# INLINE foldGroups #-}
-foldGroups = G.foldGroups
+-- performance should use 'foldWith' as much as possible.
+foldWith :: Ord g 
+         => Grouping k g a
+         -> (a -> a -> a)
+         -> Series g a
+{-# INLINE foldWith #-}
+foldWith = G.foldWith
 
 
 -- | Expanding window aggregation.
