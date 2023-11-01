@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -70,6 +71,7 @@ import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
 import           GHC.Exts               ( IsList )
 import qualified GHC.Exts               as Exts
+import           GHC.Stack              ( HasCallStack )
 import           Prelude                as P hiding ( null, take, drop, map, filter, traverse )
 
 -- $setup
@@ -354,7 +356,7 @@ filter p (MkIndex ix) = MkIndex $ Set.filter p ix
 --
 -- >>> findIndex 'b' $ fromList ['a', 'b', 'c']
 -- 1
-findIndex :: Ord k => k -> Index k -> Int
+findIndex :: HasCallStack => Ord k => k -> Index k -> Int
 findIndex e (MkIndex ix) = Set.findIndex e ix 
 {-# INLINE findIndex #-}
 
@@ -372,7 +374,7 @@ lookupIndex e (MkIndex ix) = Set.lookupIndex e ix
 
 -- | \(O(\log n)\) Returns the element at some integer index. This function raises
 -- an exception if the integer index is out-of-bounds.
-elemAt :: Int -> Index k -> k
+elemAt :: HasCallStack => Int -> Index k -> k
 elemAt n (MkIndex ix) = Set.elemAt n ix
 {-# INLINE elemAt #-}
 
