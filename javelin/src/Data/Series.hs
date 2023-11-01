@@ -62,7 +62,7 @@ module Data.Series (
     zipWithMonoid, esum, eproduct, unzip, unzip3,
 
     -- * Index manipulation
-    require, dropna, dropIndex,
+    require, catMaybes, dropIndex,
 
     -- * Accessors
     -- ** Bulk access
@@ -702,15 +702,15 @@ filter = G.filter
 --  "London" |  Just 2
 --   "Paris" |  Just 1
 -- "Toronto" | Nothing
--- >>> dropna ys
+-- >>> catMaybes ys
 --    index | values
 --    ----- | ------
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
-dropna :: Ord k => Series k (Maybe a) -> Series k a
-{-# INLINE dropna #-}
-dropna = G.dropna
+catMaybes :: Ord k => Series k (Maybe a) -> Series k a
+{-# INLINE catMaybes #-}
+catMaybes = G.catMaybes
 
 
 -- | Select a subseries. There are a few ways to do this.

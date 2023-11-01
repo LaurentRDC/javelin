@@ -33,7 +33,7 @@ module Data.Series.Generic (
     zipWithMonoid, esum, eproduct, unzip, unzip3,
 
     -- * Index manipulation
-    require, requireWith, dropna, dropIndex,
+    require, requireWith, catMaybes, dropIndex,
 
     -- * Accessors
     -- ** Bulk access
@@ -69,7 +69,7 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl, forwardFill )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, require, requireWith
-                                        , dropna, dropIndex, argmax, argmin
+                                        , catMaybes, dropIndex, argmax, argmin
                                         )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, zipWithKey, zipWith3, zipWithMatched3, zipWithKey3, replace
                                         , (|->), (<-|), zipWithStrategy, zipWithStrategy3, ZipStrategy, skipStrategy, mapStrategy, constStrategy

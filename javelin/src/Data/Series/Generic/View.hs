@@ -14,7 +14,7 @@ module Data.Series.Generic.View (
     require,
     requireWith,
     filter,
-    dropna,
+    catMaybes,
     dropIndex,
 
     -- * Finding indices based on values
@@ -115,11 +115,11 @@ filter predicate xs@(MkSeries ks vs)
        in xs `select` keysToKeep
 
 
--- | Drop elements which are not available (NA). 
-dropna :: (Vector v a, Vector v (Maybe a), Vector v Int, Ord k) 
+-- | \(O(n)\) Only keep elements which are @'Just' v@. 
+catMaybes :: (Vector v a, Vector v (Maybe a), Vector v Int, Ord k) 
        => Series v k (Maybe a) -> Series v k a
-{-# INLINE dropna #-}
-dropna = G.map fromJust . filter isJust
+{-# INLINE catMaybes #-}
+catMaybes = G.map fromJust . filter isJust
 
 
 -- | Datatype representing an /inclusive/ range of keys, which can either be bounded

@@ -1,6 +1,7 @@
 
 module Data.Series.Generic.Scans (
     postscanl,
+    prescanl,
 
     -- * Filling missing data
     forwardFill,
@@ -16,7 +17,7 @@ import qualified Data.Vector.Generic            as Vector
 -- >>> import qualified Data.Series.Generic as Series
 -- >>> import qualified Data.Series.Index as Index
 
--- | /O(n)/ Left-to-right postscan.
+-- | \(O(n)\) Left-to-right postscan.
 --
 -- >>> import qualified Data.Vector as V 
 -- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series V.Vector Int Int
@@ -39,7 +40,30 @@ postscanl :: (Vector v a, Vector v b) => (a -> b -> a) -> a -> Series v k b -> S
 postscanl f s (MkSeries ix vs) = MkSeries ix $ Vector.postscanl f s vs
 
 
--- | /O(n)/ Replace all instances of 'Nothing' with the last previous
+-- | \(O(n)\) Left-to-right prescan.
+--
+-- >>> import qualified Data.Vector as V 
+-- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series V.Vector Int Int
+-- >>> xs
+-- index | values
+-- ----- | ------
+--     0 |      1
+--     1 |      2
+--     2 |      3
+--     3 |      4
+-- >>> prescanl (+) 0 xs
+-- index | values
+-- ----- | ------
+--     0 |      0
+--     1 |      1
+--     2 |      3
+--     3 |      6
+prescanl :: (Vector v a, Vector v b) => (a -> b -> a) -> a -> Series v k b -> Series v k a
+{-# INLINE prescanl #-}
+prescanl f s (MkSeries ix vs) = MkSeries ix $ Vector.prescanl f s vs
+
+
+-- | \(O(n)\) Replace all instances of 'Nothing' with the last previous
 -- value which was not 'Nothing'.
 --
 -- >>> import qualified Data.Vector as V 
