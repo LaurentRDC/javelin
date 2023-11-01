@@ -29,6 +29,7 @@ tests = testGroup "Data.Series.Generic.Definition" [ testMappend
                                                    , testPropRoundtripConversionWithList
                                                    , testPropFromListDuplicatesNeverDrops
                                                    , testPropFromVectorDuplicatesNeverDrops
+                                                   , testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder
                                                    , testPropRoundtripConversionWithVector
                                                    , testPropVectorVsList
                                                    , testFromLazyMap
@@ -124,6 +125,13 @@ testPropFromVectorDuplicatesNeverDrops
     = testProperty "fromVectorDuplicates never drops elements" $ property $ do
         xs <- fmap Vector.fromList $ forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
         Series.length (Series.fromVectorDuplicates xs :: Series Vector (Int, Occurrence) Char) === length xs
+
+
+testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder :: TestTree
+testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder
+    = testProperty "fromVectorDuplicates and fromListDuplicates are equivalent" $ property $ do
+        xs <- fmap Vector.fromList $ forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
+        Series.fromVectorDuplicates xs === Series.fromListDuplicates (Vector.toList xs)
 
 
 testPropRoundtripConversionWithVector :: TestTree

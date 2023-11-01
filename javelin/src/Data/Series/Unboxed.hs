@@ -198,10 +198,6 @@ fromList = G.fromList
 -- ('d',0) |      1
 -- ('d',1) |     -4
 -- ('d',2) |      7
---
--- Note that due to differences in sorting,
--- 'fromVectorDuplicates' and 'fromListDuplicates' may return results in 
--- a different order.
 fromListDuplicates :: (Unbox a, Ord k) => [(k, a)] -> Series (k, Occurrence) a
 {-# INLINE fromListDuplicates #-}
 fromListDuplicates = G.fromListDuplicates
@@ -256,10 +252,6 @@ fromVector = G.fromVector
 -- ('d',0) |      1
 -- ('d',1) |     -4
 -- ('d',2) |      7
---
--- Note that due to differences in sorting,
--- 'fromVectorDuplicates' and 'fromListDuplicates' may return results in 
--- a different order.
 fromVectorDuplicates :: (Unbox k, Unbox a, Ord k) => Vector (k, a) -> Series (k, Occurrence) a
 {-# INLINE fromVectorDuplicates #-}
 fromVectorDuplicates = G.fromVectorDuplicates

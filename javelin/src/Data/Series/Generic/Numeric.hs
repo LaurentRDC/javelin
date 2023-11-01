@@ -60,7 +60,7 @@ meanAndVariance xs
 var :: (Vector v a, Vector v (Int, a, a), RealFloat a) 
     => Series v k a -> a
 var xs = let (count, _, meanSquared) = welford (const True) xs
-               in meanSquared / fromIntegral count
+          in meanSquared / fromIntegral count
 {-# INLINE var #-}
 
 

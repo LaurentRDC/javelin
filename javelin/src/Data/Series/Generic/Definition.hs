@@ -127,25 +127,11 @@ deriving instance Vector U.Vector Occurrence
 
 
 -- | Construct a series from a list of key-value pairs.
--- Contrary to 'fromList', aalues at duplicate keys are preserved. To keep each
+-- Contrary to 'fromList', values at duplicate keys are preserved. To keep each
 -- key unique, an 'Occurrence' number counts up.
---
--- Note that due to differences in sorting,
--- 'fromVectorDuplicates' and 'fromListDuplicates' may return results in 
--- a different order.
 fromListDuplicates :: (Vector v a, Ord k) => [(k, a)] -> Series v (k, Occurrence) a
 {-# INLINE fromListDuplicates #-}
-fromListDuplicates = fromStrictMap . toOccMap
-    where
-        toOccMap :: Ord k => [(k, a)] -> Map (k, Occurrence) a
-        toOccMap xs = go xs mempty
-            where
-                go []                  acc = acc
-                go ((key, val) : rest) acc = let eqKeys = filter (\(k, _) -> k == key) $ MS.keys acc
-                                                 occ = if P.null eqKeys
-                                                            then 0
-                                                            else 1 + maximum (snd <$> eqKeys)
-                                              in go rest $ MS.insert (key, occ) val acc
+fromListDuplicates = convert . fromVectorDuplicates . Boxed.fromList
 
 
 -- | Construct a list from key-value pairs. The elements are in order sorted by key. 
@@ -179,10 +165,6 @@ fromVector vec = let (indexVector, valuesVector)
 
 -- | Construct a 'Series' from a 'Vector' of key-value pairs, where there may be duplicate keys. 
 -- There is no condition on the order of pairs.
---
--- Note that due to differences in sorting,
--- 'Series.fromVectorDuplicates' and 'Series.fromListDuplicates' may return results in 
--- a different order.
 fromVectorDuplicates :: (Ord k, Vector v k, Vector v a, Vector v (k, a), Vector v (k, Occurrence))
                      => v (k, a) -> Series v (k, Occurrence) a
 {-# INLINE fromVectorDuplicates #-}
