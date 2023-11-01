@@ -30,7 +30,7 @@ module Data.Series.Generic (
     zipWith, zipWithMatched, zipWithKey,
     zipWith3, zipWithMatched3, zipWithKey3,
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy, zipWithStrategy3,
-    zipWithMonoid, esum, eproduct,
+    zipWithMonoid, esum, eproduct, unzip, unzip3,
 
     -- * Index manipulation
     require, requireWith, dropna, dropIndex,
@@ -73,5 +73,5 @@ import Data.Series.Generic.View         ( Range, Selection, at, iat, select, sel
                                         )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, zipWithKey, zipWith3, zipWithMatched3, zipWithKey3, replace
                                         , (|->), (<-|), zipWithStrategy, zipWithStrategy3, ZipStrategy, skipStrategy, mapStrategy, constStrategy
-                                        , zipWithMonoid, esum, eproduct
+                                        , zipWithMonoid, esum, eproduct, unzip, unzip3
                                         )

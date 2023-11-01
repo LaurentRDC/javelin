@@ -59,7 +59,7 @@ module Data.Series (
     zipWith, zipWithMatched, zipWithKey,
     zipWith3, zipWithMatched3, zipWithKey3,
     ZipStrategy, skipStrategy, mapStrategy, constStrategy, zipWithStrategy, zipWithStrategy3,
-    zipWithMonoid, esum, eproduct,
+    zipWithMonoid, esum, eproduct, unzip, unzip3,
 
     -- * Index manipulation
     require, dropna, dropIndex,
@@ -96,7 +96,7 @@ import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, zipWith, zipWith3, filter, takeWhile, dropWhile, last)
+import           Prelude             hiding (map, zipWith, zipWith3, filter, takeWhile, dropWhile, last, unzip, unzip3)
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -609,6 +609,25 @@ eproduct :: (Ord k, Num a)
          -> Series k a
 eproduct = G.eproduct
 {-# INLINE eproduct #-}
+
+
+-- | \(O(n)\) Unzip a 'Series' of 2-tuples.
+unzip :: Series k (a, b)
+      -> ( Series k a
+         , Series k b
+         )
+unzip = G.unzip
+{-# INLINE unzip #-}
+
+
+-- | \(O(n)\) Unzip a 'Series' of 3-tuples.
+unzip3 :: Series k (a, b, c)
+       -> ( Series k a
+          , Series k b
+          , Series k c
+          )
+unzip3 = G.unzip3
+{-# INLINE unzip3 #-}
 
 
 -- | Require a series to have a specific `Index`.

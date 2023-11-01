@@ -14,6 +14,9 @@ module Data.Series.Generic.Zip (
     -- * Special case of zipping monoids
     zipWithMonoid,
     esum, eproduct,
+
+    -- * Unzipping
+    unzip, unzip3,
 ) where
 
 import qualified Data.Map.Strict                as Map
@@ -25,7 +28,7 @@ import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
 import qualified Data.Series.Index.Internal     as Index.Internal
-import           Prelude                        hiding ( zipWith, zipWith3 ) 
+import           Prelude                        hiding ( zipWith, zipWith3, unzip, unzip3 ) 
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -422,3 +425,28 @@ eproduct :: (Ord k, Num a, Vector v a, Vector v (Product a))
          -> Series v k a
 eproduct ls rs = G.map getProduct $ zipWithMonoid (<>) (G.map Product ls) (G.map Product rs)
 {-# INLINE eproduct #-}
+
+
+-- | \(O(n)\) Unzip a 'Series' of 2-tuples.
+unzip :: (Vector v a, Vector v b, Vector v (a, b)) 
+      => Series v k (a, b)
+      -> ( Series v k a
+         , Series v k b
+         )
+unzip (MkSeries ix vs) 
+    = let (left, right) = Vector.unzip vs
+       in (MkSeries ix left, MkSeries ix right)
+{-# INLINE unzip #-}
+
+
+-- | \(O(n)\) Unzip a 'Series' of 3-tuples.
+unzip3 :: (Vector v a, Vector v b, Vector v c, Vector v (a, b, c)) 
+       => Series v k (a, b, c)
+       -> ( Series v k a
+          , Series v k b
+          , Series v k c
+          )
+unzip3 (MkSeries ix vs) 
+    = let (left, center, right) = Vector.unzip3 vs
+       in (MkSeries ix left, MkSeries ix center, MkSeries ix right)
+{-# INLINE unzip3 #-}
