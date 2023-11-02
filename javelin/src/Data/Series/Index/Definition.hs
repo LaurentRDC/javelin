@@ -78,7 +78,7 @@ import           Prelude                as P hiding ( null, take, drop, map, fil
 -- $setup
 -- >>> import Data.Series.Index
 -- >>> import qualified Data.Vector as Vector
--- attempting to use module `javelin-0.1.0.0:Data.Series.Index' (c:\Users\laure\OneDrive\Code\javelin\javelin\src\Data\Series\Index.hs) which is not loaded
+
 
 -- | Representation of the index of a series.
 -- An index is a sequence of sorted elements. All elements are unique, much like a 'Set'.
