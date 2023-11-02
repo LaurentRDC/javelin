@@ -25,6 +25,8 @@ import           Data.Csv               ( FromNamedRecord(..), ToNamedRecord(..)
 import qualified Data.Csv               as CSV
 import           Data.Functor           ( (<&>) )
 import qualified Data.HashMap.Strict    as HashMap
+import qualified Data.List.NonEmpty     as NE
+import           Data.Maybe             ( fromMaybe )
 import           Data.Map.Strict        ( Map )
 import           Data.String            ( IsString )
 import           Data.Series.Generic    ( Series, fromVector, convert, fromStrictMap )
@@ -141,11 +143,10 @@ readCSVFromFile fp = fromFile fp readCSV
 writeCSV :: (Vector v a, ToNamedRecord k, ToNamedRecord a)
          => Series v k a
          -> BL.ByteString
-writeCSV xs 
-    | GSeries.null xs = mempty
-    | otherwise       = let recs   = [ toNamedRecord k <> toNamedRecord v | (k, v) <- GSeries.toList xs]
-                            header =  CSV.header $ HashMap.keys $ head recs
-                         in CSV.encodeByName header recs
+writeCSV xs = fromMaybe mempty $ do
+    recs   <- NE.nonEmpty [ toNamedRecord k <> toNamedRecord v | (k, v) <- GSeries.toList xs]
+    let header =  CSV.header $ HashMap.keys $ NE.head recs
+    pure $ CSV.encodeByName header $ NE.toList recs
 
 
 writeCSVToFile :: (MonadIO m, Vector v a, ToNamedRecord k, ToNamedRecord a)

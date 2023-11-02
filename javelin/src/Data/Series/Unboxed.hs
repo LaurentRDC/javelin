@@ -305,11 +305,11 @@ mapWithKey = G.mapWithKey
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `mapIndex` head
+-- >>> xs `mapIndex` (take 1)
 -- index | values
 -- ----- | ------
---   'L' |      4
---   'P' |      1
+--   "L" |      4
+--   "P" |      1
 mapIndex :: (Unbox a, Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex

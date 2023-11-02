@@ -31,9 +31,9 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
     where
         testGroupBy1 = testCase "groupBy" $ do
             let (series :: Series Vector String Int) = fromStrictMap $ MS.fromList [("aa", 1), ("ab", 2), ("c", 3), ("dc", 4), ("ae", 5)]
-                expectation = fromStrictMap $ MS.fromList [('a', 1+2+5), ('c', 3), ('d', 4)]
+                expectation = fromStrictMap $ MS.fromList [(1, 3), (2, 1+2+4+5)]
             
-            assertEqual mempty expectation $ series `groupBy` head `aggregateWith` (Series.sum :: Series Vector String Int -> Int)
+            assertEqual mempty expectation $ series `groupBy` length `aggregateWith` (Series.sum :: Series Vector String Int -> Int)
 
         testGroupBy2 = testCase "groupBy" $ do
             let (series :: Series Vector Int Int) = fromStrictMap $ MS.fromList $ zip [0,1,2,3] [0,1,2,3]

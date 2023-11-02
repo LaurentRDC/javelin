@@ -122,8 +122,8 @@ testPropRequire = testProperty "require always returns a series with the expecte
 testMapIndex :: TestTree
 testMapIndex = testCase "mapIndex" $ do
     let (series :: Series Vector String Int) = fromList [("aa", 1), ("ab", 2), ("bb", 3), ("bc", 4), ("c", 5)]
-        subSeries = series `mapIndex` head
-        expectation = fromList [('a', 1), ('b', 3), ('c', 5)]
+        subSeries = series `mapIndex` take 1
+        expectation = fromList [("a", 1), ("b", 3), ("c", 5)]
     
     assertEqual mempty expectation subSeries
 
