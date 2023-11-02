@@ -12,7 +12,8 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files: test/data/*.csv
                     test/data/*.json
-tested-with:        GHC ==9.6.3
+tested-with:        GHC ==9.8.1 
+                     || ==9.6.3
                      || ==9.4.7  
 
 common common
