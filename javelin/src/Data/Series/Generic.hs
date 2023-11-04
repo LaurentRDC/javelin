@@ -24,7 +24,7 @@ module Data.Series.Generic (
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
     -- * Scans
-    postscanl, forwardFill,
+    postscanl, prescanl, forwardFill,
 
     -- * Combining series
     zipWith, zipWithMatched, zipWithKey,
@@ -67,7 +67,7 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
-import Data.Series.Generic.Scans        ( postscanl, forwardFill )
+import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, filterWithKey, require, requireWith
                                         , catMaybes, dropIndex, argmax, argmin
                                         )

@@ -93,10 +93,13 @@ module Data.Series.Unboxed (
     -- ** Specialized folds
     all, any, and, or, sum, product, maximum, minimum,
 
-    -- * aggregation
+    -- * Numerical aggregation
     mean, var, std, 
     sampleVariance,
     meanAndVariance,
+
+    -- * Scans
+    postscanl, prescanl,
 ) where
 
 import qualified Data.Map.Lazy       as ML
@@ -1088,3 +1091,49 @@ std = sqrt . var
 sampleVariance :: (Unbox a, RealFloat a) => Series k a -> a
 {-# INLINE sampleVariance #-}
 sampleVariance = G.sampleVariance
+
+
+-- | \(O(n)\) Left-to-right postscan.
+--
+-- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series Int Int
+-- >>> xs
+-- index | values
+-- ----- | ------
+--     0 |      1
+--     1 |      2
+--     2 |      3
+--     3 |      4
+-- >>> postscanl (+) 0 xs
+-- index | values
+-- ----- | ------
+--     0 |      1
+--     1 |      3
+--     2 |      6
+--     3 |     10
+postscanl :: (Unbox a, Unbox b) 
+          => (a -> b -> a) -> a -> Series k b -> Series k a
+{-# INLINE postscanl #-}
+postscanl = G.postscanl
+
+
+-- | \(O(n)\) Left-to-right prescan.
+--
+-- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series Int Int
+-- >>> xs
+-- index | values
+-- ----- | ------
+--     0 |      1
+--     1 |      2
+--     2 |      3
+--     3 |      4
+-- >>> prescanl (+) 0 xs
+-- index | values
+-- ----- | ------
+--     0 |      0
+--     1 |      1
+--     2 |      3
+--     3 |      6
+prescanl :: (Unbox a, Unbox b) 
+         => (a -> b -> a) -> a -> Series k b -> Series k a
+{-# INLINE prescanl #-}
+prescanl = G.prescanl
