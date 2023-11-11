@@ -31,18 +31,18 @@ library
     hs-source-dirs:   src
     exposed-modules:  Data.Series
                       Data.Series.Generic
+                      Data.Series.Generic.Internal
                       Data.Series.Index
+                      Data.Series.Index.Internal
                       Data.Series.Tutorial
                       Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Definition
-                      Data.Series.Generic.Internal
                       Data.Series.Generic.Numeric
                       Data.Series.Generic.Scans
                       Data.Series.Generic.View
                       Data.Series.Generic.Zip
                       Data.Series.Index.Definition
-                      Data.Series.Index.Internal
     build-depends:    base  >=4.15.0.0 && <5,
                       containers,
                       deepseq,

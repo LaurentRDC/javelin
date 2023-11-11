@@ -23,9 +23,13 @@ module Data.Series.Generic.Definition (
     -- * Conversion to/from list
     fromList,
     toList,
+    -- ** Unsafe construction
+    fromDistinctAscList,
     -- * Conversion to/from vectors
     fromVector,
     toVector,
+    -- * Unsafe construction
+    fromDistinctAscVector,
     -- * Handling duplicates
     Occurrence, fromListDuplicates, fromVectorDuplicates
 ) where
@@ -34,7 +38,7 @@ import           Control.DeepSeq        ( NFData(rnf) )
 import           Control.Monad.ST       ( runST )
 
 import           Data.Bifoldable        ( Bifoldable )
-import qualified Data.Bifoldable        as Bifoldable        
+import qualified Data.Bifoldable        as Bifoldable  
 import qualified Data.Foldable          as Foldable
 import           Data.Function          ( on )
 import qualified Data.List              as List
@@ -86,7 +90,7 @@ convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
 convert (MkSeries ix vs) = MkSeries ix $ Vector.convert vs 
 
 
--- | Create a 'Series' with a single element.
+-- | \(O(1)\) Create a 'Series' with a single element.
 singleton :: Vector v a => k -> a -> Series v k a
 {-# INLINE singleton #-}
 singleton k v = MkSeries (Index.singleton k) $ Vector.singleton v
@@ -107,6 +111,15 @@ fromIndex f ix = MkSeries ix $ Vector.convert
 fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
 {-# INLINE fromList #-}
 fromList = fromStrictMap . MS.fromList
+
+
+-- | \(O(n)\) Build a 'Series' from a list of pairs, where the first elements of the pairs (the keys)
+-- are distinct elements in ascending order. The precondition that the keys be unique and sorted is not checked.
+fromDistinctAscList :: (Vector v a) => [(k, a)] -> Series v k a
+fromDistinctAscList xs 
+    = let (ks, vs) = unzip xs 
+       in MkSeries (Index.Internal.fromDistinctAscList ks) (Vector.fromList vs)
+
 
 -- | Integer-like, non-negative number that specifies how many occurrences
 -- of a key is present in a 'Series'.
@@ -158,9 +171,16 @@ fromVector vec = let (indexVector, valuesVector)
                             destMV <- sortUniqBy (compare `on` fst) mv
                             v <- Vector.freeze destMV
                             pure (Vector.force v)
-                  in MkSeries (fromDistinctAscVector indexVector) valuesVector
-    where
-        fromDistinctAscVector = Index.Internal.fromDistinctAscList . Vector.toList
+                  in MkSeries (Index.Internal.fromDistinctAscVector indexVector) valuesVector
+
+
+-- | \(O(n)\) Build a 'Series' from a vector of pairs, where the first elements of the pairs (the keys)
+-- are distinct elements in ascending order. The precondition that the keys be unique and sorted is not checked.
+fromDistinctAscVector :: (Vector v k, Vector v a, Vector v (k, a))
+                      => v (k, a) -> Series v k a
+fromDistinctAscVector xs 
+    = let (ks, vs) = Vector.unzip xs 
+       in MkSeries (Index.Internal.fromDistinctAscVector ks) vs
 
 
 -- | Construct a 'Series' from a 'Vector' of key-value pairs, where there may be duplicate keys. 

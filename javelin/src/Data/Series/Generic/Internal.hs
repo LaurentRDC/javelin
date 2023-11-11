@@ -9,10 +9,16 @@
 -- = WARNING
 --
 -- This module is considered __internal__. Using the 'Series' constructor
--- directly may result in loss of data if not handled carefully.
+-- directly may result in loss or corruption of data if not handled carefully.
 --
 -- The Package Versioning Policy still applies.
 
-module Data.Series.Generic.Internal ( Series(..) ) where
+module Data.Series.Generic.Internal ( 
+    -- * Constructor
+    Series(..),
+    -- * Unsafe construction
+    fromDistinctAscList,
+    fromDistinctAscVector,
+) where
 
-import Data.Series.Generic.Definition   ( Series(..) )
+import Data.Series.Generic.Definition   ( Series(..), fromDistinctAscList, fromDistinctAscVector )
