@@ -328,6 +328,16 @@ instance (Vector v a, Eq k, Eq a) => Eq (Series v k a) where
     (MkSeries ks1 vs1) == (MkSeries ks2 vs2) = (ks1 == ks2) && (vs1 `Vector.eq` vs2)
 
 
+instance (Vector v a, Ord k, Ord a) => Ord (Series v k a) where
+    {-# INLINE compare #-}
+    compare :: Series v k a -> Series v k a -> Ordering
+    compare s1 s2 = compare (toBoxedVector s1) (toBoxedVector s2)
+        where
+            -- Using boxed vectors in order to limit the type constraints
+            toBoxedVector :: Series v k a -> Boxed.Vector (k, a)
+            toBoxedVector = toVector . convert
+
+
 instance (Functor v) => Functor (Series v k) where
     {-# INLINE fmap #-}
     fmap :: (a -> b) -> Series v k a -> Series v k b
