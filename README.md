@@ -22,7 +22,6 @@ You can generate documentation for all packages using `haddock` like so:
 ```bash
 cabal haddock javelin
 cabal haddock javelin-io
-cabal haddock javelin-finance
 ```
 
 A tutorial is presented in the `Data.Series.Tutorial` module.
