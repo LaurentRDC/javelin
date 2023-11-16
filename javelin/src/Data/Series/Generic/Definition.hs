@@ -1,5 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Data.Series.Generic.Definition ( 
     Series(..),
@@ -9,7 +11,7 @@ module Data.Series.Generic.Definition (
     -- * Basic interface
     singleton,
     headM, lastM, take, map, mapWithKey, mapIndex,
-    foldMap, bifoldMap, sum, length, null,
+    foldMap, bifoldMap, foldMapWithKey, sum, length, null,
     takeWhile, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
     traverseWithKey,
@@ -40,7 +42,9 @@ import           Control.Monad.ST       ( runST )
 import           Data.Bifoldable        ( Bifoldable )
 import qualified Data.Bifoldable        as Bifoldable  
 import qualified Data.Foldable          as Foldable
+import           Data.Foldable.WithIndex ( FoldableWithIndex(..))
 import           Data.Function          ( on )
+import           Data.Functor.WithIndex ( FunctorWithIndex(imap) )
 import qualified Data.List              as List
 import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
@@ -49,6 +53,7 @@ import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Series.Index.Internal as Index.Internal
 import qualified Data.Set               as Set
+import           Data.Traversable.WithIndex ( TraversableWithIndex(..) )
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Algorithms.Intro ( sortUniqBy, sortBy )
 import           Data.Vector.Generic    ( Vector )
@@ -59,6 +64,7 @@ import qualified Data.Vector.Unboxed.Mutable as UM
  
 import           Prelude                hiding ( take, takeWhile, dropWhile, map, foldMap, sum, length, null )
 import qualified Prelude                as P
+
 
 
 -- | A @Series v k a@ is a labeled array of type @v@ filled with values of type @a@,
@@ -364,10 +370,21 @@ instance (Functor v) => Functor (Series v k) where
     fmap f (MkSeries ks vs) = MkSeries ks (fmap f vs)
 
 
+instance (forall a. Vector v a, Functor v) => FunctorWithIndex k (Series v k) where
+    imap :: (k -> a -> b) -> Series v k a -> Series v k b
+    imap = mapWithKey
+    {-# INLINE imap #-}
+
+
 instance (Foldable v) => Foldable (Series v k) where
     {-# INLINE foldMap #-}
     foldMap :: (Monoid m) => (a -> m) -> Series v k a -> m
     foldMap f xs = Foldable.foldMap f (values xs)
+
+
+instance (forall a. Vector v a, Vector v k, Foldable v, Functor v) => FoldableWithIndex k (Series v k) where
+    {-# INLINE ifoldMap #-}
+    ifoldMap = foldMapWithKey
 
 
 instance (Foldable v) => Bifoldable (Series v) where
@@ -383,9 +400,19 @@ instance (Traversable v) => Traversable (Series v k) where
     traverse f (MkSeries ix vs) = MkSeries ix <$> traverse f vs
 
 
+instance (forall a. Vector v a, Functor v, Foldable v, Ord k, Traversable v) => TraversableWithIndex k (Series v k) where
+    {-# INLINE itraverse #-}
+    itraverse = traverseWithKey
+
+
 foldMap :: (Monoid m, Vector v a) => (a -> m) -> Series v k a -> m
 {-# INLINE foldMap #-}
 foldMap f = Vector.foldMap f . values
+
+
+foldMapWithKey :: (Monoid m, Vector v a, Vector v k, Vector v (k, a)) => (k -> a -> m) -> Series v k a -> m
+{-# INLINE foldMapWithKey #-}
+foldMapWithKey f = Vector.foldMap (uncurry f) . toVector
 
 
 bifoldMap :: (Vector v a, Monoid m) => (k -> m) -> (a -> m) -> Series v k a -> m

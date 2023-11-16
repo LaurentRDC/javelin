@@ -89,7 +89,7 @@ module Data.Series.Unboxed (
 
     -- * Folds
     -- ** General folds
-    foldMap, foldMap', 
+    foldMap, foldMap', foldMapWithKey,
     -- ** Specialized folds
     all, any, and, or, sum, product, maximum, minimum,
 
@@ -1002,7 +1002,7 @@ windowing = G.windowing
 -- the results.
 foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap #-}
-foldMap f = Vector.foldMap f . values
+foldMap = G.foldMap
 
 
 -- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
@@ -1010,6 +1010,13 @@ foldMap f = Vector.foldMap f . values
 foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap' #-}
 foldMap' f = Vector.foldMap' f . values
+
+
+-- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
+-- the results.
+foldMapWithKey :: (Monoid m, Unbox a, Unbox k) => (k -> a -> m) -> Series k a -> m
+{-# INLINE foldMapWithKey #-}
+foldMapWithKey = G.foldMapWithKey
 
 
 -- | /O(n)/ Check if all elements satisfy the predicate.

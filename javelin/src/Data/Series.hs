@@ -82,6 +82,9 @@ module Data.Series (
     groupBy, Grouping, aggregateWith, foldWith, 
     windowing, expanding,
 
+    -- * Folds
+    foldMapWithKey,
+
     -- * Numerical aggregation
     mean, var, std, 
     sampleVariance,
@@ -1088,6 +1091,13 @@ windowing :: Ord k
           -> Series k b
 {-# INLINE windowing #-}
 windowing = G.windowing
+
+
+-- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
+-- the results.
+foldMapWithKey :: Monoid m => (k -> a -> m) -> Series k a -> m
+{-# INLINE foldMapWithKey #-}
+foldMapWithKey = G.foldMapWithKey
 
 
 -- | Compute the mean of the values in the series.

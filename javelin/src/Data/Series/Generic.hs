@@ -23,6 +23,9 @@ module Data.Series.Generic (
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
+    -- * Folding
+    foldMap, foldMapWithKey,
+
     -- * Scans
     postscanl, prescanl, forwardFill,
 
@@ -64,7 +67,7 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile
-                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey
+                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, foldMap, foldMapWithKey,
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
 import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )
