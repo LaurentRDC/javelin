@@ -1,7 +1,7 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE DerivingStrategies    #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Data.Series.Generic.Definition ( 
     Series(..),
