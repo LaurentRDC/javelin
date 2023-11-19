@@ -1,7 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
-{-| This tutorial will get you started using 'Data.Series' -}
-
 module Data.Series.Tutorial (
     -- * Introduction
     -- $introduction
@@ -30,6 +28,9 @@ module Data.Series.Tutorial (
 
     -- * Combining 'Series' together
     -- $zipping
+
+    -- * Conclusion
+    -- $conclusion and further reading
     
     -- * Advanced topics
     -- ** Handling duplicate keys
@@ -67,8 +68,25 @@ import qualified Data.Vector.Unboxed
 
 {- $introduction
 
-    This is a short user guide on how to get started using @javelin@. 
+This is a short user guide on how to get started using @javelin@ and its various modules.
 
+The central data structure at the heart of this package is the 'Series'. A @'Series' k a@ 
+is a labeled array of type @v@ filled with values of type @a@, indexed by keys of type @k@.
+
+Like 'Data.Map.Strict.Map', 'Series' support efficient:
+
+* random access by key ( \(O(\log n)\) );
+* slice by key ( \(O(\log n)\) ).
+
+Like 'Data.Vector.Vector', 'Series' support efficient:
+
+* numerical operations.
+* random access by index ( \(O(1)\) );
+* slice by index ( \(O(1)\) );     
+
+To follow along this tutorial, the following imports are expected:
+
+>>> import Data.Series as Series
 -}
 
 {- $construction 
@@ -538,6 +556,19 @@ we can use @Series.zipWithStrategy'. For example, consider the case where:
 
 As you can imagine, 'Series.zipWithStrategy' is the most general and gives the most control, but is less easy 
 to use than 'Series.zipWith' and 'Series.zipWithMatched'.
+
+-}
+
+{- $conclusion
+
+This section concludes the introductory tutorial to the @javelin@ package and its "Data.Series" module.
+
+For a more in-depth look at this package, you can read the full documentation for each module:
+
+* "Data.Series"
+* "Data.Series.Index"
+* "Data.Series.Unboxed"
+* "Data.Series.Generic"
 
 -}
 
