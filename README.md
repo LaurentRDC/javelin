@@ -15,13 +15,7 @@ Like [`Data.Vector.Vector`](https://hackage.haskell.org/package/vector/docs/Data
 * slice by integer index ( $\mathcal{O}\left( 1 \right)$ );
 * numerical operations.
 
-## Documentation
+## Tutorial and documentation
 
-You can generate documentation for all packages using `haddock` like so:
-
-```bash
-cabal haddock javelin
-cabal haddock javelin-io
-```
-
+A tutorial and interface documentation for the most recent version on the `master` branch are [available here](https://laurentrdc.github.io/javelin/). 
 A tutorial is presented in the `Data.Series.Tutorial` module.
