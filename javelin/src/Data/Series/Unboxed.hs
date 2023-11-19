@@ -396,8 +396,6 @@ dropWhile = G.dropWhile
 -- ----- | ------
 --   'a' |     10
 --   'b' |     12
---
--- To combine elements where keys are in either series, see 'zipWith'.
 zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k) 
                => (a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithMatched #-}
@@ -436,8 +434,6 @@ zipWithMatched3 = G.zipWithMatched3
 -- ----- | ------
 --   'a' |    107
 --   'b' |    110
---
--- To combine elements where keys are in either series, see 'zipWith'
 zipWithKey :: (Unbox a, Unbox b, Unbox c, Unbox k, Ord k)  
            => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
 {-# INLINE zipWithKey #-}
@@ -456,8 +452,6 @@ zipWithKey = G.zipWithKey
 -- ----- | ------
 --   'a' |    127
 --   'b' |    117
---
--- To combine elements where keys are in either series, see 'zipWith'
 zipWithKey3 :: (Unbox a, Unbox b, Unbox c, Unbox d, Unbox k, Ord k) 
             => (k -> a -> b -> c -> d) 
             -> Series k a 
@@ -929,7 +923,7 @@ aggregateWith = G.aggregateWith
 
 
 -- | Aggregate each group in a 'Grouping' using a binary function.
--- While this is not as expressive as 'aggregate', users looking for maximum
+-- While this is not as expressive as 'aggregateWith', users looking for maximum
 -- performance should use 'foldWith' as much as possible.
 foldWith :: (Ord g, Unbox a) 
          => Grouping k g a

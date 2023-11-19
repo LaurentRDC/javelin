@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies      #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  $header
@@ -9,14 +7,14 @@
 -- Portability :  portable
 --
 -- This module contains the definition of 'Index', a sequence of /unique/ and /sorted/
--- keys which can be used to efficient index a 'Series'.
+-- keys which can be used to efficient index a 'Data.Series.Series'.
 --
 -- = Construction
 --
 -- Constructing an 'Index' can be done from the usual list using `fromList`. Note that 
 -- the 'Index' length could be smaller than the input list, due to the requirement that
 -- an 'Index' be a sequence of unique keys.  A better way to construct an 'Index' is 
--- to use a 'Set' (`fromSet`)
+-- to use a 'Data.Set' (`fromSet`)
 --
 -- For quick inline definitions of an 'Index', you can also make use of the @OverloadedLists@ extension:
 -- 
@@ -36,8 +34,8 @@
 --
 -- = Set operations
 -- 
--- Just like a 'Set', 'Index' supports efficient `member`, `notMember`, `union`, `intersection`, and `difference` operations.
--- Like 'Set', the `Semigroup` and `Monoid` instance of 'Index' are defined using the `union` operation:
+-- Just like a 'Data.Set', 'Index' supports efficient `member`, `notMember`, `union`, `intersection`, and `difference` operations.
+-- Like 'Data.Set', the `Semigroup` and `Monoid` instance of 'Index' are defined using the `union` operation:
 --
 -- >>> fromList ['a', 'b', 'c'] <> fromList ['b', 'c', 'd']
 -- Index "abcd"
@@ -47,11 +45,11 @@
 -- Because of the restriction that all keys be unique, an 'Index' is not a true `Functor`; you can't use
 -- `fmap` to map elements of an index. Instead, you can use the general-purpose function 'map'. If you want
 -- to map elements of an 'Index' with a monotonic function (i.e. a function which will not re-order elements and won't
--- create duplicate elements), you can use the `mapMonotonic` function which operates faster.
+-- create duplicate elements), you can use the 'Data.Series.mapMonotonic' function which operates faster.
 --
 -- = Indexing
 --
--- One of the key operations for 'Series' is to find the integer index of an element in an 'Index'. For this purpose, you
+-- One of the key operations for 'Data.Series.Series' is to find the integer index of an element in an 'Index'. For this purpose, you
 -- can use `lookupIndex`:
 --
 -- >>> lookupIndex 'b' $ fromList ['a', 'b', 'c']

@@ -969,7 +969,7 @@ forwardFill = G.forwardFill
 -- | Group values in a 'Series' by some grouping function (@k -> g@).
 -- The provided grouping function is guaranteed to operate on a non-empty 'Series'.
 --
--- This function is expected to be used in conjunction with @aggregate@:
+-- This function is expected to be used in conjunction with 'aggregateWith':
 -- 
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
@@ -1023,7 +1023,7 @@ aggregateWith = G.aggregateWith
 
 
 -- | Aggregate each group in a 'Grouping' using a binary function.
--- While this is not as expressive as 'aggregate', users looking for maximum
+-- While this is not as expressive as 'aggregateWith', users looking for maximum
 -- performance should use 'foldWith' as much as possible.
 foldWith :: Ord g 
          => Grouping k g a
