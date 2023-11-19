@@ -16,6 +16,7 @@ import qualified Data.Map.Strict
 import           Data.Set         ( Set )
 import qualified Data.Set         as Set 
 import qualified Data.Series
+import qualified Data.Series.Unboxed
 import qualified Data.Series.Index as Index
 import qualified Data.Vector
 import qualified Data.Vector.Unboxed
@@ -69,6 +70,10 @@ main = do
                 "Data.Vector"
                 (Data.Vector.fromList . map fst)
                 (\ix -> Data.Vector.find (==ix))
+           , Lookup
+               "Data.Series.Unboxed"
+               Data.Series.Unboxed.fromList
+               (flip Data.Series.Unboxed.at)
            , Lookup 
                 "Data.Vector.Unboxed"
                 (Data.Vector.Unboxed.fromList . map fst)
@@ -81,6 +86,7 @@ main = do
            , Sum "Data.Map.Strict" Data.Map.Strict.fromList sum
            , Sum "Data.Series" Data.Series.fromList sum
            , Sum "Data.Vector" (Data.Vector.fromList . map fst) sum
+           , Sum "Data.Series.Unboxed"  Data.Series.Unboxed.fromList Data.Series.Unboxed.sum
            , Sum "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map fst) Data.Vector.Unboxed.sum
            ])
     , bgroup
@@ -90,6 +96,7 @@ main = do
           , Mappend "Data.Map.Strict" Data.Map.Strict.fromList
           , Mappend "Data.Series" Data.Series.fromList
           , Mappend "Data.Vector" (Data.Vector.fromList . map fst)
+          , Mappend "Data.Series" Data.Series.Unboxed.fromList
           , Mappend "Data.Vector.Unboxed" (Data.Vector.fromList . map fst)
           ])
     , bgroup
@@ -104,6 +111,9 @@ main = do
           , SliceByKeys "Data.Series" 
                         Data.Series.fromList
                         (\ks xs -> xs `Data.Series.select` Index.fromSet ks)
+          , SliceByKeys "Data.Series" 
+                        Data.Series.Unboxed.fromList
+                        (\ks xs -> xs `Data.Series.Unboxed.select` Index.fromSet ks)
           ])
     ]
 

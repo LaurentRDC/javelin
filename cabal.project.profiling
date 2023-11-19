@@ -1,6 +1,12 @@
-packages: *.cabal
+packages: **/*.cabal
 test-show-details: streaming
 
+-- Optimization level for the package itself
 library-profiling: True
 executable-profiling: True
 optimization: 2
+
+-- Required to optimize all dependencies as well
+package *
+    optimization: 2
+    documentation: false
