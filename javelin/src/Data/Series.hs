@@ -294,11 +294,12 @@ mapWithKey = G.mapWithKey
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `mapIndex` head
+-- >>> import qualified Data.List
+-- >>> xs `mapIndex` (Data.List.take 1)
 -- index | values
 -- ----- | ------
---   'L' |      4
---   'P' |      1
+--   "L" |      4
+--   "P" |      1
 mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
