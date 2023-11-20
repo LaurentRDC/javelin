@@ -10,9 +10,9 @@ module Data.Series.Generic.Definition (
 
     -- * Basic interface
     singleton,
-    headM, lastM, take, map, mapWithKey, mapIndex,
+    headM, lastM, map, mapWithKey, mapIndex,
     foldMap, bifoldMap, foldMapWithKey, sum, length, null,
-    takeWhile, dropWhile,
+    take, takeWhile, drop, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
     traverseWithKey,
 
@@ -62,7 +62,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as UM
  
-import           Prelude                hiding ( take, takeWhile, dropWhile, map, foldMap, sum, length, null )
+import           Prelude                hiding ( take, takeWhile, drop, dropWhile, map, foldMap, sum, length, null )
 import qualified Prelude                as P
 
 
@@ -249,19 +249,34 @@ fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
                             }
 
 
+-- | Get the first value of a 'Series'. If the 'Series' is empty,
+-- this function returns 'Nothing'.
 headM :: Vector v a => Series v k a -> Maybe a
 {-# INLINE headM #-}
 headM (MkSeries _ vs) = Vector.headM vs
 
 
+-- | Get the last value of a 'Series'. If the 'Series' is empty,
+-- this function returns 'Nothing'.
 lastM :: Vector v a => Series v k a -> Maybe a
 {-# INLINE lastM #-}
 lastM (MkSeries _ vs) = Vector.lastM vs
 
 
+-- | \(O(\log n)\) @'take' n xs@ returns at most @n@ elements of the 'Series' @xs@.
 take :: Vector v a => Int -> Series v k a -> Series v k a
 {-# INLINE take #-}
-take n (MkSeries ks vs) = MkSeries (Index.take n ks) (Vector.take n vs)
+take n (MkSeries ks vs) 
+    -- Index.take is O(log n) while Vector.take is O(1)
+    = MkSeries (Index.take n ks) (Vector.take n vs)
+
+
+-- | \(O(\log n)\) @'drop' n xs@ drops at most @n@ elements from the 'Series' @xs@.
+drop :: Vector v a => Int -> Series v k a -> Series v k a
+{-# INLINE drop #-}
+drop n (MkSeries ks vs) 
+    -- Index.drop is O(log n) while Vector.drop is O(1)
+    = MkSeries (Index.drop n ks) (Vector.drop n vs)
 
 
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
@@ -354,14 +369,10 @@ instance (Vector v a, Eq k, Eq a) => Eq (Series v k a) where
     (MkSeries ks1 vs1) == (MkSeries ks2 vs2) = (ks1 == ks2) && (vs1 `Vector.eq` vs2)
 
 
-instance (Vector v a, Ord k, Ord a) => Ord (Series v k a) where
+instance (Vector v a, Ord (v a), Ord k, Ord a) => Ord (Series v k a) where
     {-# INLINE compare #-}
     compare :: Series v k a -> Series v k a -> Ordering
-    compare s1 s2 = compare (toBoxedVector s1) (toBoxedVector s2)
-        where
-            -- Using boxed vectors in order to limit the type constraints
-            toBoxedVector :: Series v k a -> Boxed.Vector (k, a)
-            toBoxedVector = toVector . convert
+    compare (MkSeries ks1 vs1) (MkSeries ks2 vs2) = compare (ks1, vs1) (ks2, vs2)
 
 
 instance (Functor v) => Functor (Series v k) where
@@ -371,9 +382,9 @@ instance (Functor v) => Functor (Series v k) where
 
 
 instance (forall a. Vector v a, Functor v) => FunctorWithIndex k (Series v k) where
+    {-# INLINE imap #-}
     imap :: (k -> a -> b) -> Series v k a -> Series v k b
     imap = mapWithKey
-    {-# INLINE imap #-}
 
 
 -- Inlining all methods in 'Foldable'
@@ -475,31 +486,41 @@ instance (forall a. Vector v a, Functor v, Foldable v, Ord k, Traversable v) => 
     itraverse = traverseWithKey
 
 
+-- | \(O(n)\) Fold over elements in a 'Series'.
 foldMap :: (Monoid m, Vector v a) => (a -> m) -> Series v k a -> m
 {-# INLINE foldMap #-}
 foldMap f = Vector.foldMap f . values
 
 
+-- | \(O(n)\) Fold over pairs of keys and elements in a 'Series'.
+-- See also 'bifoldMap'.
 foldMapWithKey :: (Monoid m, Vector v a, Vector v k, Vector v (k, a)) => (k -> a -> m) -> Series v k a -> m
 {-# INLINE foldMapWithKey #-}
 foldMapWithKey f = Vector.foldMap (uncurry f) . toVector
 
 
+-- | \(O(n)\) Fold over keys and elements separately in a 'Series'.
+-- See also 'foldMapWithKey'.
 bifoldMap :: (Vector v a, Monoid m) => (k -> m) -> (a -> m) -> Series v k a -> m
 {-# INLINE bifoldMap #-}
 bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Vector.foldMap fv vs
 
 
+-- | \(O(n)\) Add all elements in a 'Series'.
+-- This function exists because unboxed 'Data.Series.Unboxed' are
+-- not 'Foldable', in which case you cannot use functions such as 'Data.Foldable.sum'.
 sum :: Num a => Vector v a => Series v k a -> a
 {-# INLINE sum #-}
 sum = Vector.sum . values
 
 
+-- | Test whether a 'Series' is empty.
 null :: Vector v a => Series v k a -> Bool
 {-# INLINE null #-}
 null = Vector.null . values
 
 
+-- | Extract the length of a 'Series'.
 length :: Vector v a => Series v k a -> Int
 {-# INLINE length #-}
 length = Vector.length . values

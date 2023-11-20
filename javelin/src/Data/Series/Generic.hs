@@ -19,7 +19,7 @@ module Data.Series.Generic (
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, filter, filterWithKey, null, length, sum, 
-    take, takeWhile, dropWhile,
+    take, takeWhile, drop, dropWhile,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
@@ -66,7 +66,7 @@ import Data.Series.Generic.Aggregation  ( groupBy, Grouping, aggregateWith, fold
 import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
-                                        , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, dropWhile
+                                        , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, drop, dropWhile
                                         , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, foldMap, foldMapWithKey,
                                         )
 import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )

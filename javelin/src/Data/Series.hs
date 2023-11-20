@@ -51,7 +51,7 @@ module Data.Series (
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, 
-    takeWhile, dropWhile, filter, filterWithKey,
+    take, takeWhile, drop, dropWhile, filter, filterWithKey,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
@@ -102,7 +102,7 @@ import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, zipWith, zipWith3, filter, takeWhile, dropWhile, last, unzip, unzip3)
+import           Prelude             hiding (map, zipWith, zipWith3, filter, take, takeWhile, drop, dropWhile, last, unzip, unzip3)
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -294,11 +294,11 @@ mapWithKey = G.mapWithKey
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `mapIndex` (take 1)
+-- >>> xs `mapIndex` head
 -- index | values
 -- ----- | ------
---   "L" |      4
---   "P" |      1
+--   'L' |      4
+--   'P' |      1
 mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
@@ -341,6 +341,26 @@ traverseWithKey :: (Applicative t, Ord k)
 traverseWithKey = G.traverseWithKey
 
 
+-- | \(O(\log n)\) @'take' n xs@ returns at most @n@ elements of the 'Series' @xs@.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- "Vienna" |      5
+-- >>> take 2 xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+take :: Int -> Series k a -> Series k a
+{-# INLINE take #-}
+take = G.take
+
+
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
@@ -359,6 +379,26 @@ traverseWithKey = G.traverseWithKey
 -- "London" |      2
 takeWhile :: (a -> Bool) -> Series k a -> Series k a
 takeWhile = G.takeWhile
+
+
+-- | \(O(\log n)\) @'drop' n xs@ drops at most @n@ elements from the 'Series' @xs@.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- "Vienna" |      5
+-- >>> drop 2 xs
+--    index | values
+--    ----- | ------
+--  "Paris" |      1
+-- "Vienna" |      5
+drop :: Int -> Series k a -> Series k a
+{-# INLINE drop #-}
+drop = G.drop
 
 
 -- | \(O(n)\) Returns the complement of `takeWhile`.

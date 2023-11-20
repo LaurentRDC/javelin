@@ -59,7 +59,7 @@ module Data.Series.Unboxed (
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, null, length,
-    takeWhile, dropWhile, filter, filterWithKey,
+    take, takeWhile, drop, dropWhile, filter, filterWithKey,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
 
@@ -113,7 +113,7 @@ import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
 
 import           Prelude             hiding ( map, zipWith, filter, foldMap, all, any, and, or
-                                            , sum, product, maximum, minimum, takeWhile, dropWhile
+                                            , sum, product, maximum, minimum, take, takeWhile, drop, dropWhile
                                             , last, unzip, unzip3
                                             )
 
@@ -308,11 +308,11 @@ mapWithKey = G.mapWithKey
 -- "Lisbon" |      4
 -- "London" |      2
 --  "Paris" |      1
--- >>> xs `mapIndex` (take 1)
+-- >>> xs `mapIndex` head
 -- index | values
 -- ----- | ------
---   "L" |      4
---   "P" |      1
+--   'L' |      4
+--   'P' |      1
 mapIndex :: (Unbox a, Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
@@ -346,6 +346,26 @@ forWithKeyM_ :: (Unbox a, Monad m) => Series k a -> (k -> a -> m b) -> m ()
 forWithKeyM_ = G.forWithKeyM_
 
 
+-- | \(O(\log n)\) @'take' n xs@ returns at most @n@ elements of the 'Series' @xs@.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- "Vienna" |      5
+-- >>> take 2 xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+take :: Unbox a => Int -> Series k a -> Series k a
+{-# INLINE take #-}
+take = G.take
+
+
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
@@ -364,6 +384,26 @@ forWithKeyM_ = G.forWithKeyM_
 -- "London" |      2
 takeWhile :: Unbox a => (a -> Bool) -> Series k a -> Series k a
 takeWhile = G.takeWhile
+
+
+-- | \(O(\log n)\) @'drop' n xs@ drops at most @n@ elements from the 'Series' @xs@.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4), ("Vienna", 5)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- "Vienna" |      5
+-- >>> drop 2 xs
+--    index | values
+--    ----- | ------
+--  "Paris" |      1
+-- "Vienna" |      5
+drop :: Unbox a => Int -> Series k a -> Series k a
+{-# INLINE drop #-}
+drop = G.drop
 
 
 -- | \(O(n)\) Returns the complement of `takeWhile`.
