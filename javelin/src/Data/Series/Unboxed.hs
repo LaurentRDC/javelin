@@ -34,10 +34,7 @@
 --      * numerical operations.
 --
 -- This module re-exports most of the content of "Data.Series.Generic", with type signatures 
--- specialized to the boxed container type `Data.Vector.Vector`.
---
--- For better performance (at the cost of more constraints), especially when it comes to numerical calculations, prefer to
--- use "Data.Series.Unboxed", which contains an implementation of series specialized to the unboxed container type `Data.Vector.Unboxed.Vector`.
+-- specialized to the unboxed vector type `Data.Vector.Unboxed.Vector`.
  
 module Data.Series.Unboxed (
     Series, index, values,
