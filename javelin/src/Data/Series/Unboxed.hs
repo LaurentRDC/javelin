@@ -109,7 +109,7 @@ import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
 
-import           Prelude             hiding ( map, zipWith, filter, foldMap, all, any, and, or
+import           Prelude             hiding ( map, zipWith, filter, foldMap, null, length, all, any, and, or
                                             , sum, product, maximum, minimum, take, takeWhile, drop, dropWhile
                                             , last, unzip, unzip3
                                             )
@@ -1049,6 +1049,18 @@ foldMap' f = Vector.foldMap' f . values
 foldMapWithKey :: (Monoid m, Unbox a, Unbox k) => (k -> a -> m) -> Series k a -> m
 {-# INLINE foldMapWithKey #-}
 foldMapWithKey = G.foldMapWithKey
+
+
+-- | /O(1)/ Test whether a 'Series' is empty.
+null :: Unbox a => Series k a -> Bool
+{-# INLINE null #-}
+null = G.null
+
+
+-- |/O(1)/ Extract the length of a 'Series'.
+length :: Unbox a => Series k a -> Int
+{-# INLINE length #-}
+length = G.length
 
 
 -- | /O(n)/ Check if all elements satisfy the predicate.

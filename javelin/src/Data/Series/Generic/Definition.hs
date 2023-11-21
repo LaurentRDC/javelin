@@ -514,13 +514,13 @@ sum :: Num a => Vector v a => Series v k a -> a
 sum = Vector.sum . values
 
 
--- | Test whether a 'Series' is empty.
+-- | /O(1)/ Test whether a 'Series' is empty.
 null :: Vector v a => Series v k a -> Bool
 {-# INLINE null #-}
 null = Vector.null . values
 
 
--- | Extract the length of a 'Series'.
+-- | /O(1)/ Extract the length of a 'Series'.
 length :: Vector v a => Series v k a -> Int
 {-# INLINE length #-}
 length = Vector.length . values
