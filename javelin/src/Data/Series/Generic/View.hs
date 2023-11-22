@@ -260,16 +260,12 @@ instance Selection Index where
     -- in the series are ignored.
     select :: (Vector v a, Ord k) => Series v k a -> Index k -> Series v k a
     {-# INLINE select #-}
-    select (MkSeries ks vs) ss 
-        = let selectedKeys = ks `Index.intersection` ss
+    select xs ss
+        = let selectedKeys = index xs `Index.intersection` ss
             -- Surprisingly, using `Vector.backpermute` does not
             -- perform as well as `Vector.map (Vector.unsafeIndex vs)`
             -- for large Series
-           in MkSeries selectedKeys $ Vector.convert
-                                    $ Boxed.map (Vector.unsafeIndex vs) 
-                                    $ Boxed.map (`Index.Internal.findIndex` ks) 
-                                    $ Index.toAscVector selectedKeys
-
+           in xs `selectSubset` selectedKeys
 
 -- | Selecting a sub-series from a 'Set' is a convenience
 -- function. Internally, the 'Set' is converted to an index first.
