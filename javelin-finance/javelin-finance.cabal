@@ -29,7 +29,8 @@ library
     exposed-modules:  Data.Series.Finance.Metrics
     -- other-modules:
     -- other-extensions:
-    build-depends:    base >=4.15.0.0 && <5,
+    build-depends:    base   >=4.15.0.0 && <5,
+                      foldl ^>=1.4,
                       javelin,
                       vector,
     hs-source-dirs:   src
