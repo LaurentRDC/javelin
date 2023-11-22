@@ -8,6 +8,7 @@ module Data.Series.Generic.View (
     select,
     slice,
     selectWhere,
+    selectSubset,
     Selection,
 
     -- * Resizing
@@ -95,7 +96,7 @@ requireWith :: (Vector v a, Vector v b, Ord k)
 requireWith replacement f xs ss 
     = let existingKeys = index xs `Index.intersection` ss
           newKeys      = ss `Index.difference` existingKeys
-       in G.map f (xs `select` existingKeys) <> MkSeries newKeys (Vector.fromListN (Index.size newKeys) (replacement <$> Index.toAscList newKeys))
+       in G.map f (xs `selectSubset` existingKeys) <> MkSeries newKeys (Vector.fromListN (Index.size newKeys) (replacement <$> Index.toAscList newKeys))
 
 
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
@@ -305,6 +306,23 @@ selectWhere xs ys = xs `select` Index.fromSet keysWhereTrue
         (MkSeries _ cond) = ys `select` index xs
         whereValuesAreTrue = Set.fromDistinctAscList $ Vector.toList (Vector.findIndices id cond)
         keysWhereTrue = Set.mapMonotonic (`Index.Internal.elemAt` index xs) whereValuesAreTrue
+
+
+-- | Implementation of `select` where the selection keys are known
+-- to be a subset of the series. This precondition is NOT checked.
+--
+-- This is a performance optimization and therefore is not normally exposed.
+selectSubset :: (Vector v a, Ord k) => Series v k a -> Index k -> Series v k a
+{-# INLINE selectSubset #-}
+selectSubset (MkSeries ks vs) ss
+    -- TODO: 
+    --   Is it possible to scan over the series once
+    --   while filtering away on keys? Initial attempts did not lead
+    --   to performance improvements, but I can't imagine that calling
+    --   `Index.Internal.findIndex` repeatedly is efficient
+    = MkSeries ss $ Boxed.convert
+                  $ Boxed.map (Vector.unsafeIndex vs . (`Index.Internal.findIndex` ks))
+                  $ Index.toAscVector ss
 
 
 -- | Yield a subseries based on indices. The end index is not included.

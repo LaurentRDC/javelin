@@ -14,12 +14,11 @@ module Data.Series.Generic.Aggregation (
 import qualified Data.Map.Strict                as Map
 import           Data.Series.Generic.Definition ( Series(..), fromStrictMap, toList )
 import qualified Data.Series.Generic.Definition as GSeries
-import           Data.Series.Generic.View       ( Range, slice, select )
+import           Data.Series.Generic.View       ( Range, slice, select, selectSubset )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Vector                    as Boxed
 import qualified Data.Series.Index              as Index
-import qualified Data.Series.Index.Internal     as Index.Internal
 import           Prelude                        hiding ( last )
 
 -- $setup
@@ -82,23 +81,12 @@ aggregateWith :: (Ord k, Ord g, Vector v a, Vector v b)
               -> Series v g b
 {-# INLINE aggregateWith #-}
 aggregateWith (MkGrouping xs by) f
-
     = fromStrictMap $ Map.map f $ selectSubset xs <$> groupedKeys
         where
             groupedKeys
                 | Index.null (index xs) = mempty
                 | otherwise = Map.unionsWith (<>) $ Boxed.map (\k -> Map.singleton (by k) (Index.singleton k)) 
                                                   $ Index.toAscVector (index xs)
-
-            -- | Implementation of `select` where the selection keys are known
-            -- to be a subset of the series. This is a performance optimization and 
-            -- therefore is not exposed to users.
-            {-# INLINE selectSubset #-}
-            selectSubset (MkSeries ks vs) ss 
-                = MkSeries ss $ Boxed.convert
-                            $ Boxed.map (Vector.unsafeIndex vs)
-                            $ Boxed.map (`Index.Internal.findIndex` ks) 
-                            $ Index.toAscVector ss
 
 
 -- | Fold over each group in a 'Grouping' using a binary function.

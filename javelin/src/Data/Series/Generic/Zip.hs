@@ -23,7 +23,7 @@ import qualified Data.Map.Strict                as Map
 import           Data.Monoid                    ( Sum(..), Product(..) )
 import           Data.Series.Generic.Definition ( Series(MkSeries, index, values) )
 import qualified Data.Series.Generic.Definition as G
-import           Data.Series.Generic.View       ( select, requireWith )
+import           Data.Series.Generic.View       ( selectSubset, requireWith )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
 import qualified Data.Series.Index              as Index
@@ -113,9 +113,11 @@ zipWithMatched :: (Vector v a, Vector v b, Vector v c, Ord k)
                => (a -> b -> c) -> Series v k a -> Series v k b -> Series v k c
 zipWithMatched f left right
     = let matchedKeys   = index left `Index.intersection` index right
-
-          (MkSeries _ xs) = left  `select` matchedKeys
-          (MkSeries _ ys) = right `select` matchedKeys
+          -- Recall that `selectSubset` is a performance optimization
+          -- and is generally unsafe to use; however, in this case, we know
+          -- that `matchedKeys` are subsets of the index of both series
+          (MkSeries _ !xs) = left  `selectSubset` matchedKeys
+          (MkSeries _ !ys) = right `selectSubset` matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in MkSeries matchedKeys $ Vector.zipWith f xs ys
 {-# INLINE zipWithMatched #-}
@@ -139,10 +141,12 @@ zipWithMatched3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Ord k)
                 -> Series v k d
 zipWithMatched3 f left center right
     = let matchedKeys   = index left `Index.intersection` index center `Index.intersection` index right
-
-          (MkSeries _ xs) = left   `select` matchedKeys
-          (MkSeries _ ys) = center `select` matchedKeys
-          (MkSeries _ zs) = right  `select` matchedKeys
+          -- Recall that `selectSubset` is a performance optimization
+          -- and is generally unsafe to use; however, in this case, we know
+          -- that `matchedKeys` are subsets of the index of all series
+          (MkSeries _ !xs) = left   `selectSubset` matchedKeys
+          (MkSeries _ !ys) = center `selectSubset` matchedKeys
+          (MkSeries _ !zs) = right  `selectSubset` matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in MkSeries matchedKeys $ Vector.zipWith3 f xs ys zs
 {-# INLINE zipWithMatched3 #-}
@@ -164,9 +168,11 @@ zipWithKey :: (Vector v a, Vector v b, Vector v c, Vector v k, Ord k)
            => (k -> a -> b -> c) -> Series v k a -> Series v k b -> Series v k c
 zipWithKey f left right
     = let matchedKeys   = index left `Index.intersection` index right
-
-          (MkSeries _ xs) = left  `select` matchedKeys
-          (MkSeries _ ys) = right `select` matchedKeys
+          -- Recall that `selectSubset` is a performance optimization
+          -- and is generally unsafe to use; however, in this case, we know
+          -- that `matchedKeys` are subsets of the index of both series
+          (MkSeries _ xs) = left  `selectSubset` matchedKeys
+          (MkSeries _ ys) = right `selectSubset` matchedKeys
           ks              = Index.toAscVector matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in  MkSeries matchedKeys $ Vector.zipWith3 f ks xs ys
@@ -174,7 +180,7 @@ zipWithKey f left right
 
 
 -- | Apply a function elementwise to three series, matching elements
--- based on their keys. Keys present only in the left or right series are dropped.
+-- based on their keys. Keys not present in all series are dropped.
 -- 
 -- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
 -- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
@@ -184,8 +190,7 @@ zipWithKey f left right
 --   ----- | ------
 -- "alpha" |     35
 --  "beta" |     23
---
--- To combine elements where keys are in either series, see 'zipWith'
+
 zipWithKey3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Vector v k, Ord k) 
             => (k -> a -> b -> c -> d) 
             -> Series v k a 
@@ -194,10 +199,12 @@ zipWithKey3 :: (Vector v a, Vector v b, Vector v c, Vector v d, Vector v k, Ord 
             -> Series v k d
 zipWithKey3 f left center right
     = let matchedKeys   = index left `Index.intersection` index right
-
-          (MkSeries _ xs) = left   `select` matchedKeys
-          (MkSeries _ ys) = center `select` matchedKeys
-          (MkSeries _ zs) = right  `select` matchedKeys
+          -- Recall that `selectSubset` is a performance optimization
+          -- and is generally unsafe to use; however, in this case, we know
+          -- that `matchedKeys` are subsets of the index of all series
+          (MkSeries _ xs) = left   `selectSubset` matchedKeys
+          (MkSeries _ ys) = center `selectSubset` matchedKeys
+          (MkSeries _ zs) = right  `selectSubset` matchedKeys
           ks              = Index.toAscVector matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in  MkSeries matchedKeys $ Vector.zipWith4 f ks xs ys zs
@@ -212,7 +219,7 @@ replace :: (Vector v a, Vector v Int, Ord k)
 xs `replace` ys 
     = let keysToReplace = index xs `Index.intersection` index ys
           iixs          = Index.toAscVector $ Index.Internal.mapMonotonic (\k -> Index.Internal.findIndex k (index ys)) keysToReplace
-       in MkSeries (index ys) $ Vector.update_ (values ys) iixs (values (xs `select` keysToReplace))
+       in MkSeries (index ys) $ Vector.update_ (values ys) iixs (values (xs `selectSubset` keysToReplace))
 
 
 -- | Infix version of 'replace'
@@ -308,9 +315,11 @@ zipWithStrategy :: (Vector v a, Vector v b, Vector v c, Ord k)
 zipWithStrategy f whenLeft whenRight left right 
     = let onlyLeftKeys  = index left  `Index.difference` index right
           onlyRightKeys = index right `Index.difference` index left
-
-          leftZip =  applyStrategy whenLeft  $ left  `select` onlyLeftKeys
-          rightZip = applyStrategy whenRight $ right `select` onlyRightKeys
+          -- Recall that `selectSubset` is a performance optimization
+          -- and is generally unsafe to use; however, in this case, we know
+          -- that `matchedKeys` are subsets of the index of both series
+          leftZip =  applyStrategy whenLeft  $ left  `selectSubset` onlyLeftKeys
+          rightZip = applyStrategy whenRight $ right `selectSubset` onlyRightKeys
           
         in zipWithMatched f left right <> leftZip <> rightZip
     where
@@ -341,10 +350,12 @@ zipWithStrategy3 f whenLeft whenCenter whenRight left center right
     = let onlyLeftKeys  = index left    `Index.difference` (index center `Index.union` index right)
           onlyCenterKeys = index center `Index.difference` (index left   `Index.union` index right)
           onlyRightKeys = index right   `Index.difference` (index center `Index.union` index left)
-
-          leftZip =  applyStrategy whenLeft  $ left     `select` onlyLeftKeys
-          centerZip = applyStrategy whenCenter $ center `select` onlyCenterKeys
-          rightZip = applyStrategy whenRight $ right    `select` onlyRightKeys
+          -- Recall that `selectSubset` is a performance optimization
+          -- and is generally unsafe to use; however, in this case, we know
+          -- that `matchedKeys` are subsets of the index of all series
+          leftZip =  applyStrategy whenLeft  $ left     `selectSubset` onlyLeftKeys
+          centerZip = applyStrategy whenCenter $ center `selectSubset` onlyCenterKeys
+          rightZip = applyStrategy whenRight $ right    `selectSubset` onlyRightKeys
           
         in zipWithMatched3 f left center right <> leftZip <> centerZip <> rightZip
     where

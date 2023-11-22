@@ -24,6 +24,7 @@ main = do
         [ bench "at" $ whnf (at elems_even) srs
         , bench "iat" $ whnf (iat elems_even) srs
         , bench "select" $ whnf (select elems_odd) srs
+        , bench "zipWithMatched" $ whnf (zipWithMatched srs) srs
         , bench "group by ... aggregate with ..." $ whnf (groupbyagg small) srs
         , bench "group by ... fold with ..." $ whnf (groupbyfold small) srs
         ]
@@ -46,6 +47,11 @@ select :: Set Int -> Series Int Int -> Int
 select ks s = foldl' go 0 ks
     where
         go n k = n + length (s `Series.select` ((k-100) `Series.to` (k+100)))
+
+
+zipWithMatched :: Series Int Int -> Series Int Int -> Int
+zipWithMatched xs ys = length $ Series.zipWithMatched (+) xs ys
+
 
 groupbyagg :: Set Int -> Series Int Int -> Int
 groupbyagg ks s = foldl' go 0 ks

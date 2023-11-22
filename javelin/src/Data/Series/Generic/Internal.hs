@@ -19,6 +19,9 @@ module Data.Series.Generic.Internal (
     -- * Unsafe construction
     fromDistinctAscList,
     fromDistinctAscVector,
+    -- * Unsafe selection
+    selectSubset
 ) where
 
 import Data.Series.Generic.Definition   ( Series(..), fromDistinctAscList, fromDistinctAscVector )
+import Data.Series.Generic.View         ( selectSubset )
