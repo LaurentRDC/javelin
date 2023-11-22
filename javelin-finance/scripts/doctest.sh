@@ -1,0 +1,1 @@
+cabal repl javelin-finance --with-ghc=doctest

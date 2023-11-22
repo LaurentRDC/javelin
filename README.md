@@ -19,3 +19,11 @@ Like [`Data.Vector.Vector`](https://hackage.haskell.org/package/vector/docs/Data
 
 A tutorial and interface documentation for the most recent version on the `master` branch are [available here](https://laurentrdc.github.io/javelin/). 
 A tutorial is presented in the `Data.Series.Tutorial` module.
+
+You can generate documentation for all packages using `haddock` like so:
+
+```bash
+cabal haddock javelin
+cabal haddock javelin-io
+cabal haddock javelin-finance
+```
