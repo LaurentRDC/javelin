@@ -83,7 +83,8 @@ module Data.Series (
     windowing, expanding,
 
     -- * Folds
-    fold, foldMapWithKey,
+    fold, foldWithKey, foldMapWithKey,
+    -- ** Specialized folds
     G.mean, G.variance, G.std,
 
     -- * Scans
@@ -1004,10 +1005,23 @@ forwardFill :: a -- ^ Until the first non-'Nothing' is found, 'Nothing' will be 
 forwardFill = G.forwardFill
 
 
--- | Execute a 'Fold' over a 'Series'.
+-- | /O(n)/ Execute a 'Fold' over a 'Series'.
 fold :: Fold a b -> Series k a -> b
 fold = G.fold
 {-# INLINE fold #-}
+
+
+-- | /O(n)/ Execute a 'Fold' over a 'Series', taking keys into account.
+foldWithKey :: Fold (k, a) b -> Series k a -> b
+foldWithKey = G.foldWithKey
+{-# INLINE foldWithKey #-}
+
+
+-- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
+-- the results.
+foldMapWithKey :: Monoid m => (k -> a -> m) -> Series k a -> m
+{-# INLINE foldMapWithKey #-}
+foldMapWithKey = G.foldMapWithKey
 
 
 -- | Group values in a 'Series' by some grouping function (@k -> g@).
@@ -1135,13 +1149,6 @@ windowing :: Ord k
           -> Series k b
 {-# INLINE windowing #-}
 windowing = G.windowing
-
-
--- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
--- the results.
-foldMapWithKey :: Monoid m => (k -> a -> m) -> Series k a -> m
-{-# INLINE foldMapWithKey #-}
-foldMapWithKey = G.foldMapWithKey
 
 
 -- | \(O(n)\) Left-to-right postscan.

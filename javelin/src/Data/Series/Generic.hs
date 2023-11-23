@@ -24,7 +24,7 @@ module Data.Series.Generic (
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
     -- * Folding
-    fold, foldMap, foldMapWithKey,
+    fold, foldWithKey, foldMap, foldMapWithKey,
     mean, variance, std, 
 
     -- * Scans
@@ -62,7 +62,8 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, drop, dropWhile
-                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, fold, foldMap, foldMapWithKey,
+                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, fold, foldWithKey
+                                        , foldMap, foldMapWithKey,
                                         )
 import Data.Series.Generic.Numeric      ( mean, variance, std )
 import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )

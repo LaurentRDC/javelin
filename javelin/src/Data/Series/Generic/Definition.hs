@@ -10,7 +10,7 @@ module Data.Series.Generic.Definition (
 
     -- * Basic interface
     singleton,
-    headM, lastM, map, mapWithKey, mapIndex, fold,
+    headM, lastM, map, mapWithKey, mapIndex, fold, foldWithKey,
     foldMap, bifoldMap, foldMapWithKey, sum, length, null,
     take, takeWhile, drop, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
@@ -488,17 +488,33 @@ instance (forall a. Vector v a, Functor v, Foldable v, Ord k, Traversable v) => 
     itraverse = traverseWithKey
 
 
--- | Execute a 'Fold' over a 'Series'.
+-- | \(O(n)\) Execute a 'Fold' over a 'Series'.
 --
 -- The scary type signature means that this function will appropriately specialize for both types
 -- of 'Series', either boxed or unboxed. Since unboxed 'Data.Series.Unboxed.Series' aren't 'Foldable', 
 -- another mechanism must be used: 'MonoFoldable'.
+--
+-- See "Data.Series" and "Data.Series.Unboxed" for specialized versions of this function
+-- with friendlier type signatures.
 fold :: (MonoFoldable (v a)) 
      => Fold (Element (v a)) b  
      -> Series v k a 
      -> b
 fold f xs = Fold.purely ofoldlUnwrap f (values xs)
 {-# INLINE fold #-}
+
+
+-- | \(O(n)\) Execute a 'Fold' over a 'Series', where the 'Fold' takes keys into account.
+--
+-- The scary type signature means that this function will appropriately specialize for both types
+-- of 'Series', either boxed or unboxed. Since unboxed 'Data.Series.Unboxed.Series' aren't 'Foldable', 
+-- another mechanism must be used: 'MonoFoldable'.
+foldWithKey :: (MonoFoldable (v (k, a)), Vector v a, Vector v k, Vector v (k, a)) 
+            => Fold (Element (v (k, a))) b  
+            -> Series v k a 
+            -> b
+foldWithKey f xs = Fold.purely ofoldlUnwrap f (toVector xs)
+{-# INLINE foldWithKey #-}
 
 
 -- | \(O(n)\) Fold over elements in a 'Series'.

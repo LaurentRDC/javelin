@@ -86,7 +86,7 @@ module Data.Series.Unboxed (
 
     -- * Folds
     -- ** General folds
-    fold, foldMap, foldMap', foldMapWithKey,
+    fold, foldWithKey, foldMap, foldMap', foldMapWithKey,
     -- ** Specialized folds
     G.mean, G.variance, G.std,
     all, any, and, or, sum, product, maximum, minimum,
@@ -900,11 +900,39 @@ replace = G.replace
 (<-|) = (G.<-|)
 
 
--- | Execute a 'Fold' over a 'Series'.
+-- | /O(n)/ Execute a 'Fold' over a 'Series'.
 fold :: Unbox a 
      => Fold a b -> Series k a -> b
 fold = G.fold
 {-# INLINE fold #-}
+
+
+-- | /O(n)/ Execute a 'Fold' over a 'Series', taking keys into account.
+foldWithKey :: (Unbox k, Unbox a) 
+            => Fold (k, a) b -> Series k a -> b
+foldWithKey = G.foldWithKey
+{-# INLINE foldWithKey #-}
+
+
+-- | /O(n)/ Map each element of the structure to a monoid and combine
+-- the results.
+foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
+{-# INLINE foldMap #-}
+foldMap = G.foldMap
+
+
+-- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
+-- implementation as the corresponding method of the 'Foldable' type class.
+foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
+{-# INLINE foldMap' #-}
+foldMap' f = Vector.foldMap' f . values
+
+
+-- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
+-- the results.
+foldMapWithKey :: (Monoid m, Unbox a, Unbox k) => (k -> a -> m) -> Series k a -> m
+{-# INLINE foldMapWithKey #-}
+foldMapWithKey = G.foldMapWithKey
 
 
 -- | Group values in a 'Series' by some grouping function (@k -> g@).
@@ -1032,27 +1060,6 @@ windowing :: (Ord k, Unbox a, Unbox b)
           -> Series k b
 {-# INLINE windowing #-}
 windowing = G.windowing 
-
-
--- | /O(n)/ Map each element of the structure to a monoid and combine
--- the results.
-foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
-{-# INLINE foldMap #-}
-foldMap = G.foldMap
-
-
--- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
--- implementation as the corresponding method of the 'Foldable' type class.
-foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
-{-# INLINE foldMap' #-}
-foldMap' f = Vector.foldMap' f . values
-
-
--- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
--- the results.
-foldMapWithKey :: (Monoid m, Unbox a, Unbox k) => (k -> a -> m) -> Series k a -> m
-{-# INLINE foldMapWithKey #-}
-foldMapWithKey = G.foldMapWithKey
 
 
 -- | /O(1)/ Test whether a 'Series' is empty.
