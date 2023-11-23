@@ -46,7 +46,9 @@ library
     build-depends:    base  >=4.15.0.0 && <5,
                       containers,
                       deepseq,
+                      foldl ^>=1.4,
                       indexed-traversable ^>=0.1,
+                      mono-traversable ^>= 1.0,
                       vector >= 0.12.3.0 && <0.14,
                       vector-algorithms
 

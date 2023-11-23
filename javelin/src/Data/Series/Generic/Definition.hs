@@ -10,7 +10,7 @@ module Data.Series.Generic.Definition (
 
     -- * Basic interface
     singleton,
-    headM, lastM, map, mapWithKey, mapIndex,
+    headM, lastM, map, mapWithKey, mapIndex, fold,
     foldMap, bifoldMap, foldMapWithKey, sum, length, null,
     take, takeWhile, drop, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
@@ -37,8 +37,9 @@ module Data.Series.Generic.Definition (
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
+import           Control.Foldl          ( Fold(..) )
+import qualified Control.Foldl          as Fold
 import           Control.Monad.ST       ( runST )
-
 import           Data.Bifoldable        ( Bifoldable )
 import qualified Data.Bifoldable        as Bifoldable  
 import qualified Data.Foldable          as Foldable
@@ -49,6 +50,7 @@ import qualified Data.List              as List
 import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as MS
+import           Data.MonoTraversable   ( MonoFoldable, Element, ofoldlUnwrap )
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Series.Index.Internal as Index.Internal
@@ -484,6 +486,19 @@ instance (forall a. Vector v a, Functor v, Foldable v, Ord k, Traversable v) => 
     {-# INLINE itraverse #-}
     itraverse :: Applicative f => (k -> a -> f b) -> Series v k a -> f (Series v k b)
     itraverse = traverseWithKey
+
+
+-- | Execute a 'Fold' over a 'Series'.
+--
+-- The scary type signature means that this function will appropriately specialize for both types
+-- of 'Series', either boxed or unboxed. Since unboxed 'Data.Series.Unboxed.Series' aren't 'Foldable', 
+-- another mechanism must be used: 'MonoFoldable'.
+fold :: (MonoFoldable (v a)) 
+     => Fold (Element (v a)) b  
+     -> Series v k a 
+     -> b
+fold f xs = Fold.purely ofoldlUnwrap f (values xs)
+{-# INLINE fold #-}
 
 
 -- | \(O(n)\) Fold over elements in a 'Series'.

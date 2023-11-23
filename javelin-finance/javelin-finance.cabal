@@ -32,7 +32,6 @@ library
     build-depends:    base   >=4.15.0.0 && <5,
                       foldl ^>=1.4,
                       javelin,
-                      vector,
     hs-source-dirs:   src
     default-language: GHC2021
 

@@ -1,9 +1,9 @@
 module Test.Data.Series.Finance.Metrics ( tests ) where
 
 import           Control.Monad        ( guard )
-import           Data.Series.Finance.Metrics  ( compute, sharpeRatio, maxDrawDown, sortinoRatio )
-import qualified Data.Series          as Series
-import qualified Data.Vector          as Vector
+import           Data.Series.Finance.Metrics  ( sharpeRatio, maxDrawDown, sortinoRatio )
+import qualified Data.Series.Unboxed  as Series
+import qualified Data.Vector.Unboxed  as Vector
 
 import           Hedgehog             ( property, forAll, assert )
 import qualified Hedgehog.Gen         as Gen
@@ -32,7 +32,7 @@ testSharpeRatio = testGroup "sharpeRatio"
     where
         testBasicCase = testCase "Sharpe ratio of [1,2,3,2]" $ do
             let xs = Series.fromList $ zip [(0::Int)..] [1.0 :: Double, 2.0, 3.0, 2.0]
-            assertApproxEqual mempty 1e-8 (2 * sqrt 2) (xs `compute` sharpeRatio)
+            assertApproxEqual mempty 1e-8 (2 * sqrt 2) (Series.fold sharpeRatio xs)
         
         testProp = testProperty "sharpeRatio is mean/std" $ property $ do
             ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500)
@@ -42,7 +42,7 @@ testSharpeRatio = testGroup "sharpeRatio"
             -- Note that the std implementation of javelin
             -- uses a single-pass std algorithm, which is why
             -- the property below uses Stats.fastStdDev.
-            xs `compute` sharpeRatio `approx` (Stats.mean vs / Stats.fastStdDev vs)
+            Series.fold sharpeRatio xs `approx` (Stats.mean vs / Stats.fastStdDev vs)
 
 
 testSortinoRatio :: TestTree
@@ -55,14 +55,14 @@ testSortinoRatio = testGroup "sortinoRatio"
     where
         testBasicCase = testCase "Sortino ratio of [1,-2,3,-1]" $ do
             let xs = Series.fromList $ zip [(0::Int)..] [1.0 :: Double, -2.0, 3.0, -1.0]
-            assertApproxEqual mempty 1e-8 (1/2) (xs `compute` sortinoRatio)
+            assertApproxEqual mempty 1e-8 (1/2) (Series.fold sortinoRatio xs)
         
         testReturnsNanIfEmpty = testCase "Sortino ratio of empty series is NaN" $ do
-            assertEqual mempty True (isNaN $ (mempty :: Series.Series Int Double) `compute` sortinoRatio)
+            assertEqual mempty True (isNaN $ Series.fold sortinoRatio (mempty :: Series.Series Int Double))
 
         testNoNegReturns = testCase "Sortino ratio of non-empty series with no negative returns is NaN" $ do
             let xs = Series.fromList $ zip [(0::Int)..] [1.0 :: Double, 2.0, 3.0, 4.0]
-            assertEqual mempty True (isNaN $ xs `compute` sortinoRatio)
+            assertEqual mempty True (isNaN $ Series.fold sortinoRatio xs)
         
         testProp = testProperty "Sortino is mean(x)/std(x[x<0])" $ property $ do
             ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500)
@@ -74,7 +74,7 @@ testSortinoRatio = testGroup "sortinoRatio"
             -- Note that the std implementation of javelin
             -- uses a single-pass std algorithm, which is why
             -- the property below uses Stats.fastStdDev.
-            xs `compute` sortinoRatio `approx` (Stats.mean vs / Stats.fastStdDev (Vector.filter (<0) vs))
+            Series.fold sortinoRatio xs `approx` (Stats.mean vs / Stats.fastStdDev (Vector.filter (<0) vs))
 
 
 testMaxDrawDown :: TestTree
@@ -89,9 +89,9 @@ testMaxDrawDown = testGroup "maxDrawDown"
         runCase :: [Double] -> Double -> TestTree
         runCase pnl expectation = testCase mempty $ do
             let xs = Series.fromList $ zip [0::Int ..] pnl
-            assertEqual mempty expectation (xs `compute` maxDrawDown)
+            assertEqual mempty expectation (Series.fold maxDrawDown xs)
                 
         testNonPositiveMDDs = testProperty "maxDrawDown is always non-positive" $ property $ do
             ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500)
             let xs = Series.fromList $ zip [(0::Int)..] ms
-            assert (xs `compute` maxDrawDown <= 0)
+            assert (Series.fold maxDrawDown xs <= 0)

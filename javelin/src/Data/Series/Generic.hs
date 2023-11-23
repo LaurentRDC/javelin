@@ -24,7 +24,8 @@ module Data.Series.Generic (
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
     -- * Folding
-    foldMap, foldMapWithKey,
+    fold, foldMap, foldMapWithKey,
+    mean, variance, std, 
 
     -- * Scans
     postscanl, prescanl, forwardFill,
@@ -48,12 +49,6 @@ module Data.Series.Generic (
 
     -- * Replacement
     replace, (|->), (<-|),
-   
-    
-    -- * Numerical aggregations
-    mean, var, std, 
-    sampleVariance,
-    meanAndVariance,
 
     -- * Grouping and windowing operations
     groupBy, Grouping, aggregateWith, foldWith, 
@@ -67,9 +62,9 @@ import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, con
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
                                         , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, drop, dropWhile
-                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, foldMap, foldMapWithKey,
+                                        , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, fold, foldMap, foldMapWithKey,
                                         )
-import Data.Series.Generic.Numeric      ( mean, var, sampleVariance, std, meanAndVariance )
+import Data.Series.Generic.Numeric      ( mean, variance, std )
 import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, filterWithKey, require, requireWith
                                         , catMaybes, dropIndex, argmax, argmin

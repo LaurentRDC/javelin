@@ -20,6 +20,9 @@ module Data.Series.Tutorial (
     -- * Filtering and mapping
     -- $filteringandmapping
 
+    -- * Folding
+    -- $folding
+
     -- * Grouping
     -- $grouping
 
@@ -47,11 +50,11 @@ module Data.Series.Tutorial (
 
 ) where
 
+import           Control.Foldl   ( Fold )
 import           Data.Series     ( Series, Occurrence, at, iat, select, to, from, upto, require
                                  , groupBy, aggregateWith, (<-|), (|->), Range, windowing
                                  )
 import qualified Data.Series     as Series
-import qualified Data.Series.Generic as Series (mean, std)
 import qualified Data.Series.Generic
 import           Data.Series.Index ( Index )
 import qualified Data.Series.Index as Index
@@ -330,18 +333,27 @@ let's isolate the latitude of cities in the western hemisphere:
 Finally, we can summarize the 'Series' by reducing all its values. 
 Let's average the latitude of cities in the western hemisphere:
 
->>> import Data.Series.Generic ( mean )
+>>> import Data.Series ( mean )
 >>> let latitudes = Series.map latitude western_cities
->>> mean latitudes :: Double
-3.055
+>>> Series.fold mean latitudes
+3.05
+
+The next section introduces 'Series.fold' more generally.
 -}
 
-{- $grouping
+{- $folding
 
-One important feature of 'Series' is the ability to efficiently group values 
-together based on their keys.
+Folding refers to the action of aggregating values in a 'Series' to a single value.
+Folding 'Series' is done through the 'Series.fold' function. Its type signature is:
 
-Let's load some stock price data for this part:
+>>> :t Series.fold
+Series.fold :: Fold a b -> Series k a -> b
+
+Here, @'Fold' a b@ represents a calculation which takes in values of type @a@, and will ultimately produce a
+final value of type b. Such calculations are provided by the @foldl@ package (see 'Control.Foldl'), although
+some of its functions are re-exported by "Data.Series" (and "Data.Series.Unboxed"), such as 'Data.Series.mean'.
+
+Let's look at an example. First, we'll need some data. We'll use end-of-day stock prices for Apple Inc:
 
 >>> import Data.Fixed ( Centi )
 >>> (aapl_closing :: Series String Double) <- (Series.fromList . read) <$> readFile "files/aapl.txt"
@@ -356,9 +368,59 @@ Let's load some stock price data for this part:
 "2022-01-06" |   172.0
 "2022-01-07" |  172.17
 
-Note that normally we would use an appropriate datetime type for the index of @aapl_closing@, 
-for example from the @time@ package <https://hackage.haskell.org/package/time>, but we're keeping 
-it simple for this tutorial. 
+Normally we would use an appropriate datetime type for the index of @aapl_closing@, 
+for example from the @time@ package, but we're keeping it simple for this tutorial. 
+
+Prices have changed a lot over the years, so we'll restrict ourselves to 2021:
+
+>>> let aapl_closing_2021 = aapl_closing `select` "2021-01-01" `to` "2021-12-31"
+>>> aapl_closing_2021
+       index |   values
+       ----- |   ------
+"2021-01-04" | 128.6174
+"2021-01-05" | 130.2076
+"2021-01-06" | 125.8246
+         ... |      ...
+"2021-12-29" |   179.38
+"2021-12-30" |    178.2
+"2021-12-31" |   177.57
+
+To calculate the average closing price over the year 2021, we use 'Data.Series.fold' in conjunction with
+'Data.Series.mean':
+
+>>> Series.fold Series.mean aapl_closing_2021
+140.61256349206354
+
+One of the magic things about 'Fold' is that it's possible to combine them in such a way that you can 
+traverse a 'Series' only once, which is important for good performance. As an example, we'll calculate
+both the mean closing price AND the standard deviation of closing prices.
+
+>>> let meanAndStdDev = (,) <$> Data.Series.mean <*> Data.Series.std
+>>> Series.fold meanAndStdDev aapl_closing_2021
+(140.61256349206354,14.811663837435361)
+
+See 'Control.Foldl' from @foldl@ for more information on 'Fold'.
+-}
+
+{- $grouping
+
+One important feature of 'Series' is the ability to efficiently group values 
+together based on their keys.
+
+Let's load some stock price data again for this part:
+
+>>> import Data.Fixed ( Centi )
+>>> (aapl_closing :: Series String Double) <- (Series.fromList . read) <$> readFile "files/aapl.txt"
+>>> aapl_closing 
+       index |  values
+       ----- |  ------
+"1980-12-12" |  0.1007
+"1980-12-15" | 9.54e-2
+"1980-12-16" | 8.84e-2
+         ... |     ...
+"2022-01-05" |  174.92
+"2022-01-06" |   172.0
+"2022-01-07" |  172.17
 
 Grouping involves two steps:
 
@@ -397,7 +459,7 @@ to find the monthly average Apple closing price, rounded to the nearest cent:
 
 >>> import Data.Series (mean)
 >>> let (roundToCent :: Double -> Double) = \x -> fromIntegral ((round $ x * 100) :: Int) / 100
->>> aapl_closing `groupBy` month `aggregateWith` (roundToCent . mean)
+>>> aapl_closing `groupBy` month `aggregateWith` (roundToCent . Series.fold mean)
     index | values
     ----- | ------
 "1980-12" |   0.11
@@ -452,8 +514,8 @@ this is to compute the rolling mean of the last 3 keys:
 
 >>> import Data.Series ( mean )
 >>> :{ 
-let rollingMean = windowing (\k -> (k-3) `to` k) mean
-    (xs :: Series Int Int) 
+let rollingMean = windowing (\k -> (k-3) `to` k) (Series.fold mean)
+    (xs :: Series Int Double) 
       = Series.fromList [ (1, 0)
                         , (2, 1)
                         , (3, 2)

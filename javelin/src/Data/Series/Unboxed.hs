@@ -86,19 +86,16 @@ module Data.Series.Unboxed (
 
     -- * Folds
     -- ** General folds
-    foldMap, foldMap', foldMapWithKey,
+    fold, foldMap, foldMap', foldMapWithKey,
     -- ** Specialized folds
+    G.mean, G.variance, G.std,
     all, any, and, or, sum, product, maximum, minimum,
-
-    -- * Numerical aggregation
-    mean, var, std, 
-    sampleVariance,
-    meanAndVariance,
 
     -- * Scans
     postscanl, prescanl,
 ) where
 
+import           Control.Foldl       ( Fold )
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
@@ -903,6 +900,13 @@ replace = G.replace
 (<-|) = (G.<-|)
 
 
+-- | Execute a 'Fold' over a 'Series'.
+fold :: Unbox a 
+     => Fold a b -> Series k a -> b
+fold = G.fold
+{-# INLINE fold #-}
+
+
 -- | Group values in a 'Series' by some grouping function (@k -> g@).
 -- The provided grouping function is guaranteed to operate on a non-empty 'Series'.
 --
@@ -1111,37 +1115,6 @@ maximum = Vector.maximum . values
 minimum :: (Unbox a, Ord a) => Series k a -> a
 {-# INLINE minimum #-}
 minimum = Vector.minimum . values
-
-
--- | Compute the mean of the values in the series.
--- An empty series will have a mean of NaN.
-mean :: (Unbox a, Real a, RealFloat b) => Series k a -> b
-{-# INLINE mean #-}
-mean = G.mean
-
-
--- | Compute the mean and variance of the values in a series in a single-pass.
-meanAndVariance :: (Unbox a, RealFloat a) => Series k a -> (a, a)
-{-# INLINE meanAndVariance #-}
-meanAndVariance = G.meanAndVariance
-
-
--- | Population variance.
-var :: (Unbox a, RealFloat a) => Series k a -> a
-{-# INLINE var #-}
-var = G.var
-
-
--- | Population standard deviation.
-std :: (Unbox a, RealFloat a) => Series k a -> a
-{-# INLINE std #-}
-std = sqrt . var
-
-
--- | Sample variance.
-sampleVariance :: (Unbox a, RealFloat a) => Series k a -> a
-{-# INLINE sampleVariance #-}
-sampleVariance = G.sampleVariance
 
 
 -- | \(O(n)\) Left-to-right postscan.
