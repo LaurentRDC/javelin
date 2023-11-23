@@ -47,7 +47,7 @@ library
                       containers,
                       deepseq,
                       indexed-traversable ^>=0.1,
-                      vector,
+                      vector >= 0.12.3.0 && <0.14,
                       vector-algorithms
 
 test-suite javelin-test
