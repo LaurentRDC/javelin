@@ -399,7 +399,7 @@ both the mean closing price AND the standard deviation of closing prices.
 >>> Series.fold meanAndStdDev aapl_closing_2021
 (140.61256349206354,14.811663837435361)
 
-See 'Control.Foldl' from @foldl@ for more information on 'Fold'.
+See 'Control.Foldl' from the @foldl@ package for more information on 'Fold'.
 -}
 
 {- $grouping

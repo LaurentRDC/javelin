@@ -83,7 +83,7 @@ module Data.Series (
     windowing, expanding,
 
     -- * Folds
-    fold, foldWithKey, foldMapWithKey,
+    fold, foldM, foldWithKey, foldMWithKey, foldMapWithKey,
     -- ** Specialized folds
     G.mean, G.variance, G.std,
 
@@ -91,7 +91,7 @@ module Data.Series (
     postscanl, prescanl,
 ) where
 
-import           Control.Foldl       ( Fold )
+import           Control.Foldl       ( Fold, FoldM )
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
@@ -1006,15 +1006,51 @@ forwardFill = G.forwardFill
 
 
 -- | /O(n)/ Execute a 'Fold' over a 'Series'.
+--
+-- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series Int Double
+-- >>> xs
+-- index | values
+-- ----- | ------
+--     0 |    1.0
+--     1 |    2.0
+--     2 |    3.0
+--     3 |    4.0
+-- >>> import Control.Foldl (variance)
+-- >>> fold variance xs
+-- 1.25
+--
+-- See also 'foldM' for monadic folds, and 'foldWithKey' to take keys into
+-- account while folding.
 fold :: Fold a b -> Series k a -> b
 fold = G.fold
 {-# INLINE fold #-}
+
+
+-- | \(O(n)\) Execute a monadic 'FoldM' over a 'Series'.
+--
+-- See also 'fold' for pure folds, and 'foldMWithKey' to take keys into
+-- account while folding.
+foldM :: (Monad m) 
+      => FoldM m a b  
+      -> Series k a 
+      -> m b
+foldM = G.foldM
+{-# INLINE foldM #-}
 
 
 -- | /O(n)/ Execute a 'Fold' over a 'Series', taking keys into account.
 foldWithKey :: Fold (k, a) b -> Series k a -> b
 foldWithKey = G.foldWithKey
 {-# INLINE foldWithKey #-}
+
+
+-- | \(O(n)\) Execute a monadic 'FoldM' over a 'Series', where the 'FoldM' takes keys into account.
+foldMWithKey :: (Monad m) 
+             => FoldM m (k, a) b  
+             -> Series k a 
+             -> m b
+foldMWithKey = G.foldMWithKey
+{-# INLINE foldMWithKey #-}
 
 
 -- | /O(n)/ Map each element and associated key of the structure to a monoid and combine

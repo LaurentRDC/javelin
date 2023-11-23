@@ -1,7 +1,9 @@
 
 module Test.Data.Series.Generic.Definition (tests) where
 
+import qualified Control.Foldl        as Fold
 import           Data.Function        ( on )
+import           Data.Functor.Identity ( Identity(..))
 import           Data.List            ( nubBy, sortOn )
 import qualified Data.Map.Strict      as MS
 import qualified Data.Map.Lazy        as ML
@@ -19,24 +21,26 @@ import           Test.Tasty.Hedgehog  ( testProperty )
 import           Test.Tasty.HUnit     ( testCase, assertEqual )
 
 tests :: TestTree
-tests = testGroup "Data.Series.Generic.Definition" [ testMappend
-                                                   , testPropMappendLikeMap
-                                                   , testPropShow
-                                                   , testFromStrictMap
-                                                   , testToStrictMap
-                                                   , testPropRoundtripConversionWithStrictMap
-                                                   , testPropRoundtripConversionWithLazyMap
-                                                   , testPropRoundtripConversionWithList
-                                                   , testPropFromListDuplicatesNeverDrops
-                                                   , testPropFromVectorDuplicatesNeverDrops
-                                                   , testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder
-                                                   , testPropRoundtripConversionWithVector
-                                                   , testPropVectorVsList
-                                                   , testFromLazyMap
-                                                   , testToLazyMap
-                                                   , testTakeWhile
-                                                   , testDropWhile
-                                                   ]
+tests = testGroup "Data.Series.Generic.Definition" 
+    [ testMappend
+    , testPropMappendLikeMap
+    , testPropShow
+    , testFromStrictMap
+    , testToStrictMap
+    , testPropRoundtripConversionWithStrictMap
+    , testPropRoundtripConversionWithLazyMap
+    , testPropRoundtripConversionWithList
+    , testPropFromListDuplicatesNeverDrops
+    , testPropFromVectorDuplicatesNeverDrops
+    , testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder
+    , testPropRoundtripConversionWithVector
+    , testPropVectorVsList
+    , testFromLazyMap
+    , testToLazyMap
+    , testTakeWhile
+    , testDropWhile
+    , testFold
+    ]
 
 
 testMappend :: TestTree
@@ -187,3 +191,16 @@ testDropWhile = testProperty "dropWhile behaves like lists" $ property $ do
 
     n  <- forAll $ Gen.int  (Range.linear 1 10)
     Series.dropWhile (\v -> v `mod` n /= 0) ys === Series.fromList (dropWhile (\(_, v) -> v `mod` n /= 0) $ Series.toList ys)
+
+
+testFold :: TestTree
+testFold = testGroup "fold"
+         [ testProperty "Series.sum and Control.Foldl.sum should be equivalent" $ property $ do
+            xs <- forAll $ Gen.list (Range.linear 0 50) (Gen.int (Range.linear (-50) 50))
+            let (ys :: Series Vector Int Int) = Series.fromList $ zip [0..] xs
+            Series.fold Fold.sum ys === Series.sum ys
+         , testProperty "FoldM Identity should be equivalent to a pure fold" $ property $ do
+            xs <- forAll $ Gen.list (Range.linear 0 50) (Gen.int (Range.linear (-50) 50))
+            let (ys :: Series Vector Int Int) = Series.fromList $ zip [0..] xs
+            runIdentity (Series.foldM (Fold.generalize Fold.sum) ys) === Series.sum ys
+         ]

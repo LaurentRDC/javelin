@@ -67,6 +67,7 @@ test-suite javelin-test
                       Test.Utils
     build-depends:    base,
                       containers,
+                      foldl,
                       hedgehog,
                       HUnit,
                       ieee754,
