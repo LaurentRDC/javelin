@@ -63,6 +63,7 @@ module Data.Series.Index.Definition (
 
 import           Control.DeepSeq        ( NFData )
 import           Control.Monad          ( guard )
+import           Control.Monad.ST       ( runST )
 import           Data.Functor           ( ($>) )
 import qualified Data.List              as List
 import           Data.Set               ( Set )
@@ -70,6 +71,7 @@ import qualified Data.Set               as Set
 import qualified Data.Traversable       as Traversable
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
+import qualified Data.Vector.Generic.Mutable as M
 import           GHC.Exts               ( IsList )
 import qualified GHC.Exts               as Exts
 import           GHC.Stack              ( HasCallStack )
@@ -230,7 +232,7 @@ toAscList (MkIndex s) = Set.toAscList s
 
 -- | \(O(n)\) Convert an 'Index' to a list. Elements will be produced in ascending order.
 toAscVector :: Vector v k => Index k -> v k
-toAscVector ix = Vector.fromListN (size ix) $ toAscList ix
+toAscVector ix = runST $ M.generate (size ix) (`elemAt` ix) >>= Vector.freeze
 {-# INLINE toAscVector #-}
 
 
