@@ -1,0 +1,11 @@
+packages: **/*.cabal
+benchmarks: true
+
+-- Optimization level for the package itself
+optimization: 2
+documentation: false
+
+-- Required to optimize all dependencies as well
+package *
+    optimization: 2
+    documentation: false
