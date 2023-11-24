@@ -91,6 +91,8 @@ benchmark comparison-containers
     main-is:          Comparison.hs
     build-depends:    base,
                       containers,
+                      foldl,
+                      mono-traversable,
                       javelin,
                       vector, 
                       criterion, 

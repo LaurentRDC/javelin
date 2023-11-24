@@ -7,12 +7,14 @@
 module Main (main) where
 
 import           Control.DeepSeq  ( NFData, force )
+import qualified Control.Foldl    as Fold
 import           Control.Monad    ( when )
 import           Criterion.Main   ( defaultMainWith, defaultConfig, bench, bgroup, env, nf )
 import           Criterion.Types  ( Config(csvFile) )
 import           Data.List        ( foldl' )
 import qualified Data.Map.Lazy
 import qualified Data.Map.Strict
+import           Data.MonoTraversable ( ofoldlUnwrap )
 import           Data.Set         ( Set )
 import qualified Data.Set         as Set 
 import qualified Data.Series
@@ -32,6 +34,10 @@ data Lookup =
 data Sum =
   forall f. (NFData (f Int)) =>
             Sum String ([(Int, Int)] -> f Int) (f Int -> Int)
+
+data Fold =
+  forall f. (NFData (f Double)) =>
+            Fold String ([(Int, Double)] -> f Double) (f Double -> Double)
 
 data Mappend = 
   forall f. (NFData (f Int), Monoid (f Int)) =>
@@ -85,9 +91,19 @@ main = do
            [ Sum "Data.Map.Lazy"   Data.Map.Lazy.fromList sum
            , Sum "Data.Map.Strict" Data.Map.Strict.fromList sum
            , Sum "Data.Series" Data.Series.fromList sum
-           , Sum "Data.Vector" (Data.Vector.fromList . map fst) sum
+           , Sum "Data.Vector" (Data.Vector.fromList . map snd) sum
            , Sum "Data.Series.Unboxed"  Data.Series.Unboxed.fromList Data.Series.Unboxed.sum
-           , Sum "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map fst) Data.Vector.Unboxed.sum
+           , Sum "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map snd) Data.Vector.Unboxed.sum
+           ])
+    , bgroup
+        "Fold mean (Randomized)"
+        (foldRandomized
+           [ Fold "Data.Map.Lazy"   Data.Map.Lazy.fromList (Fold.fold Fold.mean)
+           , Fold "Data.Map.Strict" Data.Map.Strict.fromList (Fold.fold Fold.mean)
+           , Fold "Data.Series" Data.Series.fromList (Data.Series.fold Fold.mean)
+           , Fold "Data.Vector" (Data.Vector.fromList . map snd) (Fold.fold Fold.mean)
+           , Fold "Data.Series.Unboxed"  Data.Series.Unboxed.fromList (Data.Series.Unboxed.fold Fold.mean)
+           , Fold "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map snd) (Fold.purely ofoldlUnwrap Fold.mean)
            ])
     , bgroup
       "Mappend Int (Randomized)"
@@ -95,9 +111,9 @@ main = do
           [ Mappend "Data.Map.Lazy" Data.Map.Lazy.fromList
           , Mappend "Data.Map.Strict" Data.Map.Strict.fromList
           , Mappend "Data.Series" Data.Series.fromList
-          , Mappend "Data.Vector" (Data.Vector.fromList . map fst)
+          , Mappend "Data.Vector" (Data.Vector.fromList . map snd)
           , Mappend "Data.Series" Data.Series.Unboxed.fromList
-          , Mappend "Data.Vector.Unboxed" (Data.Vector.fromList . map fst)
+          , Mappend "Data.Vector.Unboxed" (Data.Vector.fromList . map snd)
           ])
     , bgroup
       "Slice by keys (Randomized)"
@@ -133,7 +149,7 @@ main = do
                        Nothing -> 0)
                   0)
              (map fst list))
-      | i <- [10, 100, 1000, 10000, 10000]
+      | i <- [10, 100, 1000, 10000]
       , Lookup title fromList func <- funcs
       ]
     sumRandomized funcs =
@@ -146,6 +162,17 @@ main = do
            nf func elems)
       | i <- [10, 100, 1000, 10000, 100000, 1000000]
       , Sum title fromList func <- funcs
+      ]
+    foldRandomized funcs =
+      [ env
+        (let list = take i (zip (randoms (mkStdGen 0) :: [Int]) [1 ..])
+             !elems = force (fromList list)
+          in pure (list, elems))
+        (\(~(_, elems)) ->
+           bench (title ++ ":" ++ show i) $
+           nf func elems)
+      | i <- [10, 100, 1000, 10000, 100000, 1000000]
+      , Fold title fromList func <- funcs
       ]
     mappendRandomized funcs =
       [ env
