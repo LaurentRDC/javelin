@@ -125,8 +125,8 @@ fromList = fromStrictMap . MS.fromList
 -- are distinct elements in ascending order. The precondition that the keys be unique and sorted is not checked.
 fromDistinctAscList :: (Vector v a) => [(k, a)] -> Series v k a
 fromDistinctAscList xs 
-    = let (ks, vs) = unzip xs 
-       in MkSeries (Index.Internal.fromDistinctAscList ks) (Vector.fromList vs)
+    = let (!ks, !vs) = unzip xs 
+       in MkSeries (Index.Internal.fromDistinctAscList ks) (Vector.fromListN (List.length vs) vs)
 
 
 -- | Integer-like, non-negative number that specifies how many occurrences
