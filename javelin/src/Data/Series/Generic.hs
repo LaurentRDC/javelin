@@ -18,7 +18,7 @@ module Data.Series.Generic (
     fromLazyMap, toLazyMap,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, filter, filterWithKey, null, length, sum, 
+    map, mapWithKey, mapIndex, concatMap, filter, filterWithKey, null, length, sum, 
     take, takeWhile, drop, dropWhile,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
@@ -61,7 +61,7 @@ import Data.Series.Generic.Aggregation  ( groupBy, Grouping, aggregateWith, fold
 import Data.Series.Generic.Definition   ( Series(index, values), Occurrence, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
-                                        , map, mapWithKey, mapIndex, null, length, sum, take, takeWhile, drop, dropWhile
+                                        , map, mapWithKey, mapIndex, concatMap, null, length, sum, take, takeWhile, drop, dropWhile
                                         , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, fold, foldM
                                         , foldWithKey, foldMWithKey, foldMap, foldMapWithKey,
                                         )

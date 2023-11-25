@@ -10,7 +10,7 @@ module Data.Series.Generic.Definition (
 
     -- * Basic interface
     singleton,
-    headM, lastM, map, mapWithKey, mapIndex, fold, foldM, 
+    headM, lastM, map, mapWithKey, mapIndex, concatMap, fold, foldM, 
     foldWithKey, foldMWithKey, foldMap, bifoldMap, foldMapWithKey, 
     sum, length, null, take, takeWhile, drop, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
@@ -64,7 +64,7 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as UM
  
-import           Prelude                hiding ( take, takeWhile, drop, dropWhile, map, foldMap, sum, length, null )
+import           Prelude                hiding ( take, takeWhile, drop, dropWhile, map, concatMap, foldMap, sum, length, null )
 import qualified Prelude                as P
 
 
@@ -330,6 +330,17 @@ mapIndex (MkSeries index values) f
     = let mapping   = MS.fromListWith (\_ x -> x) $ [(f k, k) | k <- Index.toAscList index]
           newvalues = fmap (\k -> values Vector.! Index.Internal.findIndex k index) mapping
        in fromStrictMap newvalues
+
+
+-- | Map a function over all the elements of a 'Series' and concatenate the result into a single 'Series'.
+concatMap :: (Vector v a, Vector v k, Vector v b, Vector v (k, a), Vector v (k, b), Ord k) 
+          => (a -> Series v k b) 
+          -> Series v k a 
+          -> Series v k b
+{-# INLINE concatMap #-}
+concatMap f = fromVector 
+            . Vector.concatMap (toVector . f . snd) 
+            . toVector
 
 
 instance (Vector v a, Ord k) => Semigroup (Series v k a) where

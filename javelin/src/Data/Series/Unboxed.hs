@@ -55,7 +55,7 @@ module Data.Series.Unboxed (
     G.convert,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, null, length,
+    map, mapWithKey, mapIndex, concatMap, null, length,
     take, takeWhile, drop, dropWhile, filter, filterWithKey,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
@@ -106,7 +106,7 @@ import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
 
-import           Prelude             hiding ( map, zipWith, filter, foldMap, null, length, all, any, and, or
+import           Prelude             hiding ( map, concatMap, zipWith, filter, foldMap, null, length, all, any, and, or
                                             , sum, product, maximum, minimum, take, takeWhile, drop, dropWhile
                                             , last, unzip, unzip3
                                             )
@@ -311,6 +311,15 @@ mapWithKey = G.mapWithKey
 mapIndex :: (Unbox a, Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
+
+
+-- | Map a function over all the elements of a 'Series' and concatenate the result into a single 'Series'.
+concatMap :: (Unbox a, Unbox k, Unbox b, Ord k) 
+          => (a -> Series k b) 
+          -> Series k a 
+          -> Series k b
+{-# INLINE concatMap #-}
+concatMap = G.concatMap
 
 
 -- | /O(n)/ Apply the monadic action to every element of a series and its

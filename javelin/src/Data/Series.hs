@@ -50,7 +50,7 @@ module Data.Series (
     G.convert,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, 
+    map, mapWithKey, mapIndex, concatMap,
     take, takeWhile, drop, dropWhile, filter, filterWithKey,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
@@ -100,7 +100,7 @@ import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, zipWith, zipWith3, filter, take, takeWhile, drop, dropWhile, last, unzip, unzip3)
+import           Prelude             hiding (map, concatMap, zipWith, zipWith3, filter, take, takeWhile, drop, dropWhile, last, unzip, unzip3)
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -301,6 +301,15 @@ mapWithKey = G.mapWithKey
 mapIndex :: (Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
 {-# INLINE mapIndex #-}
 mapIndex = G.mapIndex
+
+
+-- | Map a function over all the elements of a 'Series' and concatenate the result into a single 'Series'.
+concatMap :: Ord k 
+          => (a -> Series k b) 
+          -> Series k a 
+          -> Series k b
+{-# INLINE concatMap #-}
+concatMap = G.concatMap
 
 
 -- | /O(n)/ Apply the monadic action to every element of a series and its
