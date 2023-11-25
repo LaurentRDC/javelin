@@ -363,7 +363,7 @@ argmax xs | G.null xs = Nothing
                       -- We're forcing the use of boxed vectors in order to
                       -- reduce the constraints on the vector instance
                       . Boxed.maximumOn snd 
-                      . G.toVector 
+                      . G.toVector
                       . G.convert
                       $ xs
 

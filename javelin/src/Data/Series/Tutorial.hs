@@ -51,7 +51,7 @@ module Data.Series.Tutorial (
 ) where
 
 import           Control.Foldl   ( Fold )
-import           Data.Series     ( Series, Occurrence, at, iat, select, to, from, upto, require
+import           Data.Series     ( IsSeries(..), Series, Occurrence, at, iat, select, to, from, upto, require
                                  , groupBy, aggregateWith, (<-|), (|->), Range, windowing
                                  )
 import qualified Data.Series     as Series
@@ -131,7 +131,8 @@ index | values
   'c' |      3
   'd' |      4
 
-Of course, 'Series.fromLazyMap' is also available.
+Of course, 'Series.fromLazyMap' is also available. In fact, conversion to/from 'Series' is supported for
+many types; see the 'IsSeries' typeclass and its methods, 'toSeries' and 'fromSeries'.
 
 -}
 

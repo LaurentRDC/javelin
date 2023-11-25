@@ -326,9 +326,9 @@ zipWithStrategy f whenLeft whenRight left right
         -- Application of the 'ZipStrategy' is done on a `Map` rather than
         -- the 'Series' directly to keep the type contraints of `zipWithStrategy` to
         -- a minimum. Recall that unboxed 'Series' cannot contain `Maybe a`.  
-        applyStrategy strat = G.fromStrictMap 
+        applyStrategy strat = G.toSeries 
                             . Map.mapMaybeWithKey strat
-                            . G.toStrictMap
+                            . G.fromSeries
 {-# INLINE zipWithStrategy #-}
 
 
@@ -362,9 +362,9 @@ zipWithStrategy3 f whenLeft whenCenter whenRight left center right
         -- Application of the 'ZipStrategy' is done on a `Map` rather than
         -- the 'Series' directly to keep the type contraints of `zipWithStrategy` to
         -- a minimum. Recall that unboxed 'Series' cannot contain `Maybe a`.  
-        applyStrategy strat = G.fromStrictMap 
+        applyStrategy strat = G.toSeries 
                             . Map.mapMaybeWithKey strat
-                            . G.toStrictMap
+                            . G.fromSeries
 {-# INLINE zipWithStrategy3 #-}
 
 

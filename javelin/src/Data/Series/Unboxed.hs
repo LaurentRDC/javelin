@@ -40,6 +40,7 @@ module Data.Series.Unboxed (
     Series, index, values,
 
     -- * Building/converting 'Series'
+    IsSeries(..),
     singleton, fromIndex,
     -- ** Lists
     fromList, toList,
@@ -101,7 +102,7 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to, from, upto )
-import           Data.Series.Generic ( ZipStrategy, Occurrence, skipStrategy, mapStrategy, constStrategy )
+import           Data.Series.Generic ( IsSeries(..), ZipStrategy, Occurrence, skipStrategy, mapStrategy, constStrategy )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -177,7 +178,7 @@ fromIndex = G.fromIndex
 --   'd' |      1
 --
 -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
-fromList :: (Unbox a, Ord k) => [(k, a)] -> Series k a
+fromList :: (Ord k, Unbox a) => [(k, a)] -> Series k a
 {-# INLINE fromList #-}
 fromList = G.fromList
 
@@ -195,7 +196,7 @@ fromList = G.fromList
 -- ('d',0) |      1
 -- ('d',1) |     -4
 -- ('d',2) |      7
-fromListDuplicates :: (Unbox a, Ord k) => [(k, a)] -> Series (k, Occurrence) a
+fromListDuplicates :: (Ord k, Unbox a) => [(k, a)] -> Series (k, Occurrence) a
 {-# INLINE fromListDuplicates #-}
 fromListDuplicates = G.fromListDuplicates
 
@@ -816,6 +817,7 @@ argmax :: (Ord a, Unbox a)
        => Series k a
        -> Maybe k
 argmax = G.argmax
+{-# INLINE argmax #-}
 
 
 -- | \(O(n)\) Find the index of the minimum element in the input series.
@@ -839,6 +841,7 @@ argmin :: (Ord a, Unbox a)
        => Series k a
        -> Maybe k
 argmin = G.argmin
+{-# INLINE argmin #-}
 
 
 -- | Replace values in the right series from values in the left series at matching keys.

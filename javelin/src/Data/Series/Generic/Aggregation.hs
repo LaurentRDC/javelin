@@ -12,7 +12,7 @@ module Data.Series.Generic.Aggregation (
 ) where
 
 import qualified Data.Map.Strict                as Map
-import           Data.Series.Generic.Definition ( Series(..), fromStrictMap, toList )
+import           Data.Series.Generic.Definition ( Series(..), toSeries, toList )
 import qualified Data.Series.Generic.Definition as GSeries
 import           Data.Series.Generic.View       ( Range, slice, select, selectSubset )
 import           Data.Vector.Generic            ( Vector )
@@ -81,7 +81,7 @@ aggregateWith :: (Ord k, Ord g, Vector v a, Vector v b)
               -> Series v g b
 {-# INLINE aggregateWith #-}
 aggregateWith (MkGrouping xs by) f
-    = fromStrictMap $ Map.map f $ selectSubset xs <$> groupedKeys
+    = toSeries $ Map.map f $ selectSubset xs <$> groupedKeys
         where
             groupedKeys
                 | Index.null (index xs) = mempty
@@ -113,7 +113,7 @@ foldWith :: (Ord g, Vector v a)
          -> Series v g a
 {-# INLINE foldWith #-}
 foldWith (MkGrouping xs by) f 
-    = fromStrictMap $ Map.unionsWith f [Map.singleton (by k) v | (k, v) <- toList xs]
+    = toSeries $ Map.unionsWith f [Map.singleton (by k) v | (k, v) <- toList xs]
 
 
 -- | Expanding window aggregation.

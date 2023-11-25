@@ -35,6 +35,7 @@ module Data.Series (
     Series, index, values,
 
     -- * Building/converting 'Series'
+    IsSeries(..),
     singleton, fromIndex,
     -- ** Lists
     fromList, toList,
@@ -95,7 +96,7 @@ import           Control.Foldl       ( Fold, FoldM )
 import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
-import           Data.Series.Generic ( Range, Selection, ZipStrategy, Occurrence, to, from, upto )
+import           Data.Series.Generic ( IsSeries(..), Range, Selection, ZipStrategy, Occurrence, to, from, upto )
 import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
@@ -881,6 +882,7 @@ iat = G.iat
 -- Just 4
 argmax :: Ord a => Series k a -> Maybe k
 argmax = G.argmax
+{-# INLINE argmax #-}
 
 
 -- | \(O(n)\) Find the index of the minimum element in the input series.
@@ -901,6 +903,7 @@ argmax = G.argmax
 -- Just 4
 argmin :: Ord a => Series k a -> Maybe k
 argmin = G.argmin
+{-# INLINE argmin #-}
 
 
 -- | Replace values in the right series from values in the left series at matching keys.

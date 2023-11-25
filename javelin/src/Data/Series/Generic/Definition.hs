@@ -17,22 +17,24 @@ module Data.Series.Generic.Definition (
     traverseWithKey,
 
     fromIndex,
-    -- * Conversion to/from Maps
+    -- * Conversion to/from Series
+    IsSeries(..),
+    -- ** Conversion to/from Maps
     fromStrictMap,
     toStrictMap,
     fromLazyMap,
     toLazyMap,
-    -- * Conversion to/from list
+    -- ** Conversion to/from list
     fromList,
     toList,
-    -- ** Unsafe construction
+    -- *** Unsafe construction
     fromDistinctAscList,
-    -- * Conversion to/from vectors
+    -- ** Conversion to/from vectors
     fromVector,
     toVector,
-    -- * Unsafe construction
+    -- *** Unsafe construction
     fromDistinctAscVector,
-    -- * Handling duplicates
+    -- ** Handling duplicates
     Occurrence, fromListDuplicates, fromVectorDuplicates
 ) where
 
@@ -46,6 +48,9 @@ import qualified Data.Foldable          as Foldable
 import           Data.Foldable.WithIndex ( FoldableWithIndex(..))
 import           Data.Function          ( on )
 import           Data.Functor.WithIndex ( FunctorWithIndex(imap) )
+
+import           Data.IntMap.Strict     ( IntMap )
+import qualified Data.IntMap.Strict     as IntMap
 import qualified Data.List              as List
 import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
@@ -54,7 +59,6 @@ import           Data.MonoTraversable   ( MonoFoldable, Element, ofoldlUnwrap, o
 import qualified Data.Series.Index      as Index
 import           Data.Series.Index.Internal ( Index(..) )
 import qualified Data.Series.Index.Internal as Index.Internal
-import qualified Data.Set               as Set
 import           Data.Traversable.WithIndex ( TraversableWithIndex(..) )
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Algorithms.Intro ( sortUniqBy, sortBy )
@@ -113,12 +117,58 @@ fromIndex f ix = MkSeries ix $ Vector.convert
                              $ Index.toAscVector ix
 
 
+-- | The 'IsSeries' typeclass allow for ad-hoc definition
+-- of conversion functions, converting to / from 'Series'.
+class IsSeries t v k a where
+    -- | Construct a 'Series' from some container of key-values pairs. There is no
+    -- condition on the order of pairs. Duplicate keys are silently dropped. If you
+    -- need to handle duplicate keys, see 'fromListDuplicates' or 'fromVectorDuplicates'.
+    toSeries    :: t -> Series v k a
+
+    -- | Construct a container from key-value pairs of a 'Series'. 
+    -- The elements are returned in ascending order of keys. 
+    fromSeries  :: Series v k a -> t
+
+
+instance (Ord k, Vector v a) => IsSeries [(k, a)] v k a where
+    -- | Construct a series from a list of key-value pairs. There is no
+    -- condition on the order of pairs.
+    --
+    -- >>> let xs = toSeries [('b', 0::Int), ('a', 5), ('d', 1) ]
+    -- >>> xs
+    -- index | values
+    -- ----- | ------
+    --   'a' |      5
+    --   'b' |      0
+    --   'd' |      1
+    --
+    -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
+    toSeries :: [(k, a)] -> Series v k a
+    toSeries = toSeries . MS.fromList
+    {-# INLINE toSeries #-}
+
+    -- | Construct a list from key-value pairs. The elements are in order sorted by key:
+    --
+    -- >>> let xs = Series.toSeries [ ('b', 0::Int), ('a', 5), ('d', 1) ]
+    -- >>> xs
+    -- index | values
+    -- ----- | ------
+    --   'a' |      5
+    --   'b' |      0
+    --   'd' |      1
+    -- >>> fromSeries xs
+    -- [('a',5),('b',0),('d',1)]
+    fromSeries :: Series v k a -> [(k, a)]
+    fromSeries (MkSeries ks vs)= zip (Index.toAscList ks) (Vector.toList vs)
+    {-# INLINE fromSeries #-}
+
+
 -- | Construct a 'Series' from a list of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
 -- need to handle duplicate keys, see 'fromListDuplicates'.
 fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
 {-# INLINE fromList #-}
-fromList = fromStrictMap . MS.fromList
+fromList = toSeries
 
 
 -- | \(O(n)\) Build a 'Series' from a list of pairs, where the first elements of the pairs (the keys)
@@ -161,6 +211,24 @@ toList :: Vector v a => Series v k a -> [(k, a)]
 toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 
 
+instance (Ord k) => IsSeries (Boxed.Vector (k, a)) Boxed.Vector k a where
+    toSeries = fromVector
+    {-# INLINE toSeries #-}
+
+    fromSeries = toVector
+    {-# INLINE fromSeries #-}
+
+
+instance (Ord k, U.Unbox a, U.Unbox k) => IsSeries (U.Vector (k, a)) U.Vector k a where
+    toSeries :: U.Vector (k, a) -> Series U.Vector k a
+    toSeries = fromVector
+    {-# INLINE toSeries #-}
+
+    fromSeries :: Series U.Vector k a -> U.Vector (k, a)
+    fromSeries = toVector
+    {-# INLINE fromSeries #-}
+
+
 -- | Construct a 'Series' from a 'Vector' of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
 -- need to handle duplicate keys, see 'fromVectorDuplicates'.
@@ -171,15 +239,14 @@ toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 fromVector :: (Ord k, Vector v k, Vector v a, Vector v (k, a))
            => v (k, a) -> Series v k a
 {-# INLINE fromVector #-}
-fromVector vec = let (indexVector, valuesVector) 
-                        = Vector.unzip $ runST $ do
-                            mv <- Vector.thaw vec
-                            -- Note that we're using this particular flavor of `sortUniqBy`
-                            -- because it both sorts AND removes duplicate keys
-                            destMV <- sortUniqBy (compare `on` fst) mv
-                            v <- Vector.freeze destMV
-                            pure (Vector.force v)
-                  in MkSeries (Index.Internal.fromDistinctAscVector indexVector) valuesVector
+fromVector vec = let (indexVector, valuesVector) = Vector.unzip $ runST $ do
+                        mv <- Vector.thaw vec
+                        -- Note that we're using this particular flavor of `sortUniqBy`
+                        -- because it both sorts AND removes duplicate keys
+                        destMV <- sortUniqBy (compare `on` fst) mv
+                        v <- Vector.freeze destMV
+                        pure (Vector.force v)
+              in MkSeries (Index.Internal.fromDistinctAscVector indexVector) valuesVector
 
 
 -- | \(O(n)\) Build a 'Series' from a vector of pairs, where the first elements of the pairs (the keys)
@@ -222,19 +289,29 @@ toVector :: (Vector v a, Vector v k, Vector v (k, a))
 toVector (MkSeries ks vs) = Vector.zip (Index.toAscVector ks) vs
 
 
--- | Convert a series into a lazy 'Data.Map.Lazy.Map'.
+instance (Vector v a) => IsSeries (Map k a) v k a where
+    toSeries :: Map k a -> Series v k a
+    toSeries mp = MkSeries 
+                { index  = Index.fromSet $ MS.keysSet mp
+                , values = Vector.fromListN (MS.size mp) $ MS.elems mp
+                }
+    {-# INLINE toSeries #-}
+
+    fromSeries :: Series v k a -> Map k a
+    fromSeries (MkSeries ks vs)
+        = MS.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
+    {-# INLINE fromSeries #-}
+
+
 toLazyMap :: (Vector v a) => Series v k a -> Map k a
 {-# INLINE toLazyMap #-}
-toLazyMap (MkSeries ks vs) = ML.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
+toLazyMap = fromSeries
 
 
 -- | Construct a series from a lazy 'Data.Map.Lazy.Map'.
 fromLazyMap :: (Vector v a) => ML.Map k a -> Series v k a
 {-# INLINE fromLazyMap #-}
-fromLazyMap mp = let keys = ML.keysSet mp 
-                  in MkSeries { index  = Index.fromSet keys 
-                              , values = Vector.fromListN (Set.size keys) $ ML.elems mp
-                              }
+fromLazyMap = toSeries
 
 
 -- | Convert a series into a strict 'Data.Map.Strict.Map'.
@@ -250,6 +327,19 @@ fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
                             , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                             }
 
+
+instance (Vector v a) => IsSeries (IntMap a) v Int a where
+    toSeries :: IntMap a -> Series v Int a
+    toSeries im = MkSeries 
+                { index  = Index.Internal.fromDistinctAscList $ IntMap.keys im
+                , values = Vector.fromListN (IntMap.size im)  $ IntMap.elems im 
+                }
+    {-# INLINE toSeries #-}
+
+    fromSeries :: Series v Int a -> IntMap a
+    fromSeries (MkSeries ks vs) 
+        = IntMap.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
+    {-# INLINE fromSeries #-}
 
 -- | Get the first value of a 'Series'. If the 'Series' is empty,
 -- this function returns 'Nothing'.
@@ -329,7 +419,7 @@ mapIndex (MkSeries index values) f
     -- See the examples for Data.Map.Strict.fromListWith
     = let mapping   = MS.fromListWith (\_ x -> x) $ [(f k, k) | k <- Index.toAscList index]
           newvalues = fmap (\k -> values Vector.! Index.Internal.findIndex k index) mapping
-       in fromStrictMap newvalues
+       in toSeries newvalues
 
 
 -- | Map a function over all the elements of a 'Series' and concatenate the result into a single 'Series'.
@@ -621,15 +711,15 @@ instance (NFData (v a), NFData k) => NFData (Series v k a) where
     rnf (MkSeries ks vs) = rnf ks `seq` rnf vs
 
 
-instance (Vector v a, Show k, Show a) => Show (Series v k a) where
+instance (Vector v a, Ord k, Show k, Show a) => Show (Series v k a) where
     show :: Series v k a -> String
     show xs 
         = formatGrid $ if length xs > 6
-            then mconcat [ [ (show k, show v) | (k, v) <- List.take 3 $ toList xs]
+            then mconcat [ [ (show k, show v) | (k, v) <- List.take 3 (fromSeries xs :: [(k, a)])]
                          , [ ("...", "...") ]
-                         , [ (show k, show v) | (k, v) <- List.drop (length xs - 3) $ toList xs]
+                         , [ (show k, show v) | (k, v) <- List.drop (length xs - 3) (fromSeries xs :: [(k, a)])]
                          ] 
-            else [ (show k, show v) | (k, v) <- toList xs ]
+            else [ (show k, show v) | (k, v) <- (fromSeries xs :: [(k, a)]) ]
 
         where
             -- | Format a grid represented by a list of rows, where every row is a list of items
