@@ -112,8 +112,8 @@ main = do
           , Mappend "Data.Map.Strict" Data.Map.Strict.fromList
           , Mappend "Data.Series" Data.Series.fromList
           , Mappend "Data.Vector" (Data.Vector.fromList . map snd)
-          , Mappend "Data.Series" Data.Series.Unboxed.fromList
-          , Mappend "Data.Vector.Unboxed" (Data.Vector.fromList . map snd)
+          , Mappend "Data.Series.Unboxed" Data.Series.Unboxed.fromList
+          , Mappend "Data.Vector.Unboxed" (Data.Vector.Unboxed.fromList . map snd)
           ])
     , bgroup
       "Slice by keys (Randomized)"
@@ -127,7 +127,7 @@ main = do
           , SliceByKeys "Data.Series" 
                         Data.Series.fromList
                         (\ks xs -> xs `Data.Series.select` Index.fromSet ks)
-          , SliceByKeys "Data.Series" 
+          , SliceByKeys "Data.Series.Unboxed" 
                         Data.Series.Unboxed.fromList
                         (\ks xs -> xs `Data.Series.Unboxed.select` Index.fromSet ks)
           ])

@@ -2,6 +2,7 @@ packages: **/*.cabal
 test-show-details: streaming
 
 -- Optimization level for the package itself
+profiling: True
 library-profiling: True
 executable-profiling: True
 optimization: 2

@@ -41,7 +41,7 @@ import           Control.Foldl          ( Fold(..), FoldM(..) )
 import qualified Control.Foldl          as Fold
 import           Control.Monad.ST       ( runST )
 import           Data.Bifoldable        ( Bifoldable )
-import qualified Data.Bifoldable        as Bifoldable  
+import qualified Data.Bifoldable        as Bifoldable
 import qualified Data.Foldable          as Foldable
 import           Data.Foldable.WithIndex ( FoldableWithIndex(..))
 import           Data.Function          ( on )
@@ -51,8 +51,8 @@ import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as MS
 import           Data.MonoTraversable   ( MonoFoldable, Element, ofoldlUnwrap, ofoldMUnwrap )
-import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
+import           Data.Series.Index.Internal ( Index(..) )
 import qualified Data.Series.Index.Internal as Index.Internal
 import qualified Data.Set               as Set
 import           Data.Traversable.WithIndex ( TraversableWithIndex(..) )
@@ -347,23 +347,36 @@ instance (Vector v a, Ord k) => Semigroup (Series v k a) where
     {-# INLINE (<>) #-}
     (<>) :: Series v k a -> Series v k a -> Series v k a
     (MkSeries ks1 vs1) <> (MkSeries ks2 vs2)
-        = let allKeys = ks1 <> ks2
-              newValues = Vector.fromListN (Index.size allKeys) (pick <$> Index.toAscList allKeys)
-            in MkSeries allKeys newValues
-        where
-            -- TODO: would it be faster to use Set.disjointUnion 
-            --       in order to pick from left and right?
-            pick key = case findKeyIndex key of
-                Left  ix -> Vector.unsafeIndex vs1 ix
-                Right ix -> Vector.unsafeIndex vs2 ix
-            
-            findKeyIndex k 
-                = case k `Index.lookupIndex` ks1 of
-                    Just ix -> Left ix
-                    -- Not safe but we know `k` is either in `ks1` or `ks2`
-                    -- Note that this choice makes (<>) left-biased: if there are duplicate keys,
-                    -- the value from the left series is preferred.
-                    Nothing -> Right $ k `Index.Internal.findIndex` ks2
+        = let allKeys = indexed SLeft ks1 `Index.union` indexed SRight ks2
+              newValues = Vector.convert (Boxed.map pick $ Index.toAscVector allKeys)
+            in MkSeries (Index.Internal.mapMonotonic extract allKeys) newValues
+        where            
+            pick (SLeft  ix _) = Vector.unsafeIndex vs1 ix
+            pick (SRight ix _) = Vector.unsafeIndex vs2 ix
+            -- TODO: sort by uniq in vector-algorithms
+            indexed :: (Int -> b -> Second Int b) -> Index b -> Index (Second Int b)
+            indexed f = Index.Internal.fromDistinctAscVector 
+                      . Boxed.map (uncurry f) 
+                      . Boxed.indexed 
+                      . Index.toAscVector
+
+-- This datatype allows to determine from which of two 'Index' data come from,
+-- while forcing comparisons only on the second element of a tuple
+data Second a b 
+    = SLeft  !a !b
+    | SRight !a !b
+
+extract :: Second a b -> b
+extract (SLeft  _ y) = y
+extract (SRight _ y) = y
+{-# INLINE extract #-}
+
+instance Eq b => Eq (Second a b) where
+    (==) = (==) `on` extract
+
+instance (Ord b) => Ord (Second a b) where
+    compare = compare `on` extract
+    {-# INLINE compare #-}
 
 
 instance (Vector v a, Ord k) => Monoid (Series v k a) where
