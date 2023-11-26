@@ -2,6 +2,7 @@
 module Test.Data.Series.Index (tests) where
 
 import qualified Data.Series.Index    as Index
+import qualified Data.Series.Index.Internal as Index.Internal
 import qualified Data.Set             as Set
 import qualified Data.Vector          as Vector
 
@@ -18,9 +19,9 @@ tests :: TestTree
 tests = testGroup "Data.Series.Index" [ testPropRange
                                       , testPropFromToSet
                                       , testPropFromToList
-                                      --, testPropFromToAscList
+                                      , testPropFromToAscList
                                       , testPropFromToVector
-                                      --, testPropFromToAscVector
+                                      , testPropFromToAscVector
                                       , testPropMemberNotMember
                                       , testPropFilter
                                       ]
@@ -43,37 +44,54 @@ testPropRange = testProperty "range always includes the start, and all elements 
 
 
 testPropFromToSet :: TestTree
-testPropFromToSet = testProperty "fromSet / toSet" $ property $ do
-    ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
-    tripping (Set.fromList ms) Index.fromSet (Just . Index.toSet)
+testPropFromToSet = testGroup "conversion to/from Set" 
+    [ testProperty "fromSet / toSet" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+        tripping (Set.fromList ms) Index.fromSet (Just . Index.toSet)
+    , testProperty "toIndex / fromIndex" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+        tripping (Set.fromList ms) (Index.toIndex :: Set.Set (Char, Char) -> Index.Index (Char, Char)) (Just . Index.fromIndex)
+    ]
 
 
 testPropFromToList :: TestTree
-testPropFromToList = testProperty "fromList / toAscList" $ property $ do
+testPropFromToList = testGroup "conversion to/from list" 
+    [ testProperty "fromList / toAscList" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+        let index = Index.fromList ms
+        tripping index (reverse . Index.toAscList) (Just . Index.fromList)
+    , testProperty "toIndex / fromIndex" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+        let index = Index.toIndex ms :: Index.Index (Char, Char)
+        tripping index (reverse . Index.fromIndex) (Just . (Index.toIndex :: [(Char, Char)] -> Index.Index (Char, Char)))
+    ]
+
+
+testPropFromToAscList :: TestTree
+testPropFromToAscList = testProperty "fromAscList / toAscList" $ property $ do
     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
     let index = Index.fromList ms
-    tripping index (reverse . Index.toAscList) (Just . Index.fromList)
-
-
--- testPropFromToAscList :: TestTree
--- testPropFromToAscList = testProperty "fromAscList / toAscList" $ property $ do
---     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
---     let index = Index.fromList ms
---     tripping index Index.toAscList (Just . Index.fromAscList)
+    tripping index Index.toAscList (Just . Index.Internal.fromAscList)
 
 
 testPropFromToVector :: TestTree
-testPropFromToVector = testProperty "fromVector / toAscVector" $ property $ do
+testPropFromToVector = testGroup "conversion to/from Vector"
+    [ testProperty "fromVector / toAscVector" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+        let index = Index.fromList ms
+        tripping index (Vector.reverse . Index.toAscVector) (Just . Index.fromVector)
+    , testProperty "toIndex / fromIndex" $ property $ do
+        ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
+        let index = Index.toIndex ms :: Index.Index (Char, Char)
+        tripping index (Vector.reverse . Index.fromIndex) (Just . (Index.toIndex :: Vector.Vector (Char, Char) -> Index.Index (Char, Char)))
+    ]
+
+
+testPropFromToAscVector :: TestTree
+testPropFromToAscVector = testProperty "fromAscVector / toAscVector" $ property $ do
     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
     let index = Index.fromList ms
-    tripping index (Vector.reverse . Index.toAscVector) (Just . Index.fromVector)
-
-
--- testPropFromToAscVector :: TestTree
--- testPropFromToAscVector = testProperty "fromAscVector / toAscVector" $ property $ do
---     ms <- forAll $ Gen.list (Range.linear 0 50) ((,) <$> Gen.alpha <*> Gen.alpha)
---     let index = Index.fromList ms
---     tripping index (Index.toAscVector :: Index.Index (Char, Char) -> Vector.Vector (Char, Char)) (Just . Index.fromAscVector)
+    tripping index (Index.toAscVector :: Index.Index (Char, Char) -> Vector.Vector (Char, Char)) (Just . Index.Internal.fromAscVector)
 
 
 testPropMemberNotMember :: TestTree
