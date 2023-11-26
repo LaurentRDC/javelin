@@ -323,7 +323,7 @@ toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Index.toAscList ks)
 -- | Construct a series from a strict 'Data.Map.Strict.Map'.
 fromStrictMap :: (Vector v a) => MS.Map k a -> Series v k a
 {-# INLINE fromStrictMap #-}
-fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
+fromStrictMap mp = MkSeries { index  = Index.toIndex $ MS.keysSet mp
                             , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                             }
 
@@ -331,7 +331,7 @@ fromStrictMap mp = MkSeries { index  = Index.fromSet $ MS.keysSet mp
 instance (Vector v a) => IsSeries (IntMap a) v Int a where
     toSeries :: IntMap a -> Series v Int a
     toSeries im = MkSeries 
-                { index  = Index.Internal.fromDistinctAscList $ IntMap.keys im
+                { index  = Index.toIndex $ IntMap.keysSet im
                 , values = Vector.fromListN (IntMap.size im)  $ IntMap.elems im 
                 }
     {-# INLINE toSeries #-}

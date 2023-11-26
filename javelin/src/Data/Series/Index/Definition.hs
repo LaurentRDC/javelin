@@ -20,6 +20,7 @@ module Data.Series.Index.Definition (
     singleton,
     unfoldr,
     range,
+    IsIndex(..),
     fromSet,
     fromList,
     fromAscList,
@@ -64,14 +65,20 @@ module Data.Series.Index.Definition (
 import           Control.DeepSeq        ( NFData )
 import           Control.Monad          ( guard )
 import           Control.Monad.ST       ( runST )
+import           Data.Coerce            ( coerce )
 import           Data.Functor           ( ($>) )
+import           Data.IntSet            ( IntSet )
+import qualified Data.IntSet            as IntSet
 import qualified Data.List              as List
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Traversable       as Traversable
+import qualified Data.Vector            as Boxed
+import           Data.Vector.Algorithms.Intro ( sortUniq )
 import           Data.Vector.Generic    ( Vector )
 import qualified Data.Vector.Generic    as Vector
 import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Unboxed    as Unboxed
 import           GHC.Exts               ( IsList )
 import qualified GHC.Exts               as Exts
 import           GHC.Stack              ( HasCallStack )
@@ -147,6 +154,74 @@ range next start end
 {-# INLINE range #-}
 
 
+-- | The 'IsIndex' typeclass allow for ad-hoc definition
+-- of conversion functions, converting to / from 'Index'.
+class IsIndex t k where
+    -- | Construct an 'Index' from some container of keys. There is no
+    -- condition on the order of keys. Duplicate keys are silently dropped.
+    toIndex    :: t -> Index k
+
+    -- | Construct a container from keys of an 'Index'. 
+    -- The elements are returned in ascending order of keys.
+    fromIndex  :: Index k -> t
+
+
+instance IsIndex (Set k) k where
+    -- | \(O(1)\) Build an 'Index' from a 'Set'.
+    toIndex :: Set k -> Index k
+    toIndex = coerce
+    {-# INLINE toIndex #-}
+
+    -- | \(O(1)\) Build an 'Index' from a 'Set'.
+    fromIndex :: Index k -> Set k
+    fromIndex = coerce
+    {-# INLINE fromIndex #-}
+
+
+instance Ord k => IsIndex [k] k where
+    -- | \(O(n \log n)\) Build an 'Index' from a list.
+    toIndex :: [k] -> Index k
+    toIndex = fromList
+    {-# INLINE toIndex #-}
+
+    -- | \(O(n)\) Convert an 'Index' to a list.
+    fromIndex :: Index k -> [k]
+    fromIndex = toAscList
+    {-# INLINE fromIndex #-}
+
+
+instance IsIndex IntSet Int where
+    -- | \(O(n \min(n,W))\), where \W\ is the number of bits in an 'Int' on your platform (32 or 64).
+    toIndex :: IntSet -> Index Int
+    toIndex = fromDistinctAscList . IntSet.toList
+    {-# INLINE toIndex #-}
+    
+    -- | \(O(n)\) Convert an 'Index' to an 'IntSet.
+    fromIndex :: Index Int -> IntSet
+    fromIndex = IntSet.fromDistinctAscList . toAscList
+    {-# INLINE fromIndex #-}
+
+
+instance (Ord k) => IsIndex (Boxed.Vector k) k where
+    toIndex :: Boxed.Vector k -> Index k
+    toIndex = fromVector
+    {-# INLINE toIndex #-} 
+
+    fromIndex :: Index k -> Boxed.Vector k
+    fromIndex = toAscVector
+    {-# INLINE fromIndex #-}
+
+
+instance (Ord k, Unboxed.Unbox k) => IsIndex (Unboxed.Vector k) k where
+    toIndex :: Unboxed.Vector k -> Index k
+    toIndex = fromVector
+    {-# INLINE toIndex #-} 
+
+    fromIndex :: Index k -> Unboxed.Vector k
+    fromIndex = toAscVector
+    {-# INLINE fromIndex #-}
+
+
 -- | \(O(1)\) Build an 'Index' from a 'Set'.
 fromSet :: Set k -> Index k
 fromSet = MkIndex
@@ -193,7 +268,7 @@ fromDistinctAscList = MkIndex . Set.fromDistinctAscList
 --
 -- If the 'Vector' is already sorted, 'fromAscVector' is generally faster.
 fromVector :: (Vector v k, Ord k) => v k -> Index k
-fromVector = fromList . Vector.toList
+fromVector vs = fromDistinctAscVector $ runST $ Vector.thaw vs >>= sortUniq >>= Vector.freeze
 {-# INLINE fromVector #-}
 
 

@@ -64,6 +64,7 @@ module Data.Series.Index (
     singleton,
     unfoldr,
     range,
+    IsIndex(..),
     fromSet,
     fromList,
     fromVector,
@@ -97,7 +98,7 @@ module Data.Series.Index (
     delete,
 ) where
 
-import Data.Series.Index.Definition ( Index, singleton, unfoldr, range, fromSet, fromList, fromVector, toSet
+import Data.Series.Index.Definition ( Index, IsIndex(..), singleton, unfoldr, range, fromSet, fromList, fromVector, toSet
                                     , toAscList, toAscVector, null, member, notMember, union, intersection
                                     , difference, symmetricDifference, contains, size, take, drop, map
                                     , filter, traverse, lookupIndex, insert, delete 
