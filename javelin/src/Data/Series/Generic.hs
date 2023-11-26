@@ -6,7 +6,6 @@ module Data.Series.Generic (
 
     -- * Building/converting 'Series'
     singleton, fromIndex,
-    IsSeries(..),
     -- ** Lists
     fromList, toList,
     -- ** Vectors
@@ -17,6 +16,8 @@ module Data.Series.Generic (
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
     fromLazyMap, toLazyMap,
+    -- ** Ad-hoc conversion with other data structures
+    IsSeries(..),
 
     -- * Mapping and filtering
     map, mapWithKey, mapIndex, concatMap, filter, filterWithKey, null, length, sum, 

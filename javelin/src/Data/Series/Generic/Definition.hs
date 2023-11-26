@@ -56,6 +56,7 @@ import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as MS
 import           Data.MonoTraversable   ( MonoFoldable, Element, ofoldlUnwrap, ofoldMUnwrap )
+import           Data.Semigroup         ( Semigroup(..) )
 import qualified Data.Series.Index      as Index
 import           Data.Series.Index.Internal ( Index(..) )
 import qualified Data.Series.Index.Internal as Index.Internal
@@ -436,37 +437,11 @@ concatMap f = fromVector
 instance (Vector v a, Ord k) => Semigroup (Series v k a) where
     {-# INLINE (<>) #-}
     (<>) :: Series v k a -> Series v k a -> Series v k a
-    (MkSeries ks1 vs1) <> (MkSeries ks2 vs2)
-        = let allKeys = indexed SLeft ks1 `Index.union` indexed SRight ks2
-              newValues = Vector.convert (Boxed.map pick $ Index.toAscVector allKeys)
-            in MkSeries (Index.Internal.mapMonotonic extract allKeys) newValues
-        where            
-            pick (SLeft  ix _) = Vector.unsafeIndex vs1 ix
-            pick (SRight ix _) = Vector.unsafeIndex vs2 ix
-            -- TODO: sort by uniq in vector-algorithms
-            indexed :: (Int -> b -> Second Int b) -> Index b -> Index (Second Int b)
-            indexed f = Index.Internal.fromDistinctAscVector 
-                      . Boxed.map (uncurry f) 
-                      . Boxed.indexed 
-                      . Index.toAscVector
+    -- Despite all my effort, merging via conversion to Map remains fastest.
+    xs <> ys = toSeries $ toStrictMap xs <> toStrictMap ys
 
--- This datatype allows to determine from which of two 'Index' data come from,
--- while forcing comparisons only on the second element of a tuple
-data Second a b 
-    = SLeft  !a !b
-    | SRight !a !b
-
-extract :: Second a b -> b
-extract (SLeft  _ y) = y
-extract (SRight _ y) = y
-{-# INLINE extract #-}
-
-instance Eq b => Eq (Second a b) where
-    (==) = (==) `on` extract
-
-instance (Ord b) => Ord (Second a b) where
-    compare = compare `on` extract
-    {-# INLINE compare #-}
+    {-# INLINE sconcat #-}
+    sconcat = toSeries . sconcat . fmap toStrictMap
 
 
 instance (Vector v a, Ord k) => Monoid (Series v k a) where
@@ -477,6 +452,10 @@ instance (Vector v a, Ord k) => Monoid (Series v k a) where
     {-# INLINE mappend #-}
     mappend :: Series v k a -> Series v k a -> Series v k a
     mappend = (<>)
+
+    {-# INLINE mconcat #-}
+    mconcat :: [Series v k a] -> Series v k a
+    mconcat = toSeries . mconcat . fmap toStrictMap
 
 
 instance (Vector v a, Eq k, Eq a) => Eq (Series v k a) where

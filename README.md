@@ -34,54 +34,54 @@ Looking up random integers:
 
 |Name|10|100|1000|10000|
 |---|---|---|---|---|
-|Data.Map.Lazy|84.09 ns|1.073 μs|44.24 μs|1.018 ms|
-|Data.Map.Strict|99.60 ns|1.288 μs|47.03 μs|1.052 ms|
-|Data.Series|152.5 ns|1.806 μs|61.03 μs|1.178 ms|
-|Data.Vector|169.1 ns|10.12 μs|900.1 μs|99.62 ms|
-|Data.Series.Unboxed|174.5 ns|2.067 μs|62.12 μs|1.191 ms|
-|Data.Vector.Unboxed|114.9 ns|4.251 μs|284.7 μs|27.94 ms|
+|Data.Map.Lazy|89.53 ns|1.269 μs|50.53 μs|1.115 ms|
+|Data.Map.Strict|103.5 ns|1.497 μs|51.25 μs|1.153 ms|
+|Data.Series|176.9 ns|2.164 μs|68.50 μs|1.287 ms|
+|Data.Vector|188.8 ns|11.06 μs|924.4 μs|98.32 ms|
+|Data.Series.Unboxed|182.8 ns|2.204 μs|68.94 μs|1.268 ms|
+|Data.Vector.Unboxed|133.4 ns|4.446 μs|307.5 μs|29.40 ms|
 
 Summing random integers:
 
 |Name|10|100|1000|10000|100000|1000000|
 |---|---|---|---|---|---|---|
-|Data.Map.Lazy|38.67 ns|306.6 ns|3.330 μs|59.70 μs|1275 μs|18.31 ms|
-|Data.Map.Strict|38.53 ns|291.0 ns|3.520 μs|59.45 μs|1464 μs|19.06 ms|
-|Data.Series|27.91 ns|232.8 ns|2.485 μs|27.24 μs|473.8 μs|12.47 ms|
-|Data.Vector|27.29 ns|236.4 ns|2.402 μs|25.05 μs|298.7 μs|4.928 ms|
-|Data.Series.Unboxed|13.22 ns|64.80 ns|0.476 μs|4.685 μs|45.31 μs|0.508 ms|
-|Data.Vector.Unboxed|13.83 ns|62.11 ns|0.499 μs|4.842 μs|46.86 μs|0.508 ms|
+|Data.Map.Lazy|44.80 ns|330.4 ns|3.868 μs|67.41 μs|1504 μs|20.14 ms|
+|Data.Map.Strict|44.39 ns|331.8 ns|3.701 μs|70.92 μs|1770 μs|21.08 ms|
+|Data.Series|31.21 ns|265.1 ns|2.594 μs|30.32 μs|665.9 μs|13.94 ms|
+|Data.Vector|31.01 ns|261.7 ns|2.623 μs|27.30 μs|366.1 μs|5.814 ms|
+|Data.Series.Unboxed|16.04 ns|71.59 ns|0.520 μs|5.053 μs|50.91 μs|0.608 ms|
+|Data.Vector.Unboxed|17.40 ns|75.46 ns|0.564 μs|5.240 μs|51.34 μs|0.612 ms|
 
 Averaging elements using 'Control.Foldl.mean' from the 'foldl' package:
 
 |Name|10|100|1000|10000|100000|1000000|
 |---|---|---|---|---|---|---|
-|Data.Map.Lazy|153.5 ns|1591 ns|16.55 μs|174.9 μs|2.967 ms|64.65 ms|
-|Data.Map.Strict|159.8 ns|1589 ns|17.03 μs|182.2 μs|2.740 ms|67.65 ms|
-|Data.Series|44.86 ns|585.1 ns|6.062 μs|60.04 μs|0.823 ms|14.02 ms|
-|Data.Vector|43.97 ns|591.4 ns|6.138 μs|60.43 μs|0.641 ms|7.364 ms|
-|Data.Series.Unboxed|30.84 ns|438.1 ns|4.877 μs|49.59 μs|0.495 ms|4.954 ms|
-|Data.Vector.Unboxed|29.91 ns|438.5 ns|4.969 μs|49.55 μs|0.489 ms|4.963 ms|
+|Data.Map.Lazy|175.8 ns|1636 ns|17.80 μs|191.2 μs|3.268 ms|64.55 ms|
+|Data.Map.Strict|176.4 ns|1727 ns|18.55 μs|208.8 μs|2.826 ms|69.86 ms|
+|Data.Series|50.17 ns|621.3 ns|6.488 μs|63.07 μs|0.832 ms|13.66 ms|
+|Data.Vector|55.49 ns|610.3 ns|6.345 μs|63.08 μs|0.682 ms|7.606 ms|
+|Data.Series.Unboxed|32.92 ns|450.7 ns|5.112 μs|52.97 μs|0.509 ms|5.353 ms|
+|Data.Vector.Unboxed|30.86 ns|448.2 ns|5.343 μs|51.13 μs|0.507 ms|5.420 ms|
 
-Appending integers:
+Concatenating with `(<>)`:
 
 |Name|10|100|1000|10000|100000|1000000|
 |---|---|---|---|---|---|---|
-|Data.Map.Lazy|0.204 μs|2.407 μs|26.84 μs|0.265 ms|4.914 ms|65.72 ms|
-|Data.Map.Strict|0.205 μs|2.468 μs|25.72 μs|0.267 ms|2.753 ms|41.35 ms|
-|Data.Series|2.914 μs|29.37 μs|431.2 μs|11.45 ms|199.6 ms|2309 ms|
-|Data.Vector|0.083 μs|0.457 μs|4.382 μs|0.045 ms|0.519 ms|5.389 ms|
-|Data.Series.Unboxed|3.030 μs|29.94 μs|458.1 μs|10.37 ms|173.7 ms|1935 ms|
-|Data.Vector.Unboxed|0.101 μs|0.120 μs|0.493 μs|0.004 ms|0.049 ms|0.746 ms|
+|Data.Map.Lazy|212.4 ns|2.818 μs|27.78 μs|0.274 ms|5.286 ms|67.65 ms|
+|Data.Map.Strict|228.3 ns|2.348 μs|26.79 μs|0.279 ms|2.752 ms|40.90 ms|
+|Data.Series|1469 ns|15.55 μs|164.6 μs|2.833 ms|44.03 ms|550.2 ms|
+|Data.Vector|94.14 ns|0.605 μs|4.276 μs|0.048 ms|0.506 ms|5.337 ms|
+|Data.Series.Unboxed|1574 ns|15.76 μs|168.5 μs|2.900 ms|53.45 ms|565.5 ms|
+|Data.Vector.Unboxed|103.9 ns|0.122 μs|0.512 μs|0.004 ms|0.054 ms|0.609 ms|
 
 Extracing a 10% chunk of the container:
 
 |Name|10|100|1000|10000|100000|1000000|
 |---|---|---|---|---|---|---|
-|Data.Map.Lazy|70.72 ns|661.8 ns|5.993 μs|80.95 μs|1.024 ms|25.02 ms|
-|Data.Map.Strict|77.05 ns|610.5 ns|5.952 μs|80.67 μs|0.923 ms|20.14 ms|
-|Data.Series|182.8 ns|918.3 ns|9.246 μs|187.9 μs|2.198 ms|43.99 ms|
-|Data.Series.Unboxed|171.3 ns|966.3 ns|8.778 μs|179.0 μs|2.177 ms|40.92 ms|
+|Data.Map.Lazy|72.12 ns|650.4 ns|5.679 μs|89.16 μs|1.238 ms|31.56 ms|
+|Data.Map.Strict|77.67 ns|628.2 ns|5.714 μs|85.86 μs|1.200 ms|20.89 ms|
+|Data.Series|177.4 ns|938.3 ns|9.071 μs|194.9 μs|2.913 ms|44.76 ms|
+|Data.Series.Unboxed|186.7 ns|1024 ns|9.087 μs|189.3 μs|2.485 ms|42.68 ms|
 
 You can run the benchmarks above by running:
 

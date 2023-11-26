@@ -35,7 +35,6 @@ module Data.Series (
     Series, index, values,
 
     -- * Building/converting 'Series'
-    IsSeries(..),
     singleton, fromIndex,
     -- ** Lists
     fromList, toList,
@@ -47,6 +46,8 @@ module Data.Series (
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
     fromLazyMap, toLazyMap,
+    -- ** Ad-hoc conversion with other data structures
+    IsSeries(..),
     -- ** Conversion between 'Series' types
     G.convert,
 

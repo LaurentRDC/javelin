@@ -20,18 +20,14 @@ module Data.Series.Index.Definition (
     singleton,
     unfoldr,
     range,
+    fromSet, toSet,
+    fromList, toAscList,
+    fromAscList, fromDistinctAscList,
+    fromVector, toAscVector,
+    fromAscVector, fromDistinctAscVector,
+    -- ** Ad-hoc conversion with other data structures
     IsIndex(..),
-    fromSet,
-    fromList,
-    fromAscList,
-    fromDistinctAscList,
-    fromVector,
-    fromAscVector,
-    fromDistinctAscVector,
-    toSet,
-    toAscList,
-    toAscVector,
-
+    
     -- * Set-like operations
     null,
     member,

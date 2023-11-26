@@ -40,7 +40,6 @@ module Data.Series.Unboxed (
     Series, index, values,
 
     -- * Building/converting 'Series'
-    IsSeries(..),
     singleton, fromIndex,
     -- ** Lists
     fromList, toList,
@@ -52,6 +51,8 @@ module Data.Series.Unboxed (
     fromStrictMap, toStrictMap,
     -- ** Lazy Maps
     fromLazyMap, toLazyMap,
+    -- ** Ad-hoc conversion with other data structures
+    IsSeries(..),
     -- ** Conversion between 'Series' types
     G.convert,
 
