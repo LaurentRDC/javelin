@@ -19,10 +19,6 @@ module Data.Series.Generic.View (
     catMaybes,
     dropIndex,
 
-    -- * Finding indices based on values
-    argmax,
-    argmin,
-
     -- * Creating and accessing ranges
     Range(..),
     to,
@@ -30,7 +26,7 @@ module Data.Series.Generic.View (
     upto,
 ) where
 
-import           Data.Ord               (Down(..))
+
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Series.Index.Internal as Index.Internal
@@ -335,59 +331,3 @@ slice start stop (MkSeries ks vs)
                 }
 
 
--- | \(O(n)\) Find the index of the maximum element in the input series.
--- If the input series is empty, 'Nothing' is returned.
---
--- The index of the first occurrence of the maximum element is returned.
---
--- >>> import qualified Data.Series as Series 
--- >>> :{ 
---     let (xs :: Series.Series Int Int) 
---          = Series.fromList [ (1, 0)
---                            , (2, 1)
---                            , (3, 2)
---                            , (4, 7)
---                            , (5, 4)
---                            , (6, 5)
---                            ]
---     in argmax xs 
--- :}
--- Just 4
-argmax :: (Ord a, Vector v a)
-       => Series v k a
-       -> Maybe k
-{-# INLINE argmax #-}
-argmax xs | G.null xs = Nothing
-          | otherwise = Just 
-                      . fst 
-                      -- We're forcing the use of boxed vectors in order to
-                      -- reduce the constraints on the vector instance
-                      . Boxed.maximumOn snd 
-                      . G.toVector
-                      . G.convert
-                      $ xs
-
-
--- | \(O(n)\) Find the index of the minimum element in the input series.
--- If the input series is empty, 'Nothing' is returned.
---
--- The index of the first occurrence of the minimum element is returned.
---
--- >>> import qualified Data.Series as Series 
--- >>> :{ 
---     let (xs :: Series.Series Int Int) 
---          = Series.fromList [ (1, 1)
---                            , (2, 1)
---                            , (3, 2)
---                            , (4, 0)
---                            , (5, 4)
---                            , (6, 5)
---                            ]
---     in argmin xs 
--- :}
--- Just 4
-argmin :: (Ord a, Vector v a, Vector v (Down a))
-       => Series v k a
-       -> Maybe k
-{-# INLINE argmin #-}
-argmin = argmax . G.map Down

@@ -71,8 +71,6 @@ module Data.Series (
     select, selectWhere, Range, to, from, upto, Selection, 
     -- ** Single-element access
     at, iat,
-    -- ** Finding indices based on values
-    argmax, argmin,
 
     -- * Replacing values
     replace, (|->), (<-|),
@@ -88,6 +86,8 @@ module Data.Series (
     fold, foldM, foldWithKey, foldMWithKey, foldMapWithKey,
     -- ** Specialized folds
     G.mean, G.variance, G.std,
+    length, null, all, any, and, or, sum, product, maximum, maximumOn, minimum, minimumOn, 
+    argmin, argmax,
 
     -- * Scans
     postscanl, prescanl,
@@ -102,7 +102,9 @@ import qualified Data.Series.Generic as G
 import           Data.Series.Generic.Zip ( skipStrategy, mapStrategy, constStrategy )
 import           Data.Vector         ( Vector )
 
-import           Prelude             hiding (map, concatMap, zipWith, zipWith3, filter, take, takeWhile, drop, dropWhile, last, unzip, unzip3)
+import           Prelude             hiding ( map, concatMap, zipWith, zipWith3, filter, take, takeWhile, drop, dropWhile, last, unzip, unzip3
+                                            , length, null, all, any, and, or, sum, product, maximum, minimum, 
+                                            )
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -519,15 +521,6 @@ zipWithMatched3 = G.zipWithMatched3
 
 -- | Apply a function elementwise to two series, matching elements
 -- based on their keys. Keys present only in the left or right series are dropped.
--- 
---
--- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
--- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
--- >>> zipWithKey (\k x y -> length k + x + y) xs ys
---   index | values
---   ----- | ------
--- "alpha" |     15
---  "beta" |     16
 --
 -- To combine elements where keys are in either series, see 'zipWith'
 zipWithKey :: (Ord k) 
@@ -538,17 +531,8 @@ zipWithKey = G.zipWithKey
 
 -- | Apply a function elementwise to three series, matching elements
 -- based on their keys. Keys present only in the left or right series are dropped.
--- 
--- >>> let xs = Series.fromList [ ("alpha", 0::Int), ("beta", 1), ("gamma", 2) ]
--- >>> let ys = Series.fromList [ ("alpha", 10::Int), ("beta", 11), ("delta", 13) ]
--- >>> let zs = Series.fromList [ ("alpha", 20::Int), ("beta", 7), ("delta", 5) ]
--- >>> zipWithKey3 (\k x y z -> length k + x + y + z) xs ys zs
---   index | values
---   ----- | ------
--- "alpha" |     35
---  "beta" |     23
 --
--- To combine elements where keys are in either series, see 'zipWith'
+-- To combine elements where keys are in any series, see 'zipWith3'
 zipWithKey3 :: (Ord k) 
             => (k -> a -> b -> c -> d) 
             -> Series k a 
@@ -864,49 +848,6 @@ iat :: Series k a -> Int -> Maybe a
 iat = G.iat
 
 
--- | \(O(n)\) Find the index of the maximum element in the input series.
--- If the input series is empty, 'Nothing' is returned.
---
--- The index of the first occurrence of the maximum element is returned.
---
--- >>> :{ 
---     let (xs :: Series Int Int) 
---          = Series.fromList [ (1, 0)
---                            , (2, 1)
---                            , (3, 2)
---                            , (4, 7)
---                            , (5, 4)
---                            , (6, 5)
---                            ]
---     in argmax xs 
--- :}
--- Just 4
-argmax :: Ord a => Series k a -> Maybe k
-argmax = G.argmax
-{-# INLINE argmax #-}
-
-
--- | \(O(n)\) Find the index of the minimum element in the input series.
--- If the input series is empty, 'Nothing' is returned.
---
--- The index of the first occurrence of the minimum element is returned.
--- >>> :{ 
---     let (xs :: Series Int Int) 
---          = Series.fromList [ (1, 1)
---                            , (2, 1)
---                            , (3, 2)
---                            , (4, 0)
---                            , (5, 4)
---                            , (6, 5)
---                            ]
---     in argmin xs 
--- :}
--- Just 4
-argmin :: Ord a => Series k a -> Maybe k
-argmin = G.argmin
-{-# INLINE argmin #-}
-
-
 -- | Replace values in the right series from values in the left series at matching keys.
 -- Keys not in the right series are unaffected.
 -- 
@@ -1198,6 +1139,129 @@ windowing :: Ord k
           -> Series k b
 {-# INLINE windowing #-}
 windowing = G.windowing
+
+
+-- | /O(1)/ Test whether a 'Series' is empty.
+null :: Series k a -> Bool
+{-# INLINE null #-}
+null = G.null
+
+
+-- |/O(1)/ Extract the length of a 'Series'.
+length :: Series k a -> Int
+{-# INLINE length #-}
+length = G.length
+
+
+-- | /O(n)/ Check if all elements satisfy the predicate.
+all :: (a -> Bool) -> Series k a -> Bool
+{-# INLINE all #-}
+all = G.all
+
+
+-- | /O(n)/ Check if any element satisfies the predicate.
+any :: (a -> Bool) -> Series k a -> Bool
+{-# INLINE any #-}
+any = G.any
+
+
+-- | /O(n)/ Check if all elements are 'True'.
+and :: Series k Bool -> Bool
+{-# INLINE and #-}
+and = G.and
+
+
+-- | /O(n)/ Check if any element is 'True'.
+or :: Series k Bool -> Bool
+{-# INLINE or #-}
+or = G.or
+
+
+-- | /O(n)/ Compute the sum of the elements.
+sum :: (Num a) => Series k a -> a
+{-# INLINE sum #-}
+sum = G.sum
+
+
+-- | /O(n)/ Compute the product of the elements.
+product :: (Num a) => Series k a -> a
+{-# INLINE product #-}
+product = G.product
+
+
+-- | /O(n)/ Yield the maximum element of the series. The series may not be
+-- empty. In case of a tie, the first occurrence wins.
+-- 
+-- To find the key associated with the maximum value, see 'argmax'.
+maximum :: (Ord a) => Series k a -> a
+{-# INLINE maximum #-}
+maximum = G.maximum
+
+
+-- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
+-- In case of a tie, the first occurrence wins.
+maximumOn :: (Ord b) => (a -> b) -> Series k a -> a
+{-# INLINE maximumOn #-}
+maximumOn = G.maximumOn
+
+
+-- | /O(n)/ Yield the minimum element of the series. The series may not be
+-- empty. In case of a tie, the first occurrence wins.
+--
+-- To find the key associated with the minimum value, see 'argmin'.
+minimum :: (Ord a) => Series k a -> a
+{-# INLINE minimum #-}
+minimum = G.minimum
+
+
+-- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
+-- In case of a tie, the first occurrence wins.
+minimumOn :: (Ord b) => (a -> b) -> Series k a -> a
+{-# INLINE minimumOn #-}
+minimumOn = G.minimumOn
+
+
+-- | \(O(n)\) Find the index of the maximum element in the input series.
+-- If the input series is empty, 'Nothing' is returned.
+--
+-- The index of the first occurrence of the maximum element is returned.
+--
+-- >>> :{ 
+--     let (xs :: Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 7)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmax xs 
+-- :}
+-- Just 4
+argmax :: Ord a => Series k a -> Maybe k
+argmax = G.argmax
+{-# INLINE argmax #-}
+
+
+-- | \(O(n)\) Find the index of the minimum element in the input series.
+-- If the input series is empty, 'Nothing' is returned.
+--
+-- The index of the first occurrence of the minimum element is returned.
+-- >>> :{ 
+--     let (xs :: Series Int Int) 
+--          = Series.fromList [ (1, 1)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 0)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmin xs 
+-- :}
+-- Just 4
+argmin :: Ord a => Series k a -> Maybe k
+argmin = G.argmin
+{-# INLINE argmin #-}
 
 
 -- | \(O(n)\) Left-to-right postscan.

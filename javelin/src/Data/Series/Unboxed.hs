@@ -57,7 +57,7 @@ module Data.Series.Unboxed (
     G.convert,
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, concatMap, null, length,
+    map, mapWithKey, mapIndex, concatMap,
     take, takeWhile, drop, dropWhile, filter, filterWithKey,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
@@ -76,8 +76,6 @@ module Data.Series.Unboxed (
     select, selectWhere, Range, to, from, upto, Selection, 
     -- ** Single-element access
     at, iat,
-    -- ** Finding indices based on values
-    argmax, argmin,
 
     -- * Replacement
     replace, (|->), (<-|),
@@ -91,7 +89,8 @@ module Data.Series.Unboxed (
     fold, foldM, foldWithKey, foldMWithKey, foldMap, foldMap', foldMapWithKey,
     -- ** Specialized folds
     G.mean, G.variance, G.std,
-    all, any, and, or, sum, product, maximum, minimum,
+    null, length, all, any, and, or, sum, product, maximum, maximumOn, minimum, minimumOn,
+    argmin, argmax,
 
     -- * Scans
     postscanl, prescanl,
@@ -796,55 +795,6 @@ iat :: Unbox a => Series k a -> Int -> Maybe a
 iat = G.iat
 
 
--- | \(O(n)\) Find the index of the maximum element in the input series.
--- If the input series is empty, 'Nothing' is returned.
---
--- The index of the first occurrence of the maximum element is returned.
---
--- >>> import qualified Data.Series.Unboxed as Series 
--- >>> :{ 
---     let (xs :: Series.Series Int Int) 
---          = Series.fromList [ (1, 0)
---                            , (2, 1)
---                            , (3, 2)
---                            , (4, 7)
---                            , (5, 4)
---                            , (6, 5)
---                            ]
---     in argmax xs 
--- :}
--- Just 4
-argmax :: (Ord a, Unbox a)
-       => Series k a
-       -> Maybe k
-argmax = G.argmax
-{-# INLINE argmax #-}
-
-
--- | \(O(n)\) Find the index of the minimum element in the input series.
--- If the input series is empty, 'Nothing' is returned.
---
--- The index of the first occurrence of the minimum element is returned.
--- >>> import qualified Data.Series.Unboxed as Series 
--- >>> :{ 
---     let (xs :: Series.Series Int Int) 
---          = Series.fromList [ (1, 1)
---                            , (2, 1)
---                            , (3, 2)
---                            , (4, 0)
---                            , (5, 4)
---                            , (6, 5)
---                            ]
---     in argmin xs 
--- :}
--- Just 4
-argmin :: (Ord a, Unbox a)
-       => Series k a
-       -> Maybe k
-argmin = G.argmin
-{-# INLINE argmin #-}
-
-
 -- | Replace values in the right series from values in the left series at matching keys.
 -- Keys not in the right series are unaffected.
 -- 
@@ -1126,51 +1076,114 @@ length = G.length
 -- | /O(n)/ Check if all elements satisfy the predicate.
 all :: Unbox a => (a -> Bool) -> Series k a -> Bool
 {-# INLINE all #-}
-all f = Vector.all f . values
+all = G.all
 
 
 -- | /O(n)/ Check if any element satisfies the predicate.
 any :: Unbox a => (a -> Bool) -> Series k a -> Bool
 {-# INLINE any #-}
-any f = Vector.any f . values
+any = G.any
 
 
 -- | /O(n)/ Check if all elements are 'True'.
 and :: Series k Bool -> Bool
 {-# INLINE and #-}
-and = Vector.and . values
+and = G.and
 
 
 -- | /O(n)/ Check if any element is 'True'.
 or :: Series k Bool -> Bool
 {-# INLINE or #-}
-or = Vector.or . values
+or = G.or
 
 
 -- | /O(n)/ Compute the sum of the elements.
 sum :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE sum #-}
-sum = Vector.sum . values
+sum = G.sum
 
 
 -- | /O(n)/ Compute the product of the elements.
 product :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE product #-}
-product = Vector.product . values
+product = G.product
 
 
 -- | /O(n)/ Yield the maximum element of the series. The series may not be
 -- empty. In case of a tie, the first occurrence wins.
-maximum :: (Unbox a, Ord a) => Series k a -> a
+maximum :: (Ord a, Unbox a) => Series k a -> a
 {-# INLINE maximum #-}
-maximum = Vector.maximum . values
+maximum = G.maximum
+
+
+-- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
+-- In case of a tie, the first occurrence wins.
+maximumOn :: (Ord b, Unbox a) => (a -> b) -> Series k a -> a
+{-# INLINE maximumOn #-}
+maximumOn = G.maximumOn
 
 
 -- | /O(n)/ Yield the minimum element of the series. The series may not be
 -- empty. In case of a tie, the first occurrence wins.
-minimum :: (Unbox a, Ord a) => Series k a -> a
+minimum :: (Ord a, Unbox a) => Series k a -> a
 {-# INLINE minimum #-}
-minimum = Vector.minimum . values
+minimum = G.minimum
+
+
+-- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
+-- In case of a tie, the first occurrence wins.
+minimumOn :: (Ord b, Unbox a) => (a -> b) -> Series k a -> a
+{-# INLINE minimumOn #-}
+minimumOn = G.minimumOn
+
+
+-- | \(O(n)\) Find the index of the maximum element in the input series.
+-- If the input series is empty, 'Nothing' is returned.
+--
+-- The index of the first occurrence of the maximum element is returned.
+--
+-- >>> import qualified Data.Series.Unboxed as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 7)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmax xs 
+-- :}
+-- Just 4
+argmax :: (Ord a, Unbox a)
+       => Series k a
+       -> Maybe k
+argmax = G.argmax
+{-# INLINE argmax #-}
+
+
+-- | \(O(n)\) Find the index of the minimum element in the input series.
+-- If the input series is empty, 'Nothing' is returned.
+--
+-- The index of the first occurrence of the minimum element is returned.
+-- >>> import qualified Data.Series.Unboxed as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 1)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 0)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmin xs 
+-- :}
+-- Just 4
+argmin :: (Ord a, Unbox a)
+       => Series k a
+       -> Maybe k
+argmin = G.argmin
+{-# INLINE argmin #-}
 
 
 -- | \(O(n)\) Left-to-right postscan.

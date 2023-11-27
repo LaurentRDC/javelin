@@ -20,14 +20,17 @@ module Data.Series.Generic (
     IsSeries(..),
 
     -- * Mapping and filtering
-    map, mapWithKey, mapIndex, concatMap, filter, filterWithKey, null, length, sum, 
+    map, mapWithKey, mapIndex, concatMap, filter, filterWithKey, 
     take, takeWhile, drop, dropWhile,
     -- ** Mapping with effects
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey,
 
     -- * Folding
     fold, foldM, foldWithKey, foldMWithKey, foldMap, foldMapWithKey,
+    -- ** Specialized folds
     mean, variance, std, 
+    length, null, all, any, and, or, sum, product, maximum, maximumOn, minimum, minimumOn,
+    argmax, argmin,
 
     -- * Scans
     postscanl, prescanl, forwardFill,
@@ -46,8 +49,6 @@ module Data.Series.Generic (
     select, selectWhere, Range, to, from, upto, Selection, 
     -- ** Single-element access
     at, iat,
-    -- ** Finding indices based on values
-    argmax, argmin,
 
     -- * Replacement
     replace, (|->), (<-|),
@@ -58,19 +59,20 @@ module Data.Series.Generic (
 ) where
 
 import Data.Series.Generic.Aggregation  ( groupBy, Grouping, aggregateWith, foldWith
-                                        , windowing, expanding 
+                                        , windowing, expanding, all, any, and, or, sum, product, maximum, maximumOn, minimum, minimumOn
+                                        , argmax, argmin,
                                         )
 import Data.Series.Generic.Definition   ( Series(index, values), IsSeries(..), Occurrence, convert, singleton, fromIndex, fromStrictMap
                                         , toStrictMap, fromLazyMap, toLazyMap, fromList, fromListDuplicates, toList
                                         , fromVector, fromVectorDuplicates, toVector
-                                        , map, mapWithKey, mapIndex, concatMap, null, length, sum, take, takeWhile, drop, dropWhile
+                                        , map, mapWithKey, mapIndex, concatMap, length, null, take, takeWhile, drop, dropWhile
                                         , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, fold, foldM
                                         , foldWithKey, foldMWithKey, foldMap, foldMapWithKey,
                                         )
 import Data.Series.Generic.Numeric      ( mean, variance, std )
 import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, filterWithKey, require, requireWith
-                                        , catMaybes, dropIndex, argmax, argmin
+                                        , catMaybes, dropIndex,
                                         )
 import Data.Series.Generic.Zip          ( zipWith, zipWithMatched, zipWithKey, zipWith3, zipWithMatched3, zipWithKey3, replace
                                         , (|->), (<-|), zipWithStrategy, zipWithStrategy3, ZipStrategy, skipStrategy, mapStrategy, constStrategy

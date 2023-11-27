@@ -9,16 +9,21 @@ module Data.Series.Generic.Aggregation (
     expanding,
     windowing,
 
+    -- * Folding
+    all, any, and, or, sum, product, maximum, maximumOn, minimum, minimumOn,
+    argmax, argmin,
 ) where
 
 import qualified Data.List 
 import qualified Data.Map.Strict                as Map
+import           Data.Ord                       ( Down(..) )
 import           Data.Series.Generic.Definition ( Series(..) )
 import qualified Data.Series.Generic.Definition as GSeries
 import           Data.Series.Generic.View       ( Range, slice, select )
+import qualified Data.Vector                    as Boxed
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
-import           Prelude                        hiding ( last )
+import           Prelude                        hiding ( last, null, length, all, any, and, or, sum, product, maximum, minimum )
 
 -- $setup
 -- >>> import qualified Data.Series as Series
@@ -189,3 +194,125 @@ windowing :: (Ord k, Vector v a, Vector v b)
 {-# INLINE windowing #-}
 windowing range agg series 
     = GSeries.mapWithKey (\k _ -> agg $ series `select` range k) series
+
+
+-- | /O(n)/ Check if all elements satisfy the predicate.
+all :: Vector v a => (a -> Bool) -> Series v k a -> Bool
+{-# INLINE all #-}
+all f = Vector.all f . values
+
+
+-- | /O(n)/ Check if any element satisfies the predicate.
+any :: Vector v a => (a -> Bool) -> Series v k a -> Bool
+{-# INLINE any #-}
+any f = Vector.any f . values
+
+
+-- | /O(n)/ Check if all elements are 'True'.
+and :: Vector v Bool => Series v k Bool -> Bool
+{-# INLINE and #-}
+and = Vector.and . values
+
+
+-- | /O(n)/ Check if any element is 'True'.
+or :: Vector v Bool => Series v k Bool -> Bool
+{-# INLINE or #-}
+or = Vector.or . values
+
+
+-- | /O(n)/ Compute the sum of the elements.
+sum :: (Num a, Vector v a) => Series v k a -> a
+{-# INLINE sum #-}
+sum = Vector.sum . values
+
+
+-- | /O(n)/ Compute the product of the elements.
+product :: (Num a, Vector v a) => Series v k a -> a
+{-# INLINE product #-}
+product = Vector.product . values
+
+
+-- | /O(n)/ Yield the maximum element of the series. The series may not be
+-- empty. In case of a tie, the first occurrence wins.
+maximum :: (Ord a, Vector v a) => Series v k a -> a
+{-# INLINE maximum #-}
+maximum = Vector.maximum . values
+
+
+-- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
+-- In case of a tie, the first occurrence wins.
+maximumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> a
+{-# INLINE maximumOn #-}
+maximumOn f = Vector.maximumOn f . values
+
+
+-- | /O(n)/ Yield the minimum element of the series. The series may not be
+-- empty. In case of a tie, the first occurrence wins.
+minimum :: (Ord a, Vector v a) => Series v k a -> a
+{-# INLINE minimum #-}
+minimum = Vector.minimum . values
+
+
+-- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
+-- In case of a tie, the first occurrence wins.
+minimumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> a
+{-# INLINE minimumOn #-}
+minimumOn f = Vector.minimumOn f . values
+
+
+-- | \(O(n)\) Find the index of the maximum element in the input series.
+-- If the input series is empty, 'Nothing' is returned.
+--
+-- The index of the first occurrence of the maximum element is returned.
+--
+-- >>> import qualified Data.Series as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 0)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 7)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmax xs 
+-- :}
+-- Just 4
+argmax :: (Ord a, Vector v a)
+       => Series v k a
+       -> Maybe k
+{-# INLINE argmax #-}
+argmax xs | GSeries.null xs = Nothing
+          | otherwise = Just 
+                      . fst 
+                      -- We're forcing the use of boxed vectors in order to
+                      -- reduce the constraints on the vector instance
+                      . Boxed.maximumOn snd 
+                      . GSeries.toVector
+                      . GSeries.convert
+                      $ xs
+
+
+-- | \(O(n)\) Find the index of the minimum element in the input series.
+-- If the input series is empty, 'Nothing' is returned.
+--
+-- The index of the first occurrence of the minimum element is returned.
+--
+-- >>> import qualified Data.Series as Series 
+-- >>> :{ 
+--     let (xs :: Series.Series Int Int) 
+--          = Series.fromList [ (1, 1)
+--                            , (2, 1)
+--                            , (3, 2)
+--                            , (4, 0)
+--                            , (5, 4)
+--                            , (6, 5)
+--                            ]
+--     in argmin xs 
+-- :}
+-- Just 4
+argmin :: (Ord a, Vector v a, Vector v (Down a))
+       => Series v k a
+       -> Maybe k
+{-# INLINE argmin #-}
+argmin = argmax . GSeries.map Down

@@ -12,7 +12,7 @@ module Data.Series.Generic.Definition (
     singleton,
     headM, lastM, map, mapWithKey, mapIndex, concatMap, fold, foldM, 
     foldWithKey, foldMWithKey, foldMap, bifoldMap, foldMapWithKey, 
-    sum, length, null, take, takeWhile, drop, dropWhile,
+    length, null, take, takeWhile, drop, dropWhile,
     mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_,
     traverseWithKey,
 
@@ -670,24 +670,16 @@ bifoldMap :: (Vector v a, Monoid m) => (k -> m) -> (a -> m) -> Series v k a -> m
 bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Vector.foldMap fv vs
 
 
--- | \(O(n)\) Add all elements in a 'Series'.
--- This function exists because unboxed 'Data.Series.Unboxed' are
--- not 'Foldable', in which case you cannot use functions such as 'Data.Foldable.sum'.
-sum :: Num a => Vector v a => Series v k a -> a
-{-# INLINE sum #-}
-sum = Vector.sum . values
+-- | /O(1)/ Extract the length of a 'Series'.
+length :: Vector v a => Series v k a -> Int
+{-# INLINE length #-}
+length = Vector.length . values
 
 
 -- | /O(1)/ Test whether a 'Series' is empty.
 null :: Vector v a => Series v k a -> Bool
 {-# INLINE null #-}
 null = Vector.null . values
-
-
--- | /O(1)/ Extract the length of a 'Series'.
-length :: Vector v a => Series v k a -> Int
-{-# INLINE length #-}
-length = Vector.length . values
 
 
 instance (NFData (v a), NFData k) => NFData (Series v k a) where
