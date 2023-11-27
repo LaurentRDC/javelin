@@ -62,10 +62,13 @@ import           Control.DeepSeq        ( NFData )
 import           Control.Monad          ( guard )
 import           Control.Monad.ST       ( runST )
 import           Data.Coerce            ( coerce )
+import qualified Data.Foldable          as Foldable
 import           Data.Functor           ( ($>) )
 import           Data.IntSet            ( IntSet )
 import qualified Data.IntSet            as IntSet
 import qualified Data.List              as List
+import           Data.Sequence          ( Seq )
+import qualified Data.Sequence          as Seq
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
 import qualified Data.Traversable       as Traversable
@@ -183,6 +186,18 @@ instance Ord k => IsIndex [k] k where
     -- | \(O(n)\) Convert an 'Index' to a list.
     fromIndex :: Index k -> [k]
     fromIndex = toAscList
+    {-# INLINE fromIndex #-}
+
+
+instance Ord k => IsIndex (Seq k) k where
+    -- | \(O(n \log n)\) Build an 'Index' from a 'Seq'.
+    toIndex :: Seq k -> Index k
+    toIndex = fromList . Foldable.toList
+    {-# INLINE toIndex #-}
+
+    -- | \(O(n)\) Convert an 'Index' to a 'Seq'.
+    fromIndex :: Index k -> Seq k
+    fromIndex = Seq.fromList . toAscList
     {-# INLINE fromIndex #-}
 
 

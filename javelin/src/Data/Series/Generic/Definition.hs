@@ -54,10 +54,14 @@ import qualified Data.List              as List
 import qualified Data.Map.Lazy          as ML
 import           Data.Map.Strict        ( Map )
 import qualified Data.Map.Strict        as MS
+import           Data.Sequence          ( Seq )
+import qualified Data.Sequence          as Seq
 import           Data.Semigroup         ( Semigroup(..) )
 import qualified Data.Series.Index      as Index
 import           Data.Series.Index.Internal ( Index(..) )
 import qualified Data.Series.Index.Internal as Index.Internal
+import           Data.Set               ( Set )
+import qualified Data.Set               as Set
 import           Data.Traversable.WithIndex ( TraversableWithIndex(..) )
 import qualified Data.Vector            as Boxed
 import           Data.Vector.Algorithms.Intro ( sortUniqBy, sortBy )
@@ -339,6 +343,27 @@ instance (Vector v a) => IsSeries (IntMap a) v Int a where
     fromSeries (MkSeries ks vs) 
         = IntMap.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
     {-# INLINE fromSeries #-}
+
+
+instance (Ord k, Vector v a) => IsSeries (Seq (k, a)) v k a where
+    toSeries :: Seq (k, a) -> Series v k a
+    toSeries = toSeries . Foldable.toList
+    {-# INLINE toSeries #-}
+
+    fromSeries :: Series v k a -> Seq (k, a)
+    fromSeries = Seq.fromList . fromSeries
+    {-# INLINE fromSeries #-}
+
+
+instance (Vector v a) => IsSeries (Set (k, a)) v k a where
+    toSeries :: Set (k, a) -> Series v k a
+    toSeries = fromDistinctAscList . Set.toAscList
+    {-# INLINE toSeries #-}
+
+    fromSeries :: Series v k a -> Set (k, a)
+    fromSeries = Set.fromDistinctAscList . toList
+    {-# INLINE fromSeries #-}
+
 
 -- | Get the first value of a 'Series'. If the 'Series' is empty,
 -- this function returns 'Nothing'.
