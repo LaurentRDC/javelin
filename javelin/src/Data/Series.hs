@@ -1019,6 +1019,7 @@ foldMapWithKey = G.foldMapWithKey
 --
 -- This function is expected to be used in conjunction with 'aggregateWith':
 -- 
+-- >>> import Data.Maybe ( fromMaybe )
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
 -- >>> :{ 
@@ -1027,7 +1028,7 @@ foldMapWithKey = G.foldMapWithKey
 --                              , ((2020, "June")   , 20)
 --                              , ((2021, "June")   , 25) 
 --                              ]
---      in xs `groupBy` month `aggregateWith` minimum
+--      in xs `groupBy` month `aggregateWith` (fromMaybe 0 . minimum)
 -- :}
 --     index | values
 --     ----- | ------
@@ -1045,6 +1046,7 @@ type Grouping k g a = G.Grouping k g Vector a
 
 -- | Aggregate groups resulting from a call to 'groupBy':
 -- 
+-- >>> import Data.Maybe ( fromMaybe )
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
 -- >>> :{ 
@@ -1053,7 +1055,7 @@ type Grouping k g a = G.Grouping k g Vector a
 --                              , ((2020, "June")   , 20)
 --                              , ((2021, "June")   , 25) 
 --                              ]
---      in xs `groupBy` month `aggregateWith` minimum
+--      in xs `groupBy` month `aggregateWith` (fromMaybe 0 . minimum)
 -- :}
 --     index | values
 --     ----- | ------
@@ -1189,34 +1191,34 @@ product :: (Num a) => Series k a -> a
 product = G.product
 
 
--- | /O(n)/ Yield the maximum element of the series. The series may not be
--- empty. In case of a tie, the first occurrence wins.
--- 
--- To find the key associated with the maximum value, see 'argmax'.
-maximum :: (Ord a) => Series k a -> a
+-- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
+-- If the 'Series' is empty, @Nothing@ is returned.
+--
+-- See also 'argmax'.
+maximum :: (Ord a) => Series k a -> Maybe a
 {-# INLINE maximum #-}
 maximum = G.maximum
 
 
 -- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
--- In case of a tie, the first occurrence wins.
-maximumOn :: (Ord b) => (a -> b) -> Series k a -> a
+-- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
+maximumOn :: (Ord b) => (a -> b) -> Series k a -> Maybe a
 {-# INLINE maximumOn #-}
 maximumOn = G.maximumOn
 
 
--- | /O(n)/ Yield the minimum element of the series. The series may not be
--- empty. In case of a tie, the first occurrence wins.
+-- | /O(n)/ Yield the minimum element of the series. In case of a tie, the first occurrence wins.
+-- If the 'Series' is empty, @Nothing@ is returned.
 --
--- To find the key associated with the minimum value, see 'argmin'.
-minimum :: (Ord a) => Series k a -> a
+-- See also 'argmin'.
+minimum :: (Ord a) => Series k a -> Maybe a
 {-# INLINE minimum #-}
 minimum = G.minimum
 
 
 -- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
--- In case of a tie, the first occurrence wins.
-minimumOn :: (Ord b) => (a -> b) -> Series k a -> a
+-- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
+minimumOn :: (Ord b) => (a -> b) -> Series k a -> Maybe a
 {-# INLINE minimumOn #-}
 minimumOn = G.minimumOn
 

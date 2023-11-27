@@ -34,6 +34,7 @@ import           Prelude                        hiding ( last, null, length, all
 --
 -- This function is expected to be used in conjunction with @aggregate@:
 -- 
+-- >>> import Data.Maybe ( fromMaybe )
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
 -- >>> :{ 
@@ -42,7 +43,7 @@ import           Prelude                        hiding ( last, null, length, all
 --                              , ((2020, "June")   , 20)
 --                              , ((2021, "June")   , 25) 
 --                              ]
---      in xs `groupBy` month `aggregateWith` minimum
+--      in xs `groupBy` month `aggregateWith` (fromMaybe 0 . minimum)
 -- :}
 --     index | values
 --     ----- | ------
@@ -62,6 +63,7 @@ data Grouping k g v a
 
 -- | Aggregate groups resulting from a call to 'groupBy':
 -- 
+-- >>> import Data.Maybe ( fromMaybe )
 -- >>> type Date = (Int, String)
 -- >>> month :: (Date -> String) = snd
 -- >>> :{ 
@@ -70,7 +72,7 @@ data Grouping k g v a
 --                              , ((2020, "June")   , 20)
 --                              , ((2021, "June")   , 25) 
 --                              ]
---      in xs `groupBy` month `aggregateWith` minimum
+--      in xs `groupBy` month `aggregateWith` (fromMaybe 0 . minimum)
 -- :}
 --     index | values
 --     ----- | ------
@@ -232,32 +234,38 @@ product :: (Num a, Vector v a) => Series v k a -> a
 product = Vector.product . values
 
 
--- | /O(n)/ Yield the maximum element of the series. The series may not be
--- empty. In case of a tie, the first occurrence wins.
-maximum :: (Ord a, Vector v a) => Series v k a -> a
+nothingIfEmpty :: Vector v a 
+               => (Series v k a -> b) -> (Series v k a -> Maybe b)
+nothingIfEmpty f xs = if GSeries.null xs then Nothing else Just (f xs) 
+
+-- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
+
+maximum :: (Ord a, Vector v a) => Series v k a -> Maybe a
 {-# INLINE maximum #-}
-maximum = Vector.maximum . values
+maximum = nothingIfEmpty $ Vector.maximum . values
 
 
 -- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins.
-maximumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> a
+-- If the 'Series' is empty, @Nothing@ is returned.
+maximumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a
 {-# INLINE maximumOn #-}
-maximumOn f = Vector.maximumOn f . values
+maximumOn f = nothingIfEmpty $ Vector.maximumOn f . values
 
 
--- | /O(n)/ Yield the minimum element of the series. The series may not be
--- empty. In case of a tie, the first occurrence wins.
-minimum :: (Ord a, Vector v a) => Series v k a -> a
+-- | /O(n)/ Yield the minimum element of the series. In case of a tie, the first occurrence wins.
+-- If the 'Series' is empty, @Nothing@ is returned.
+minimum :: (Ord a, Vector v a) => Series v k a -> Maybe a
 {-# INLINE minimum #-}
-minimum = Vector.minimum . values
+minimum = nothingIfEmpty $ Vector.minimum . values
 
 
 -- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins.
-minimumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> a
+-- If the 'Series' is empty, @Nothing@ is returned.
+minimumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a
 {-# INLINE minimumOn #-}
-minimumOn f = Vector.minimumOn f . values
+minimumOn f = nothingIfEmpty $ Vector.minimumOn f . values
 
 
 -- | \(O(n)\) Find the index of the maximum element in the input series.
