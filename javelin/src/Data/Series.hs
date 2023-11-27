@@ -1121,7 +1121,7 @@ type Grouping k g a = G.Grouping k g Vector a
 --
 -- If you want to aggregate groups using a binary function, see 'foldWith' which
 -- may be much faster.
-aggregateWith :: (Ord k, Ord g) 
+aggregateWith :: (Ord g) 
               => Grouping k g a 
               -> (Series k a -> b) 
               -> Series g b

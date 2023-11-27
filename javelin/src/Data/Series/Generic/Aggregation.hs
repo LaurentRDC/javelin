@@ -11,14 +11,13 @@ module Data.Series.Generic.Aggregation (
 
 ) where
 
+import qualified Data.List 
 import qualified Data.Map.Strict                as Map
-import           Data.Series.Generic.Definition ( Series(..), toSeries, toList )
+import           Data.Series.Generic.Definition ( Series(..) )
 import qualified Data.Series.Generic.Definition as GSeries
-import           Data.Series.Generic.View       ( Range, slice, select, selectSubset )
+import           Data.Series.Generic.View       ( Range, slice, select )
 import           Data.Vector.Generic            ( Vector )
 import qualified Data.Vector.Generic            as Vector
-import qualified Data.Vector                    as Boxed
-import qualified Data.Series.Index              as Index
 import           Prelude                        hiding ( last )
 
 -- $setup
@@ -75,18 +74,21 @@ data Grouping k g v a
 --
 -- If you want to aggregate groups using a binary function, see 'foldWith' which
 -- may be much faster.
-aggregateWith :: (Ord k, Ord g, Vector v a, Vector v b) 
+aggregateWith :: (Ord g, Vector v a, Vector v b) 
               => Grouping k g v a 
               -> (Series v k a -> b) 
               -> Series v g b
 {-# INLINE aggregateWith #-}
 aggregateWith (MkGrouping xs by) f
-    = toSeries $ Map.map f $ selectSubset xs <$> groupedKeys
-        where
-            groupedKeys
-                | Index.null (index xs) = mempty
-                | otherwise = Map.unionsWith (<>) $ Boxed.map (\k -> Map.singleton (by k) (Index.singleton k)) 
-                                                  $ Index.toAscVector (index xs)
+    = GSeries.fromStrictMap 
+    $ fmap (f . GSeries.fromDistinctAscList)
+    -- We're using a list fold to limit the number of 
+    -- type constraints. This is about as fast as it is 
+    -- with a Vector fold
+    $ Data.List.foldl' acc mempty 
+    $ GSeries.toList xs
+    where
+        acc !m (key, val) = Map.insertWith (<>) (by key) (Data.List.singleton (key, val)) m
 
 
 -- | Fold over each group in a 'Grouping' using a binary function.
@@ -113,7 +115,14 @@ foldWith :: (Ord g, Vector v a)
          -> Series v g a
 {-# INLINE foldWith #-}
 foldWith (MkGrouping xs by) f 
-    = toSeries $ Map.unionsWith f [Map.singleton (by k) v | (k, v) <- toList xs]
+    = GSeries.fromStrictMap 
+    -- We're using a list fold to limit the number of 
+    -- type constraints. This is about as fast as it is 
+    -- with a Vector fold
+    $ Data.List.foldl' acc mempty 
+    $ GSeries.toList xs
+    where
+        acc !m (key, val) = Map.insertWith f (by key) val m
 
 
 -- | Expanding window aggregation.

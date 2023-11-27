@@ -21,7 +21,7 @@ tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
                                                     , testWindowing
                                                     , testWindowingRollingForwards
                                                     , testWindowingRollingBackwards
-                                                    , testPropaggregateVsfoldWith
+                                                    , testPropAggregateVsfoldWith
                                                     , testExpanding
                                                     ]
 
@@ -116,13 +116,13 @@ testWindowingRollingBackwards = testGroup "Data.Series.Generic.windowing" [ test
             assertEqual mempty expectation $ windowing (\k -> (k-2) `to` k)  (Series.sum :: Series Vector Int Int -> Int) series
 
 
-testPropaggregateVsfoldWith :: TestTree
-testPropaggregateVsfoldWith 
+testPropAggregateVsfoldWith :: TestTree
+testPropAggregateVsfoldWith 
     = testProperty "check that groupBy and testWindowingRollingForwards are equivalent" $ property $ do
-        ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.double $ Range.linearFrac (-500) 500) 
-        let (xs :: Series Vector Int Double) = Series.fromList (zip [0::Int ..] ms)
+        ms <- forAll $ Gen.list (Range.linear 0 100) (Gen.int $ Range.linear (-500) 500) 
+        let (xs :: Series Vector Int Int) = Series.fromList (zip [0::Int ..] ms)
 
-        xs `groupBy` (`mod` 5) `aggregateWith` (Series.sum :: Series Vector Int Double -> Double) === xs `groupBy` (`mod` 5) `foldWith` (+)
+        xs `groupBy` (`mod` 5) `aggregateWith` (Series.sum :: Series Vector Int Int -> Int) === xs `groupBy` (`mod` 5) `foldWith` (+)
 
 
 testExpanding :: TestTree
