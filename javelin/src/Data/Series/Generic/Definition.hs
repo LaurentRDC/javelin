@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingStrategies    #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Data.Series.Generic.Definition ( 
@@ -35,7 +36,12 @@ module Data.Series.Generic.Definition (
     -- *** Unsafe construction
     fromDistinctAscVector,
     -- ** Handling duplicates
-    Occurrence, fromListDuplicates, fromVectorDuplicates
+    Occurrence, fromListDuplicates, fromVectorDuplicates,
+
+    -- * Displaying 'Series'
+    display, displayWith,
+    noLongerThan,
+    DisplayOptions(..), defaultDisplayOptions
 ) where
 
 import           Control.DeepSeq        ( NFData(rnf) )
@@ -682,44 +688,6 @@ null :: Vector v a => Series v k a -> Bool
 null = Vector.null . values
 
 
-instance (NFData (v a), NFData k) => NFData (Series v k a) where
-    rnf :: Series v k a -> ()
-    rnf (MkSeries ks vs) = rnf ks `seq` rnf vs
-
-
-instance (Vector v a, Ord k, Show k, Show a) => Show (Series v k a) where
-    show :: Series v k a -> String
-    show xs 
-        = formatGrid $ if length xs > 6
-            then mconcat [ [ (show k, show v) | (k, v) <- List.take 3 (fromSeries xs :: [(k, a)])]
-                         , [ ("...", "...") ]
-                         , [ (show k, show v) | (k, v) <- List.drop (length xs - 3) (fromSeries xs :: [(k, a)])]
-                         ] 
-            else [ (show k, show v) | (k, v) <- (fromSeries xs :: [(k, a)]) ]
-
-        where
-            -- | Format a grid represented by a list of rows, where every row is a list of items
-            -- All columns will have a fixed width
-            formatGrid :: [ (String, String) ] -- List of rows
-                       -> String
-            formatGrid rows = mconcat $ List.intersperse "\n" 
-                                      $ [ pad indexWidth k <> " | " <> pad valuesWidth v 
-                                        | (k, v) <- rows'
-                                        ] 
-                where
-                    rows' = [ ("index", "values") ] <> [ ("-----", "------")] <> rows
-                    (indexCol, valuesCol) = unzip rows'
-                    width col = maximum (P.length <$> col)
-                    indexWidth = width indexCol
-                    valuesWidth = width valuesCol
-
-                    -- | Pad a string to a minimum of @n@ characters wide.
-                    pad :: Int -> String -> String 
-                    pad n s
-                        | n <= P.length s = s
-                        | otherwise     = replicate (n - P.length s) ' ' <> s
-
-
 -- | /O(n)/ Apply the monadic action to every element of a series and its
 -- index, yielding a series of results.
 mapWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) 
@@ -761,3 +729,104 @@ traverseWithKey :: (Applicative t, Ord k, Traversable v, Vector v a, Vector v b,
 traverseWithKey f = fmap fromVector 
                   . traverse (\(k, x) -> (k,) <$> f k x) 
                   . toVector
+
+
+instance (NFData (v a), NFData k) => NFData (Series v k a) where
+    rnf :: Series v k a -> ()
+    rnf (MkSeries ks vs) = rnf ks `seq` rnf vs
+
+
+instance (Vector v a, Ord k, Show k, Show a) => Show (Series v k a) where
+    show :: Series v k a -> String
+    show = display
+
+
+-- | Options controlling how to display 'Series' in the 'displayWith' function.
+-- Default options are provided by 'defaultDisplayOptions'.
+--
+-- To help with creating 'DisplayOptions', see 'noLongerThan'.
+data DisplayOptions k a
+    = DisplayOptions
+    { maximumNumberOfRows  :: Int
+    -- ^ Maximum number of rows shown. These rows will be distributed evenly
+    -- between the start of the 'Series' and the end. 
+    , indexHeader          :: String
+    -- ^ Header of the index column.
+    , valuesHeader         :: String
+    -- ^ Header of the values column.
+    , keyDisplayFunction   :: k -> String
+    -- ^ Function used to display keys from the 'Series'. Use 'noLongerThan'
+    -- to control the width of the index column.
+    , valueDisplayFunction :: a -> String
+    -- ^ Function used to display values from the 'Series'. Use 'noLongerThan'
+    -- to control the width of the values column.
+    }
+
+
+-- | Default 'Series' display options.
+defaultDisplayOptions :: (Show k, Show a) => DisplayOptions k a
+defaultDisplayOptions 
+    = DisplayOptions { maximumNumberOfRows  = 6
+                     , indexHeader          = "index"
+                     , valuesHeader         = "values"
+                     , keyDisplayFunction   = show
+                     , valueDisplayFunction = show
+                     }
+
+
+-- | This function modifies existing functions to limit the width of its result.
+--
+-- >>> let limit7 = (show :: Int -> String) `noLongerThan` 7
+-- >>> limit7 123456789
+-- "123456..."
+noLongerThan :: (a -> String) -> Int -> (a -> String)
+noLongerThan f len x 
+    = let raw = f x
+       in if List.length raw <= max 0 len
+        then raw
+        else List.take (List.length raw - 3) raw <> "..."
+
+
+-- | Display a 'Series' using default 'DisplayOptions'.
+display :: (Vector v a, Show k, Show a) 
+        => Series v k a 
+        -> String
+display = displayWith defaultDisplayOptions
+
+
+-- | Display a 'Series' using customizable 'DisplayOptions'.
+displayWith :: (Vector v a) 
+            => DisplayOptions k a
+            -> Series v k a 
+            -> String
+displayWith DisplayOptions{..} xs
+    = formatGrid $ if length xs > max 0 maximumNumberOfRows
+        then let headlength = max 0 maximumNumberOfRows `div` 2
+                 taillength = max 0 maximumNumberOfRows - headlength
+              in mconcat [ [ (keyDisplayFunction k, valueDisplayFunction v) | (k, v) <- toList $ take headlength xs]
+                         , [ ("...", "...") ]
+                         , [ (keyDisplayFunction k, valueDisplayFunction v) | (k, v) <- toList $ drop (length xs - taillength) xs]
+                         ] 
+        else [ (keyDisplayFunction k, valueDisplayFunction v) | (k, v) <- toList xs ]
+
+    where
+        -- | Format a grid represented by a list of rows, where every row is a list of items
+        -- All columns will have a fixed width
+        formatGrid :: [ (String, String) ] -- List of rows
+                   -> String
+        formatGrid rows = mconcat $ List.intersperse "\n" 
+                                  $ [ pad indexWidth k <> " | " <> pad valuesWidth v 
+                                    | (k, v) <- rows'
+                                    ] 
+            where
+                rows' = [ (indexHeader, valuesHeader) ] <> [ ("-----", "------")] <> rows
+                (indexCol, valuesCol) = unzip rows'
+                width col = maximum (P.length <$> col)
+                indexWidth = width indexCol
+                valuesWidth = width valuesCol
+
+                -- | Pad a string to a minimum of @n@ characters wide.
+                pad :: Int -> String -> String 
+                pad n s
+                    | n <= P.length s = s
+                    | otherwise     = replicate (n - P.length s) ' ' <> s

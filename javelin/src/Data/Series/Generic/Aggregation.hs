@@ -238,8 +238,8 @@ nothingIfEmpty :: Vector v a
                => (Series v k a -> b) -> (Series v k a -> Maybe b)
 nothingIfEmpty f xs = if GSeries.null xs then Nothing else Just (f xs) 
 
--- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
 
+-- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
 maximum :: (Ord a, Vector v a) => Series v k a -> Maybe a
 {-# INLINE maximum #-}
 maximum = nothingIfEmpty $ Vector.maximum . values
