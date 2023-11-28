@@ -56,6 +56,11 @@ module Data.Series.Generic (
     -- * Grouping and windowing operations
     groupBy, Grouping, aggregateWith, foldWith, 
     windowing, expanding,
+
+    -- * Displaying 'Series'
+    display, displayWith,
+    noLongerThan,
+    DisplayOptions(..), defaultDisplayOptions
 ) where
 
 import Data.Series.Generic.Aggregation  ( groupBy, Grouping, aggregateWith, foldWith
@@ -67,7 +72,8 @@ import Data.Series.Generic.Definition   ( Series(index, values), IsSeries(..), O
                                         , fromVector, fromVectorDuplicates, toVector
                                         , map, mapWithKey, mapIndex, concatMap, length, null, take, takeWhile, drop, dropWhile
                                         , mapWithKeyM, mapWithKeyM_, forWithKeyM, forWithKeyM_, traverseWithKey, fold, foldM
-                                        , foldWithKey, foldMWithKey, foldMap, foldMapWithKey,
+                                        , foldWithKey, foldMWithKey, foldMap, foldMapWithKey
+                                        , display, displayWith, noLongerThan, DisplayOptions(..), defaultDisplayOptions
                                         )
 import Data.Series.Generic.Numeric      ( mean, variance, std )
 import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )

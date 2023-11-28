@@ -94,6 +94,11 @@ module Data.Series.Unboxed (
 
     -- * Scans
     postscanl, prescanl,
+
+    -- * Displaying 'Series'
+    display, displayWith,
+    noLongerThan,
+    DisplayOptions(..), G.defaultDisplayOptions
 ) where
 
 import           Control.Foldl       ( Fold, FoldM )
@@ -102,7 +107,9 @@ import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic.View 
                                      ( Range, Selection, to, from, upto )
-import           Data.Series.Generic ( IsSeries(..), ZipStrategy, Occurrence, skipStrategy, mapStrategy, constStrategy )
+import           Data.Series.Generic ( IsSeries(..), ZipStrategy, Occurrence, DisplayOptions(..), skipStrategy, mapStrategy, constStrategy
+                                     , noLongerThan 
+                                     )
 import qualified Data.Series.Generic as G
 import           Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as Vector
@@ -1236,3 +1243,49 @@ prescanl :: (Unbox a, Unbox b)
          => (a -> b -> a) -> a -> Series k b -> Series k a
 {-# INLINE prescanl #-}
 prescanl = G.prescanl
+
+
+-- | Display a 'Series' using default 'DisplayOptions'.
+--
+-- >>> let xs = Series.fromList (zip [0..] [1,2,3,4,5,6,7]) :: Series Int Int
+-- >>> putStrLn $ display xs
+-- index | values
+-- ----- | ------
+--     0 |      1
+--     1 |      2
+--     2 |      3
+--   ... |    ...
+--     4 |      5
+--     5 |      6
+--     6 |      7
+display :: (Unbox a, Show k, Show a) 
+        => Series k a 
+        -> String
+display = G.display
+
+
+-- | Display a 'Series' using customizable 'DisplayOptions'.
+--
+-- >>> let xs = Series.fromList (zip [0..] [1,2,3,4,5,6,7]) :: Series Int Int
+-- >>> import Data.List (replicate)
+-- >>> :{
+--     let opts = DisplayOptions { maximumNumberOfRows  = 4
+--                               , indexHeader = "keys"
+--                               , valuesHeader = "vals"
+--                               , keyDisplayFunction   = (\i -> replicate i 'x') `noLongerThan` 5
+--                               , valueDisplayFunction = (\i -> replicate i 'o') 
+--                               }
+--      in putStrLn $ displayWith opts xs
+-- :}
+--   keys |    vals
+--  ----- |  ------
+--        |       o
+--      x |      oo
+--    ... |     ...
+--  xxxxx |  oooooo
+-- xxx... | ooooooo
+displayWith :: (Unbox a) 
+            => DisplayOptions k a
+            -> Series k a 
+            -> String
+displayWith = G.displayWith
