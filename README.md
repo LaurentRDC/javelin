@@ -1,8 +1,6 @@
-# [Experimental] Haskell implementation of labeled one-dimensional arrays
+# Haskell implementation of labeled one-dimensional arrays
 
-:warning: This repository is in experimental development. Backwards compatibility may be broken at any moment. Feel free to make usage suggestions if you're interested in this topic!
-
-Packages in this repository implement series, or labeled one-dimensional arrays.
+Packages in this repository implement series, or labeled one-dimensional arrays, and associated functions.
 
 Like [`Data.Map.Strict`](https://hackage.haskell.org/package/containers/docs/Data-Map-Strict.html), series support efficient:
 
@@ -27,6 +25,10 @@ cabal haddock javelin
 cabal haddock javelin-io
 cabal haddock javelin-finance
 ```
+
+## Get involved!
+
+Do not hesitate to make feature requests or report bugs via the [issue tracker](https://github.com/LaurentRDC/javelin/issues).
 
 ## Preliminary benchmarks
 
