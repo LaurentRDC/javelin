@@ -63,8 +63,8 @@ import qualified Data.Map.Strict        as MS
 import           Data.Sequence          ( Seq )
 import qualified Data.Sequence          as Seq
 import           Data.Semigroup         ( Semigroup(..) )
+import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
-import           Data.Series.Index.Internal ( Index(..) )
 import qualified Data.Series.Index.Internal as Index.Internal
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
