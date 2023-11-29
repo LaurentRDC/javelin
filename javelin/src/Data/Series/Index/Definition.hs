@@ -229,13 +229,13 @@ instance (Ord k, Unboxed.Unbox k) => IsIndex (Unboxed.Vector k) k where
     {-# INLINE toIndex #-} 
 
     fromIndex :: Index k -> Unboxed.Vector k
-    fromIndex = toAscVector
+    fromIndex ix = runST $ M.generate (size ix) (`elemAt` ix) >>= Vector.freeze
     {-# INLINE fromIndex #-}
 
 
 -- | \(O(1)\) Build an 'Index' from a 'Set'.
 fromSet :: Set k -> Index k
-fromSet = MkIndex
+fromSet = toIndex
 {-# INLINE fromSet #-}
 
 
@@ -258,7 +258,7 @@ fromList = fromSet . Set.fromList
 -- Note that since an 'Index' is composed of unique elements, the length of 
 -- the index may not be the same as the length of the input list.
 fromAscList :: Eq k => [k] -> Index k
-fromAscList = MkIndex . Set.fromAscList
+fromAscList = toIndex . Set.fromAscList
 {-# INLINE fromAscList #-}
 
 
@@ -306,7 +306,7 @@ fromDistinctAscVector = fromDistinctAscList . Vector.toList
 
 -- | \(O(1)\) Convert an 'Index' to a 'Set'.
 toSet :: Index k -> Set k
-toSet (MkIndex s) = s
+toSet = fromIndex
 {-# INLINE toSet #-}
 
 

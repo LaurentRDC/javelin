@@ -198,37 +198,37 @@ windowing range agg series
     = GSeries.mapWithKey (\k _ -> agg $ series `select` range k) series
 
 
--- | /O(n)/ Check if all elements satisfy the predicate.
+-- | \(O(n)\) Check if all elements satisfy the predicate.
 all :: Vector v a => (a -> Bool) -> Series v k a -> Bool
 {-# INLINE all #-}
 all f = Vector.all f . values
 
 
--- | /O(n)/ Check if any element satisfies the predicate.
+-- | \(O(n)\) Check if any element satisfies the predicate.
 any :: Vector v a => (a -> Bool) -> Series v k a -> Bool
 {-# INLINE any #-}
 any f = Vector.any f . values
 
 
--- | /O(n)/ Check if all elements are 'True'.
+-- | \(O(n)\) Check if all elements are 'True'.
 and :: Vector v Bool => Series v k Bool -> Bool
 {-# INLINE and #-}
 and = Vector.and . values
 
 
--- | /O(n)/ Check if any element is 'True'.
+-- | \(O(n)\) Check if any element is 'True'.
 or :: Vector v Bool => Series v k Bool -> Bool
 {-# INLINE or #-}
 or = Vector.or . values
 
 
--- | /O(n)/ Compute the sum of the elements.
+-- | \(O(n)\) Compute the sum of the elements.
 sum :: (Num a, Vector v a) => Series v k a -> a
 {-# INLINE sum #-}
 sum = Vector.sum . values
 
 
--- | /O(n)/ Compute the product of the elements.
+-- | \(O(n)\) Compute the product of the elements.
 product :: (Num a, Vector v a) => Series v k a -> a
 {-# INLINE product #-}
 product = Vector.product . values
@@ -239,13 +239,13 @@ nothingIfEmpty :: Vector v a
 nothingIfEmpty f xs = if GSeries.null xs then Nothing else Just (f xs) 
 
 
--- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
+-- | \(O(n)\) Yield the maximum element of the series. In case of a tie, the first occurrence wins.
 maximum :: (Ord a, Vector v a) => Series v k a -> Maybe a
 {-# INLINE maximum #-}
 maximum = nothingIfEmpty $ Vector.maximum . values
 
 
--- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
+-- | \(O(n)\) @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 maximumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a
@@ -253,14 +253,14 @@ maximumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a
 maximumOn f = nothingIfEmpty $ Vector.maximumOn f . values
 
 
--- | /O(n)/ Yield the minimum element of the series. In case of a tie, the first occurrence wins.
+-- | \(O(n)\) Yield the minimum element of the series. In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 minimum :: (Ord a, Vector v a) => Series v k a -> Maybe a
 {-# INLINE minimum #-}
 minimum = nothingIfEmpty $ Vector.minimum . values
 
 
--- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
+-- | \(O(n)\) @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 minimumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a

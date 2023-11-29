@@ -5,7 +5,7 @@ synopsis:           IO operations for the `javelin` package
 description:
 license:            MIT
 license-file:       LICENSE
-author:             Laurent René de Cotret
+author:             Laurent P. René de Cotret
 maintainer:         laurent.decotret@outlook.com
 category:           Data
 build-type:         Simple

@@ -63,8 +63,8 @@ import qualified Data.Map.Strict        as MS
 import           Data.Sequence          ( Seq )
 import qualified Data.Sequence          as Seq
 import           Data.Semigroup         ( Semigroup(..) )
+import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
-import           Data.Series.Index.Internal ( Index(..) )
 import qualified Data.Series.Index.Internal as Index.Internal
 import           Data.Set               ( Set )
 import qualified Data.Set               as Set
@@ -676,19 +676,19 @@ bifoldMap :: (Vector v a, Monoid m) => (k -> m) -> (a -> m) -> Series v k a -> m
 bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Vector.foldMap fv vs
 
 
--- | /O(1)/ Extract the length of a 'Series'.
+-- | \(O(1)\) Extract the length of a 'Series'.
 length :: Vector v a => Series v k a -> Int
 {-# INLINE length #-}
 length = Vector.length . values
 
 
--- | /O(1)/ Test whether a 'Series' is empty.
+-- | \(O(1)\) Test whether a 'Series' is empty.
 null :: Vector v a => Series v k a -> Bool
 {-# INLINE null #-}
 null = Vector.null . values
 
 
--- | /O(n)/ Apply the monadic action to every element of a series and its
+-- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, yielding a series of results.
 mapWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) 
             => (k -> a -> m b) -> Series v k a -> m (Series v k b)
@@ -697,7 +697,7 @@ mapWithKeyM f xs = let f' (key, val) = (key,) <$> f key val
            in fmap fromList $ traverse f' $ toList xs
 
 
--- | /O(n)/ Apply the monadic action to every element of a series and its
+-- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, discarding the results.
 mapWithKeyM_ :: (Vector v a, Monad m) 
              => (k -> a -> m b) -> Series v k a -> m ()
@@ -706,21 +706,21 @@ mapWithKeyM_ f xs = let f' (key, val) = (key,) <$> f key val
            in mapM_ f' $ toList xs
 
 
--- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- yielding a series of results.
 forWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) => Series v k a -> (k -> a -> m b) -> m (Series v k b)
 {-# INLINE forWithKeyM #-}
 forWithKeyM = flip mapWithKeyM
 
 
--- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- discarding the results.
 forWithKeyM_ :: (Vector v a, Monad m) => Series v k a -> (k -> a -> m b) -> m ()
 {-# INLINE forWithKeyM_ #-}
 forWithKeyM_ = flip mapWithKeyM_
 
 
--- | /O(n)/ Traverse a 'Series' with an Applicative action, taking into account both keys and values. 
+-- | \(O(n)\) Traverse a 'Series' with an Applicative action, taking into account both keys and values. 
 traverseWithKey :: (Applicative t, Ord k, Traversable v, Vector v a, Vector v b, Vector v k, Vector v (k, a),  Vector v (k, b))
                 => (k -> a -> t b) 
                 -> Series v k a 

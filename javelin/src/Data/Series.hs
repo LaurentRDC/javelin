@@ -94,7 +94,7 @@ module Data.Series (
 
     -- * Displaying 'Series'
     display, displayWith,
-    G.noLongerThan,
+    noLongerThan,
     DisplayOptions(..), G.defaultDisplayOptions
 ) where
 
@@ -103,7 +103,7 @@ import qualified Data.Map.Lazy       as ML
 import qualified Data.Map.Strict     as MS
 import           Data.Series.Index   ( Index )
 import           Data.Series.Generic ( IsSeries(..), Range, Selection, ZipStrategy, Occurrence, DisplayOptions(..)
-                                     , to, from, upto, skipStrategy, mapStrategy, constStrategy 
+                                     , to, from, upto, skipStrategy, mapStrategy, constStrategy, noLongerThan
                                      )
 import qualified Data.Series.Generic as G
 import           Data.Vector         ( Vector )
@@ -322,35 +322,35 @@ concatMap :: Ord k
 concatMap = G.concatMap
 
 
--- | /O(n)/ Apply the monadic action to every element of a series and its
+-- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, yielding a series of results.
 mapWithKeyM :: (Monad m, Ord k) => (k -> a -> m b) -> Series k a -> m (Series k b)
 {-# INLINE mapWithKeyM #-}
 mapWithKeyM = G.mapWithKeyM
 
 
--- | /O(n)/ Apply the monadic action to every element of a series and its
+-- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, discarding the results.
 mapWithKeyM_ :: Monad m => (k -> a -> m b) -> Series k a -> m ()
 {-# INLINE mapWithKeyM_ #-}
 mapWithKeyM_ = G.mapWithKeyM_
 
 
--- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- yielding a series of results.
 forWithKeyM :: (Monad m, Ord k) => Series k a -> (k -> a -> m b) -> m (Series k b)
 {-# INLINE forWithKeyM #-}
 forWithKeyM = G.forWithKeyM
 
 
--- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- discarding the results.
 forWithKeyM_ :: Monad m => Series k a -> (k -> a -> m b) -> m ()
 {-# INLINE forWithKeyM_ #-}
 forWithKeyM_ = G.forWithKeyM_
 
 
--- | /O(n)/ Traverse a 'Series' with an Applicative action, taking into account both keys and values. 
+-- | \(O(n)\) Traverse a 'Series' with an Applicative action, taking into account both keys and values. 
 traverseWithKey :: (Applicative t, Ord k)
                 => (k -> a -> t b) 
                 -> Series k a 
@@ -922,7 +922,7 @@ replace = G.replace
 (<-|) = (G.<-|)
 
 
--- | /O(n)/ Replace all instances of 'Nothing' with the last previous
+-- | \(O(n)\) Replace all instances of 'Nothing' with the last previous
 -- value which was not 'Nothing'.
 --
 -- >>> let xs = Series.fromList (zip [0..] [Just 1, Just 2,Nothing, Just 3]) :: Series Int (Maybe Int)
@@ -965,7 +965,7 @@ forwardFill :: a -- ^ Until the first non-'Nothing' is found, 'Nothing' will be 
 forwardFill = G.forwardFill
 
 
--- | /O(n)/ Execute a 'Fold' over a 'Series'.
+-- | \(O(n)\) Execute a 'Fold' over a 'Series'.
 --
 -- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series Int Double
 -- >>> xs
@@ -998,7 +998,7 @@ foldM = G.foldM
 {-# INLINE foldM #-}
 
 
--- | /O(n)/ Execute a 'Fold' over a 'Series', taking keys into account.
+-- | \(O(n)\) Execute a 'Fold' over a 'Series', taking keys into account.
 foldWithKey :: Fold (k, a) b -> Series k a -> b
 foldWithKey = G.foldWithKey
 {-# INLINE foldWithKey #-}
@@ -1013,7 +1013,7 @@ foldMWithKey = G.foldMWithKey
 {-# INLINE foldMWithKey #-}
 
 
--- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
+-- | \(O(n)\) Map each element and associated key of the structure to a monoid and combine
 -- the results.
 foldMapWithKey :: Monoid m => (k -> a -> m) -> Series k a -> m
 {-# INLINE foldMapWithKey #-}
@@ -1149,55 +1149,55 @@ windowing :: Ord k
 windowing = G.windowing
 
 
--- | /O(1)/ Test whether a 'Series' is empty.
+-- | \(O(1)\) Test whether a 'Series' is empty.
 null :: Series k a -> Bool
 {-# INLINE null #-}
 null = G.null
 
 
--- |/O(1)/ Extract the length of a 'Series'.
+-- |\(O(1)\) Extract the length of a 'Series'.
 length :: Series k a -> Int
 {-# INLINE length #-}
 length = G.length
 
 
--- | /O(n)/ Check if all elements satisfy the predicate.
+-- | \(O(n)\) Check if all elements satisfy the predicate.
 all :: (a -> Bool) -> Series k a -> Bool
 {-# INLINE all #-}
 all = G.all
 
 
--- | /O(n)/ Check if any element satisfies the predicate.
+-- | \(O(n)\) Check if any element satisfies the predicate.
 any :: (a -> Bool) -> Series k a -> Bool
 {-# INLINE any #-}
 any = G.any
 
 
--- | /O(n)/ Check if all elements are 'True'.
+-- | \(O(n)\) Check if all elements are 'True'.
 and :: Series k Bool -> Bool
 {-# INLINE and #-}
 and = G.and
 
 
--- | /O(n)/ Check if any element is 'True'.
+-- | \(O(n)\) Check if any element is 'True'.
 or :: Series k Bool -> Bool
 {-# INLINE or #-}
 or = G.or
 
 
--- | /O(n)/ Compute the sum of the elements.
+-- | \(O(n)\) Compute the sum of the elements.
 sum :: (Num a) => Series k a -> a
 {-# INLINE sum #-}
 sum = G.sum
 
 
--- | /O(n)/ Compute the product of the elements.
+-- | \(O(n)\) Compute the product of the elements.
 product :: (Num a) => Series k a -> a
 {-# INLINE product #-}
 product = G.product
 
 
--- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
+-- | \(O(n)\) Yield the maximum element of the series. In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 --
 -- See also 'argmax'.
@@ -1206,14 +1206,14 @@ maximum :: (Ord a) => Series k a -> Maybe a
 maximum = G.maximum
 
 
--- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
+-- | \(O(n)\) @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
 maximumOn :: (Ord b) => (a -> b) -> Series k a -> Maybe a
 {-# INLINE maximumOn #-}
 maximumOn = G.maximumOn
 
 
--- | /O(n)/ Yield the minimum element of the series. In case of a tie, the first occurrence wins.
+-- | \(O(n)\) Yield the minimum element of the series. In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 --
 -- See also 'argmin'.
@@ -1222,7 +1222,7 @@ minimum :: (Ord a) => Series k a -> Maybe a
 minimum = G.minimum
 
 
--- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
+-- | \(O(n)\) @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
 minimumOn :: (Ord b) => (a -> b) -> Series k a -> Maybe a
 {-# INLINE minimumOn #-}
@@ -1340,12 +1340,21 @@ display = G.display
 -- >>> let xs = Series.fromList (zip [0..] [1,2,3,4,5,6,7]) :: Series Int Int
 -- >>> import Data.List (replicate)
 -- >>> :{
---     let opts = defaultDisplayOptions { maximumNumberOfRows  = 4
---                                      , keyDisplayFunction   = (\i -> replicate i 'x') `noLongerThan` 5
---                                      , valueDisplayFunction = (\i -> replicate i 'o') 
---                                      }
+--     let opts = DisplayOptions { maximumNumberOfRows  = 4
+--                               , indexHeader = "keys"
+--                               , valuesHeader = "vals"
+--                               , keyDisplayFunction   = (\i -> replicate i 'x') `noLongerThan` 5
+--                               , valueDisplayFunction = (\i -> replicate i 'o') 
+--                               }
 --      in putStrLn $ displayWith opts xs
 -- :}
+--   keys |    vals
+--  ----- |  ------
+--        |       o
+--      x |      oo
+--    ... |     ...
+--  xxxxx |  oooooo
+-- xxx... | ooooooo
 displayWith :: DisplayOptions k a
             -> Series k a 
             -> String

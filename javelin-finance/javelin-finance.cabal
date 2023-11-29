@@ -4,7 +4,7 @@ version:            0.1.0.0
 synopsis:           Technical analysis and financial metrics on Haskell series
 license:            MIT
 license-file:       LICENSE
-author:             Laurent René de Cotret
+author:             Laurent P. René de Cotret
 maintainer:         laurent.decotret@outlook.com
 category:           Finance
 build-type:         Simple

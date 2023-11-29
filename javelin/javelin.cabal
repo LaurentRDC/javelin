@@ -2,18 +2,34 @@ cabal-version:      3.0
 name:               javelin
 version:            0.1.0.0
 synopsis:           Labeled one-dimensional arrays
-description:
 license:            MIT
 license-file:       LICENSE
-author:             Laurent René de Cotret
+author:             Laurent P. René de Cotret
 maintainer:         laurent.decotret@outlook.com
-category:           Data
+category:           Data, Data Structures, Data Science
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
                     files/aapl.txt
 tested-with:        GHC ==9.8.1 
                      || ==9.6.3
                      || ==9.4.7  
+description:
+        
+        This package implements 'Series', labeled one-dimensional arrays
+        combining properties from maps and arrays.
+        
+        To get started, the important modules are:
+        
+        ["Data.Series"] Boxed series of arbitrary types.
+        
+        ["Data.Series.Unboxed"] Series of unboxed data types for better performance, at the cost of flexibility.
+        
+        ["Data.Series.Generic"] Generic interface to manipulate any type of 'Series'.
+        
+        ["Data.Series.Index"] Index containing series keys.
+        
+        To get started, please take a look at the tutorial ("Data.Series.Tutorial").
+        
 
 common common
     default-language: GHC2021
@@ -43,13 +59,13 @@ library
                       Data.Series.Generic.View
                       Data.Series.Generic.Zip
                       Data.Series.Index.Definition
-    build-depends:    base  >=4.15.0.0 && <5,
-                      containers,
-                      deepseq,
-                      foldl ^>=1.4,
+    build-depends:    base                >=4.15.0.0 && <4.20,
+                      containers          >=0.6      && <0.8,
+                      deepseq             >=1.4      && <1.6,
+                      foldl               ^>=1.4,
                       indexed-traversable ^>=0.1,
-                      vector >= 0.12.3.0 && <0.14,
-                      vector-algorithms
+                      vector              >=0.12.3.0 && <0.14,
+                      vector-algorithms   ^>=0.9
 
 test-suite javelin-test
     import:           common
@@ -122,4 +138,4 @@ executable bench-report
     main-is:          bench-report.hs
     hs-source-dirs:   scripts
     build-depends:    base, 
-                      csv
+                      csv ^>=0.1

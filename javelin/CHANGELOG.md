@@ -1,5 +1,5 @@
 # Revision history for javelin
 
-## 0.1.0.0 -- YYYY-mm-dd
+## Release 0.1.0.0
 
-* First version. Released on an unsuspecting world.
+* This is the first version of `javelin` and associated packages.
