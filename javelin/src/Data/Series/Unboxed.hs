@@ -330,28 +330,28 @@ concatMap :: (Unbox a, Unbox k, Unbox b, Ord k)
 concatMap = G.concatMap
 
 
--- | /O(n)/ Apply the monadic action to every element of a series and its
+-- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, yielding a series of results.
 mapWithKeyM :: (Unbox a, Unbox b, Monad m, Ord k) => (k -> a -> m b) -> Series k a -> m (Series k b)
 {-# INLINE mapWithKeyM #-}
 mapWithKeyM = G.mapWithKeyM
 
 
--- | /O(n)/ Apply the monadic action to every element of a series and its
+-- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, discarding the results.
 mapWithKeyM_ :: (Unbox a, Monad m) => (k -> a -> m b) -> Series k a -> m ()
 {-# INLINE mapWithKeyM_ #-}
 mapWithKeyM_ = G.mapWithKeyM_
 
 
--- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- yielding a series of results.
 forWithKeyM :: (Unbox a, Unbox b, Monad m, Ord k) => Series k a -> (k -> a -> m b) -> m (Series k b)
 {-# INLINE forWithKeyM #-}
 forWithKeyM = G.forWithKeyM
 
 
--- | /O(n)/ Apply the monadic action to all elements of the series and their associated keys, 
+-- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- discarding the results.
 forWithKeyM_ :: (Unbox a, Monad m) => Series k a -> (k -> a -> m b) -> m ()
 {-# INLINE forWithKeyM_ #-}
@@ -870,7 +870,7 @@ replace = G.replace
 (<-|) = (G.<-|)
 
 
--- | /O(n)/ Execute a 'Fold' over a 'Series'.
+-- | \(O(n)\) Execute a 'Fold' over a 'Series'.
 --
 -- >>> let xs = Series.fromList (zip [0..] [1,2,3,4]) :: Series Int Double
 -- >>> xs
@@ -904,7 +904,7 @@ foldM = G.foldM
 {-# INLINE foldM #-}
 
 
--- | /O(n)/ Execute a 'Fold' over a 'Series', taking keys into account.
+-- | \(O(n)\) Execute a 'Fold' over a 'Series', taking keys into account.
 foldWithKey :: (Unbox k, Unbox a) 
             => Fold (k, a) b -> Series k a -> b
 foldWithKey = G.foldWithKey
@@ -920,21 +920,21 @@ foldMWithKey = G.foldMWithKey
 {-# INLINE foldMWithKey #-}
 
 
--- | /O(n)/ Map each element of the structure to a monoid and combine
+-- | \(O(n)\) Map each element of the structure to a monoid and combine
 -- the results.
 foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap #-}
 foldMap = G.foldMap
 
 
--- | /O(n)/ Like 'foldMap', but strict in the accumulator. It uses the same
+-- | \(O(n)\) Like 'foldMap', but strict in the accumulator. It uses the same
 -- implementation as the corresponding method of the 'Foldable' type class.
 foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
 {-# INLINE foldMap' #-}
 foldMap' f = Vector.foldMap' f . values
 
 
--- | /O(n)/ Map each element and associated key of the structure to a monoid and combine
+-- | \(O(n)\) Map each element and associated key of the structure to a monoid and combine
 -- the results.
 foldMapWithKey :: (Monoid m, Unbox a, Unbox k) => (k -> a -> m) -> Series k a -> m
 {-# INLINE foldMapWithKey #-}
@@ -1070,55 +1070,55 @@ windowing :: (Ord k, Unbox a, Unbox b)
 windowing = G.windowing 
 
 
--- | /O(1)/ Test whether a 'Series' is empty.
+-- | \(O(1)\) Test whether a 'Series' is empty.
 null :: Unbox a => Series k a -> Bool
 {-# INLINE null #-}
 null = G.null
 
 
--- |/O(1)/ Extract the length of a 'Series'.
+-- |\(O(1)\) Extract the length of a 'Series'.
 length :: Unbox a => Series k a -> Int
 {-# INLINE length #-}
 length = G.length
 
 
--- | /O(n)/ Check if all elements satisfy the predicate.
+-- | \(O(n)\) Check if all elements satisfy the predicate.
 all :: Unbox a => (a -> Bool) -> Series k a -> Bool
 {-# INLINE all #-}
 all = G.all
 
 
--- | /O(n)/ Check if any element satisfies the predicate.
+-- | \(O(n)\) Check if any element satisfies the predicate.
 any :: Unbox a => (a -> Bool) -> Series k a -> Bool
 {-# INLINE any #-}
 any = G.any
 
 
--- | /O(n)/ Check if all elements are 'True'.
+-- | \(O(n)\) Check if all elements are 'True'.
 and :: Series k Bool -> Bool
 {-# INLINE and #-}
 and = G.and
 
 
--- | /O(n)/ Check if any element is 'True'.
+-- | \(O(n)\) Check if any element is 'True'.
 or :: Series k Bool -> Bool
 {-# INLINE or #-}
 or = G.or
 
 
--- | /O(n)/ Compute the sum of the elements.
+-- | \(O(n)\) Compute the sum of the elements.
 sum :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE sum #-}
 sum = G.sum
 
 
--- | /O(n)/ Compute the product of the elements.
+-- | \(O(n)\) Compute the product of the elements.
 product :: (Unbox a, Num a) => Series k a -> a
 {-# INLINE product #-}
 product = G.product
 
 
--- | /O(n)/ Yield the maximum element of the series. In case of a tie, the first occurrence wins.
+-- | \(O(n)\) Yield the maximum element of the series. In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 --
 -- See also 'argmax'.
@@ -1127,14 +1127,14 @@ maximum :: (Ord a, Unbox a) => Series k a -> Maybe a
 maximum = G.maximum
 
 
--- | /O(n)/ @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
+-- | \(O(n)\) @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
 maximumOn :: (Ord b, Unbox a) => (a -> b) -> Series k a -> Maybe a
 {-# INLINE maximumOn #-}
 maximumOn = G.maximumOn
 
 
--- | /O(n)/ Yield the minimum element of the series. In case of a tie, the first occurrence wins.
+-- | \(O(n)\) Yield the minimum element of the series. In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 --
 -- See also 'argmin'.
@@ -1143,7 +1143,7 @@ minimum :: (Ord a, Unbox a) => Series k a -> Maybe a
 minimum = G.minimum
 
 
--- | /O(n)/ @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
+-- | \(O(n)\) @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
 minimumOn :: (Ord b, Unbox a) => (a -> b) -> Series k a -> Maybe a
 {-# INLINE minimumOn #-}
