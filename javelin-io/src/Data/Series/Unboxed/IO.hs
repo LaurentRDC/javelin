@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Series.IO (
+module Data.Series.Unboxed.IO (
     readCSV,
     readCSVFromFile,
 
@@ -13,8 +13,9 @@ module Data.Series.IO (
 import           Control.Monad.IO.Class ( MonadIO )
 import qualified Data.ByteString.Lazy   as BL
 import           Data.Csv               ( FromNamedRecord(..), ToNamedRecord(..), )
-import           Data.Series            ( Series )
+import           Data.Series.Unboxed    ( Series )
 import qualified Data.Series.Generic.IO as Generic.IO
+import           Data.Vector.Unboxed    ( Unbox )
 
 
 {-|
@@ -70,7 +71,7 @@ main = do
     print latlongs
 @
 -}
-readCSV :: (Ord k, FromNamedRecord k, FromNamedRecord a)
+readCSV :: (Ord k, FromNamedRecord k, FromNamedRecord a, Unbox a)
         => BL.ByteString
         -> Either String (Series k a)
 readCSV = Generic.IO.readCSV
@@ -92,7 +93,7 @@ main = do
     print latlongs
 @
 -}
-readCSVFromFile :: (MonadIO m, Ord k, FromNamedRecord k, FromNamedRecord a)
+readCSVFromFile :: (MonadIO m, Ord k, FromNamedRecord k, FromNamedRecord a, Unbox a)
                 => FilePath
                 -> m (Either String (Series k a))
 readCSVFromFile = Generic.IO.readCSVFromFile
@@ -152,13 +153,13 @@ main = do
     print latlongs
 @
 -}
-writeCSV :: (ToNamedRecord k, ToNamedRecord a)
+writeCSV :: (ToNamedRecord k, ToNamedRecord a, Unbox a)
          => Series k a
          -> BL.ByteString
 writeCSV = Generic.IO.writeCSV
 
 
-writeCSVToFile :: (MonadIO m, ToNamedRecord k, ToNamedRecord a)
+writeCSVToFile :: (MonadIO m, ToNamedRecord k, ToNamedRecord a, Unbox a)
                => FilePath
                -> Series k a
                -> m ()

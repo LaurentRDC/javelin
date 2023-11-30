@@ -31,8 +31,9 @@ library
     import:           common
     hs-source-dirs:   src
     exposed-modules:  Data.Series.IO
-    build-depends:    aeson >= 2.0 && < 2.3,
-                      base  >=4.15.0.0,
+                      Data.Series.Generic.IO
+                      Data.Series.Unboxed.IO
+    build-depends:    base  >=4.15.0.0,
                       bytestring,
                       cassava,
                       containers,

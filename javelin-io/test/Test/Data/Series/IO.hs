@@ -2,11 +2,9 @@
 module Test.Data.Series.IO (tests) where
 
 import           Data.Csv             ( FromNamedRecord(..), (.:), ToNamedRecord(..), (.=), namedRecord )
-import           Data.Map.Strict      ( Map )
-import qualified Data.Map.Strict      as Map
-import           Data.Series.Generic  ( Series, at, fromList)
+import           Data.Series.Generic  ( Series, at)
 import qualified Data.Series.Generic  as Series
-import           Data.Series.IO       ( ColumnName, readCSVFromFile, readJSONFromFile, writeCSVToFile )
+import           Data.Series.IO       ( readCSVFromFile, writeCSVToFile )
 import           Data.String          ( IsString )
 import           Data.Vector          ( Vector )
 
@@ -19,7 +17,6 @@ import           Test.Tasty.HUnit     ( testCase, assertEqual )
 tests :: TestTree
 tests = testGroup "Data.Series.IO" [ testReadCSVFromFile
                                    , testWriteCSVToFile
-                                   , testReadJSONFromFile
                                    ]
 
 
@@ -74,20 +71,3 @@ testWriteCSVToFile = testCase "Write CSV data" $ do
         either (error . show) id <$> readCSVFromFile (dirname </> "myseries.csv")
     
     assertEqual mempty latlongs written
-
-
-testReadJSONFromFile :: TestTree
-testReadJSONFromFile = testCase "Read JSON data" $ do
-    (mp :: Map ColumnName (Series Vector String Int)) <- either (error . show) id <$> readJSONFromFile "test/data/columns.json"
-
-    let expectation = Map.fromList [ ("a", fromList [ ("hello", 1)
-                                                    , ("world", 2)
-                                                    ]
-                                     )
-                                   , ("b", fromList [ ("hello", 3)
-                                                    , ("world", 4)
-                                                    ]
-                                     ) 
-                                   ]
-
-    assertEqual mempty expectation mp

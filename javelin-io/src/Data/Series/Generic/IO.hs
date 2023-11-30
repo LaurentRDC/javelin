@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Series.IO (
+module Data.Series.Generic.IO (
     readCSV,
     readCSVFromFile,
 
@@ -10,11 +10,21 @@ module Data.Series.IO (
 ) where
 
 
-import           Control.Monad.IO.Class ( MonadIO )
+import           Control.Monad          ( forM )
+import           Control.Monad.IO.Class ( MonadIO(liftIO) )
+import qualified Data.ByteString        as BS
 import qualified Data.ByteString.Lazy   as BL
 import           Data.Csv               ( FromNamedRecord(..), ToNamedRecord(..), )
-import           Data.Series            ( Series )
-import qualified Data.Series.Generic.IO as Generic.IO
+import qualified Data.Csv               as CSV
+import           Data.Functor           ( (<&>) )
+import qualified Data.HashMap.Strict    as HashMap
+import qualified Data.List.NonEmpty     as NE
+import           Data.Maybe             ( fromMaybe )
+import           Data.Series.Generic    ( Series, fromVector, convert )
+import qualified Data.Series.Generic    as GSeries
+import qualified Data.Vector            as Boxed
+import           Data.Vector.Generic    ( Vector )
+import qualified System.IO              as IO
 
 
 {-|
@@ -70,10 +80,27 @@ main = do
     print latlongs
 @
 -}
-readCSV :: (Ord k, FromNamedRecord k, FromNamedRecord a)
+readCSV :: (Vector v a, Ord k, FromNamedRecord k, FromNamedRecord a)
         => BL.ByteString
-        -> Either String (Series k a)
-readCSV = Generic.IO.readCSV
+        -> Either String (Series v k a)
+readCSV bytes = do
+    (_, records :: Boxed.Vector CSV.NamedRecord) <- CSV.decodeByName bytes
+
+    rows <- CSV.runParser $ forM records
+                          $ \record -> (,) <$> parseNamedRecord record
+                                           <*> parseNamedRecord record
+
+    pure $ convert $ fromVector rows
+
+
+fromFile :: MonadIO m 
+         => FilePath
+         -> (BL.ByteString -> Either String b)
+         -> m (Either String b)
+fromFile fp f
+    = liftIO $ IO.withFile fp IO.ReadMode $ \h -> do
+        IO.hSetBinaryMode h True
+        BS.hGetContents h <&> f . BL.fromStrict
 
 
 {-|
@@ -92,10 +119,10 @@ main = do
     print latlongs
 @
 -}
-readCSVFromFile :: (MonadIO m, Ord k, FromNamedRecord k, FromNamedRecord a)
+readCSVFromFile :: (MonadIO m, Vector v a, Ord k, FromNamedRecord k, FromNamedRecord a)
                 => FilePath
-                -> m (Either String (Series k a))
-readCSVFromFile = Generic.IO.readCSVFromFile
+                -> m (Either String (Series v k a))
+readCSVFromFile fp = fromFile fp readCSV 
 
 
 
@@ -152,14 +179,17 @@ main = do
     print latlongs
 @
 -}
-writeCSV :: (ToNamedRecord k, ToNamedRecord a)
-         => Series k a
+writeCSV :: (Vector v a, ToNamedRecord k, ToNamedRecord a)
+         => Series v k a
          -> BL.ByteString
-writeCSV = Generic.IO.writeCSV
+writeCSV xs = fromMaybe mempty $ do
+    recs   <- NE.nonEmpty [ toNamedRecord k <> toNamedRecord v | (k, v) <- GSeries.toList xs]
+    let header =  CSV.header $ HashMap.keys $ NE.head recs
+    pure $ CSV.encodeByName header $ NE.toList recs
 
 
-writeCSVToFile :: (MonadIO m, ToNamedRecord k, ToNamedRecord a)
+writeCSVToFile :: (MonadIO m, Vector v a, ToNamedRecord k, ToNamedRecord a)
                => FilePath
-               -> Series k a
+               -> Series v k a
                -> m ()
-writeCSVToFile = Generic.IO.writeCSVToFile
+writeCSVToFile fp xs = liftIO $ BS.writeFile fp $ BL.toStrict $ writeCSV xs
