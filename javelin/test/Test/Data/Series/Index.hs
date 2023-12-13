@@ -23,6 +23,7 @@ tests = testGroup "Data.Series.Index" [ testPropRange
                                       , testPropFromToVector
                                       , testPropFromToAscVector
                                       , testPropMemberNotMember
+                                      , testPropIndexed
                                       , testPropFilter
                                       ]
 
@@ -101,6 +102,15 @@ testPropMemberNotMember = testProperty "elements are either a member or not a me
 
     let ix = Index.fromList ms
     assert $ (k `Index.member` ix) /= (k `Index.notMember` ix)
+
+
+testPropIndexed :: TestTree
+testPropIndexed = testProperty "indexed works just like for Vectors" $ property $ do
+    ms <- forAll $ Gen.list (Range.linear 0 50) (Gen.int (Range.linear (-100) 100))
+
+    let ix = Index.fromList ms
+    
+    Index.toAscVector (Index.indexed ix) === Vector.indexed (Index.toAscVector ix)
 
 
 testPropFilter :: TestTree

@@ -45,6 +45,7 @@ module Data.Series.Index.Definition (
     -- * Mapping and filtering
     map,
     mapMonotonic,
+    indexed,
     filter,
     traverse,
     
@@ -86,6 +87,7 @@ import           Prelude                as P hiding ( null, take, drop, map, fil
 -- $setup
 -- >>> import Data.Series.Index
 -- >>> import qualified Data.Vector as Vector
+-- attempting to use module `javelin-0.1.0.0:Data.Series.Index' (c:\Users\laure\OneDrive\Code\javelin\javelin\src\Data\Series\Index.hs) which is not loaded
 
 
 -- | Representation of the index of a series.
@@ -440,6 +442,19 @@ map f (MkIndex ix) = MkIndex $ Set.map f ix
 mapMonotonic :: (k -> g) -> Index k -> Index g
 mapMonotonic f (MkIndex ix) = MkIndex $ Set.mapMonotonic f ix
 {-# INLINE mapMonotonic #-}
+
+
+-- | \(O(n)\) Pair each key in the index with its position in the index, starting with 0:
+--
+-- @since 0.1.1.0
+--
+-- >>> indexed (fromList ['a', 'b', 'c', 'd'])
+-- Index [(0,'a'),(1,'b'),(2,'c'),(3,'d')]
+indexed :: Index k -> Index (Int, k)
+indexed = fromDistinctAscList 
+        . zip [0..] 
+        . toAscList
+{-# INLINE indexed #-}
 
 
 -- | \(O(n)\) Filter elements satisfying a predicate.
