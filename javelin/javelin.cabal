@@ -77,15 +77,12 @@ test-suite javelin-test
                       Test.Data.Series.Generic.Definition
                       Test.Data.Series.Generic.View
                       Test.Data.Series.Generic.Zip
-                      Test.Utils
     build-depends:    base,
                       containers,
                       foldl,
                       hedgehog,
                       HUnit,
-                      ieee754,
                       javelin,
-                      statistics,
                       tasty,
                       tasty-hedgehog,
                       tasty-hspec,
