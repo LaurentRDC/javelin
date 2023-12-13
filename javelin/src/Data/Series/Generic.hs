@@ -63,6 +63,7 @@ module Data.Series.Generic (
     DisplayOptions(..), defaultDisplayOptions
 ) where
 
+import Control.Foldl                    ( mean, variance, std )
 import Data.Series.Generic.Aggregation  ( groupBy, Grouping, aggregateWith, foldWith
                                         , windowing, expanding, all, any, and, or, sum, product, maximum, maximumOn, minimum, minimumOn
                                         , argmax, argmin,
@@ -75,7 +76,6 @@ import Data.Series.Generic.Definition   ( Series(index, values), IsSeries(..), O
                                         , foldWithKey, foldMWithKey, foldMap, foldMapWithKey
                                         , display, displayWith, noLongerThan, DisplayOptions(..), defaultDisplayOptions
                                         )
-import Data.Series.Generic.Numeric      ( mean, variance, std )
 import Data.Series.Generic.Scans        ( postscanl, prescanl, forwardFill )
 import Data.Series.Generic.View         ( Range, Selection, at, iat, select, selectWhere, to, from, upto, filter, filterWithKey, require, requireWith
                                         , catMaybes, dropIndex,

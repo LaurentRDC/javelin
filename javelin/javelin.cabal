@@ -54,7 +54,6 @@ library
                       Data.Series.Unboxed
     other-modules:    Data.Series.Generic.Aggregation
                       Data.Series.Generic.Definition
-                      Data.Series.Generic.Numeric
                       Data.Series.Generic.Scans
                       Data.Series.Generic.View
                       Data.Series.Generic.Zip
@@ -76,7 +75,6 @@ test-suite javelin-test
                       Test.Data.Series.Index
                       Test.Data.Series.Generic.Aggregation
                       Test.Data.Series.Generic.Definition
-                      Test.Data.Series.Generic.Numeric
                       Test.Data.Series.Generic.View
                       Test.Data.Series.Generic.Zip
                       Test.Utils
