@@ -3,7 +3,3 @@ packages: **/*.cabal
 test-show-details: streaming
 tests: True
 benchmarks: True
-
-allow-newer: pinch-gen:base
-           , pinch:deepseq
-           , pinch:bytestring
