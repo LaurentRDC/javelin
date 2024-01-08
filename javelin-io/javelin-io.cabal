@@ -38,7 +38,7 @@ library
                       cassava,
                       containers,
                       hashable,
-                      pinch,
+                      pinch         ^>=0.5,
                       unordered-containers,
                       javelin,
                       text,

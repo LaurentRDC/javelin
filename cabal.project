@@ -6,3 +6,4 @@ benchmarks: True
 
 allow-newer: pinch-gen:base
            , pinch:deepseq
+           , pinch:bytestring
