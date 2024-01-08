@@ -32,14 +32,18 @@ library
     exposed-modules:  Data.Series.IO
                       Data.Series.Generic.IO
                       Data.Series.Unboxed.IO
+    other-modules:    Data.Series.Generic.IO.Parquet.Types
     build-depends:    base  >=4.15.0.0,
                       bytestring,
                       cassava,
                       containers,
+                      hashable,
+                      pinch,
                       unordered-containers,
                       javelin,
                       text,
-                      vector
+                      vector,
+                      vector-instances
 
 test-suite javelin-io-test
     import:           common
