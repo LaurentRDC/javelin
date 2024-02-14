@@ -27,6 +27,7 @@ module Data.Series.Generic.View (
 ) where
 
 
+import           Data.Functor           ( (<&>) )
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Series.Index.Internal as Index.Internal
@@ -60,9 +61,7 @@ infixl 1 `select`
 
 -- | \(O(\log n)\). Extract a single value from a series, by key.
 at :: (Vector v a, Ord k) => Series v k a -> k -> Maybe a
-at (MkSeries ks vs) k = do
-    ix <- Index.lookupIndex k ks
-    pure $ Vector.unsafeIndex vs ix 
+at (MkSeries ks vs) k = Index.lookupIndex k ks <&> Vector.unsafeIndex vs 
 {-# INLINABLE at #-}
 
 
@@ -72,8 +71,8 @@ iat (MkSeries _ vs) =  (Vector.!?) vs
 {-# INLINABLE iat #-}
 
 
--- | require a series with a new index.
--- Contrary to 'select', all keys in @'Set' k@ will be present in the re-indexed series.
+-- | Require a series with a new index.
+-- Contrary to 'select', all keys in @'Index' k@ will be present in the re-indexed series.
 require :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
 {-# INLINABLE require #-}
@@ -95,7 +94,7 @@ requireWith replacement f xs ss
        in G.map f (xs `selectSubset` existingKeys) <> MkSeries newKeys (Vector.fromListN (Index.size newKeys) (replacement <$> Index.toAscList newKeys))
 
 
--- | Drop the index of a series by replacing it with an @Int@-based index. Values will
+-- | \(O(n)\) Drop the index of a series by replacing it with an @Int@-based index. Values will
 -- be indexed from 0.
 dropIndex :: Series v k a -> Series v Int a
 {-# INLINABLE dropIndex #-}
@@ -263,6 +262,7 @@ instance Selection Index where
             -- for large Series
            in xs `selectSubset` selectedKeys
 
+
 -- | Selecting a sub-series from a 'Set' is a convenience
 -- function. Internally, the 'Set' is converted to an index first.
 instance Selection Set where
@@ -287,7 +287,7 @@ instance Selection Range where
     select series rng = case keysInRange series rng of 
         Nothing              -> mempty
         Just (kstart, kstop) -> let indexOf xs k = Index.Internal.findIndex k (index xs)
-                                 in slice (series `indexOf` kstart) (1 + indexOf series kstop) series
+                                 in slice (series `indexOf` kstart) (1 + series `indexOf` kstop) series
 
 
 -- | Select a sub-series from a series matching a condition.
@@ -312,12 +312,14 @@ selectSubset (MkSeries ks vs) ss
     --   while filtering away on keys? Initial attempts did not lead
     --   to performance improvements, but I can't imagine that calling
     --   `Index.Internal.findIndex` repeatedly is efficient
+    --
+    --   Maybe use Data.Series.Index.indexed to traverse the index once?
     = MkSeries ss $ Boxed.convert
                   $ Boxed.map (Vector.unsafeIndex vs . (`Index.Internal.findIndex` ks))
                   $ Index.toAscVector ss
 
 
--- | Yield a subseries based on indices. The end index is not included.
+-- | \(O(\log n)\) Yield a subseries based on integer indices. The end index is not included.
 slice :: Vector v a
       => Int -- ^ Start index
       -> Int -- ^ End index, which is not included
@@ -326,6 +328,7 @@ slice :: Vector v a
 {-# INLINABLE slice #-}
 slice start stop (MkSeries ks vs) 
     = let stop' = min (Vector.length vs) stop
+    -- Index.take is O(log n) while Vector.slice is O(1)
     in MkSeries { index  = Index.take (stop' - start) $ Index.drop start ks
                 , values = Vector.slice start (stop' - start) vs
                 }

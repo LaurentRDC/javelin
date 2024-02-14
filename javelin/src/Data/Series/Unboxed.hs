@@ -667,7 +667,7 @@ require :: (Unbox a, Ord k)
 require f = G.requireWith f id
 
 
--- | Drop the index of a series by replacing it with an `Int`-based index. Values will
+-- | \(O(n)\) Drop the index of a series by replacing it with an `Int`-based index. Values will
 -- be indexed from 0.
 --
 -- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]

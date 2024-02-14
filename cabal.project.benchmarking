@@ -1,5 +1,4 @@
-packages: **/*.cabal
-benchmarks: true
+import: cabal.project
 
 -- Optimization level for the package itself
 optimization: 2
