@@ -1,4 +1,16 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Series.Generic
+-- Copyright   :  (c) Laurent P. René de Cotret
+-- License     :  MIT
+-- Maintainer  :  laurent.decotret@outlook.com
+-- Portability :  portable
+--
+-- This module contains data structures and functions to work with any type of 'Series', 
+-- including boxed and unboxed types.
+--
+-- Use the definitions in this module if you want to support all types of 'Series' at once.
 module Data.Series.Generic (
     -- * Definition
     Series(index, values),

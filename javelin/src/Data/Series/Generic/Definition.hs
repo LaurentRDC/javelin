@@ -107,20 +107,20 @@ data Series v k a
 
 -- | \(O(n)\) Convert between two types of 'Series'.
 convert :: (Vector v1 a, Vector v2 a) => Series v1 k a -> Series v2 k a
-{-# INLINE convert #-}
+{-# INLINABLE convert #-}
 convert (MkSeries ix vs) = MkSeries ix $ Vector.convert vs 
 
 
 -- | \(O(1)\) Create a 'Series' with a single element.
 singleton :: Vector v a => k -> a -> Series v k a
-{-# INLINE singleton #-}
+{-# INLINABLE singleton #-}
 singleton k v = MkSeries (Index.singleton k) $ Vector.singleton v
 
 
 -- | \(O(n)\) Generate a 'Series' by mapping every element of its index.
 fromIndex :: (Vector v a) 
           => (k -> a) -> Index k -> Series v k a
-{-# INLINE fromIndex #-}
+{-# INLINABLE fromIndex #-}
 fromIndex f ix = MkSeries ix $ Vector.convert 
                              $ Boxed.map f -- Using boxed vector to prevent a (Vector v k) constraint
                              $ Index.toAscVector ix
@@ -154,7 +154,7 @@ instance (Ord k, Vector v a) => IsSeries [(k, a)] v k a where
     -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
     toSeries :: [(k, a)] -> Series v k a
     toSeries = toSeries . MS.fromList
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     -- | Construct a list from key-value pairs. The elements are in order sorted by key:
     --
@@ -169,14 +169,14 @@ instance (Ord k, Vector v a) => IsSeries [(k, a)] v k a where
     -- [('a',5),('b',0),('d',1)]
     fromSeries :: Series v k a -> [(k, a)]
     fromSeries (MkSeries ks vs)= zip (Index.toAscList ks) (Vector.toList vs)
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 -- | Construct a 'Series' from a list of key-value pairs. There is no
 -- condition on the order of pairs. Duplicate keys are silently dropped. If you
 -- need to handle duplicate keys, see 'fromListDuplicates'.
 fromList :: (Vector v a, Ord k) => [(k, a)] -> Series v k a
-{-# INLINE fromList #-}
+{-# INLINABLE fromList #-}
 fromList = toSeries
 
 
@@ -210,32 +210,32 @@ deriving instance Vector U.Vector Occurrence
 -- Contrary to 'fromList', values at duplicate keys are preserved. To keep each
 -- key unique, an 'Occurrence' number counts up.
 fromListDuplicates :: (Vector v a, Ord k) => [(k, a)] -> Series v (k, Occurrence) a
-{-# INLINE fromListDuplicates #-}
+{-# INLINABLE fromListDuplicates #-}
 fromListDuplicates = convert . fromVectorDuplicates . Boxed.fromList
 
 
 -- | Construct a list from key-value pairs. The elements are in order sorted by key. 
 toList :: Vector v a => Series v k a -> [(k, a)]
-{-# INLINE toList #-}
+{-# INLINABLE toList #-}
 toList (MkSeries ks vs) = zip (Index.toAscList ks) (Vector.toList vs)
 
 
 instance (Ord k) => IsSeries (Boxed.Vector (k, a)) Boxed.Vector k a where
     toSeries = fromVector
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     fromSeries = toVector
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 instance (Ord k, U.Unbox a, U.Unbox k) => IsSeries (U.Vector (k, a)) U.Vector k a where
     toSeries :: U.Vector (k, a) -> Series U.Vector k a
     toSeries = fromVector
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     fromSeries :: Series U.Vector k a -> U.Vector (k, a)
     fromSeries = toVector
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 -- | Construct a 'Series' from a 'Vector' of key-value pairs. There is no
@@ -247,7 +247,7 @@ instance (Ord k, U.Unbox a, U.Unbox k) => IsSeries (U.Vector (k, a)) U.Vector k 
 -- may not be equivalent if the input list contains duplicate keys.
 fromVector :: (Ord k, Vector v k, Vector v a, Vector v (k, a))
            => v (k, a) -> Series v k a
-{-# INLINE fromVector #-}
+{-# INLINABLE fromVector #-}
 fromVector vec = let (indexVector, valuesVector) = Vector.unzip $ runST $ do
                         mv <- Vector.thaw vec
                         -- Note that we're using this particular flavor of `sortUniqBy`
@@ -271,7 +271,7 @@ fromDistinctAscVector xs
 -- There is no condition on the order of pairs.
 fromVectorDuplicates :: (Ord k, Vector v k, Vector v a, Vector v (k, a), Vector v (k, Occurrence))
                      => v (k, a) -> Series v (k, Occurrence) a
-{-# INLINE fromVectorDuplicates #-}
+{-# INLINABLE fromVectorDuplicates #-}
 fromVectorDuplicates vec 
     = let (indexVector, valuesVector) 
             = Vector.unzip $ runST $ do
@@ -294,7 +294,7 @@ fromVectorDuplicates vec
 -- | Construct a 'Vector' of key-value pairs. The elements are in order sorted by key. 
 toVector :: (Vector v a, Vector v k, Vector v (k, a)) 
          => Series v k a -> v (k, a)
-{-# INLINE toVector #-}
+{-# INLINABLE toVector #-}
 toVector (MkSeries ks vs) = Vector.zip (Index.toAscVector ks) vs
 
 
@@ -304,34 +304,34 @@ instance (Vector v a) => IsSeries (Map k a) v k a where
                 { index  = Index.fromSet $ MS.keysSet mp
                 , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                 }
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     fromSeries :: Series v k a -> Map k a
     fromSeries (MkSeries ks vs)
         = MS.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 toLazyMap :: (Vector v a) => Series v k a -> Map k a
-{-# INLINE toLazyMap #-}
+{-# INLINABLE toLazyMap #-}
 toLazyMap = fromSeries
 
 
 -- | Construct a series from a lazy 'Data.Map.Lazy.Map'.
 fromLazyMap :: (Vector v a) => ML.Map k a -> Series v k a
-{-# INLINE fromLazyMap #-}
+{-# INLINABLE fromLazyMap #-}
 fromLazyMap = toSeries
 
 
 -- | Convert a series into a strict 'Data.Map.Strict.Map'.
 toStrictMap :: (Vector v a) => Series v k a -> Map k a
-{-# INLINE toStrictMap #-}
+{-# INLINABLE toStrictMap #-}
 toStrictMap (MkSeries ks vs) = MS.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
 
 
 -- | Construct a series from a strict 'Data.Map.Strict.Map'.
 fromStrictMap :: (Vector v a) => MS.Map k a -> Series v k a
-{-# INLINE fromStrictMap #-}
+{-# INLINABLE fromStrictMap #-}
 fromStrictMap mp = MkSeries { index  = Index.toIndex $ MS.keysSet mp
                             , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                             }
@@ -343,51 +343,51 @@ instance (Vector v a) => IsSeries (IntMap a) v Int a where
                 { index  = Index.toIndex $ IntMap.keysSet im
                 , values = Vector.fromListN (IntMap.size im)  $ IntMap.elems im 
                 }
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     fromSeries :: Series v Int a -> IntMap a
     fromSeries (MkSeries ks vs) 
         = IntMap.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 instance (Ord k, Vector v a) => IsSeries (Seq (k, a)) v k a where
     toSeries :: Seq (k, a) -> Series v k a
     toSeries = toSeries . Foldable.toList
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     fromSeries :: Series v k a -> Seq (k, a)
     fromSeries = Seq.fromList . fromSeries
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 instance (Vector v a) => IsSeries (Set (k, a)) v k a where
     toSeries :: Set (k, a) -> Series v k a
     toSeries = fromDistinctAscList . Set.toAscList
-    {-# INLINE toSeries #-}
+    {-# INLINABLE toSeries #-}
 
     fromSeries :: Series v k a -> Set (k, a)
     fromSeries = Set.fromDistinctAscList . toList
-    {-# INLINE fromSeries #-}
+    {-# INLINABLE fromSeries #-}
 
 
 -- | Get the first value of a 'Series'. If the 'Series' is empty,
 -- this function returns 'Nothing'.
 headM :: Vector v a => Series v k a -> Maybe a
-{-# INLINE headM #-}
+{-# INLINABLE headM #-}
 headM (MkSeries _ vs) = Vector.headM vs
 
 
 -- | Get the last value of a 'Series'. If the 'Series' is empty,
 -- this function returns 'Nothing'.
 lastM :: Vector v a => Series v k a -> Maybe a
-{-# INLINE lastM #-}
+{-# INLINABLE lastM #-}
 lastM (MkSeries _ vs) = Vector.lastM vs
 
 
 -- | \(O(\log n)\) @'take' n xs@ returns at most @n@ elements of the 'Series' @xs@.
 take :: Vector v a => Int -> Series v k a -> Series v k a
-{-# INLINE take #-}
+{-# INLINABLE take #-}
 take n (MkSeries ks vs) 
     -- Index.take is O(log n) while Vector.take is O(1)
     = MkSeries (Index.take n ks) (Vector.take n vs)
@@ -395,7 +395,7 @@ take n (MkSeries ks vs)
 
 -- | \(O(\log n)\) @'drop' n xs@ drops at most @n@ elements from the 'Series' @xs@.
 drop :: Vector v a => Int -> Series v k a -> Series v k a
-{-# INLINE drop #-}
+{-# INLINABLE drop #-}
 drop n (MkSeries ks vs) 
     -- Index.drop is O(log n) while Vector.drop is O(1)
     = MkSeries (Index.drop n ks) (Vector.drop n vs)
@@ -403,7 +403,7 @@ drop n (MkSeries ks vs)
 
 -- | \(O(n)\) Returns the longest prefix (possibly empty) of the input 'Series' that satisfy a predicate.
 takeWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
-{-# INLINE takeWhile #-}
+{-# INLINABLE takeWhile #-}
 takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
                  in MkSeries { index  = Index.take (Vector.length taken) ix
                              , values = taken 
@@ -412,7 +412,7 @@ takeWhile f (MkSeries ix vs) = let taken = Vector.takeWhile f vs
 
 -- | \(O(n)\) Returns the complement of 'takeWhile'.
 dropWhile :: Vector v a => (a -> Bool) -> Series v k a -> Series v k a
-{-# INLINE dropWhile #-}
+{-# INLINABLE dropWhile #-}
 dropWhile f (MkSeries ix vs) = let dropped = Vector.dropWhile f vs
                  in MkSeries { index  = Index.drop (Index.size ix - Vector.length dropped) ix
                              , values = dropped
@@ -422,14 +422,14 @@ dropWhile f (MkSeries ix vs) = let dropped = Vector.dropWhile f vs
 -- | \(O(n)\) Map every element of a 'Series'.
 map :: (Vector v a, Vector v b) 
     => (a -> b) -> Series v k a -> Series v k b
-{-# INLINE map #-}
+{-# INLINABLE map #-}
 map f (MkSeries ix xs) = MkSeries ix $ Vector.map f xs
 
 
 -- | \(O(n)\) Map every element of a 'Series', possibly using the key as well.
 mapWithKey :: (Vector v a, Vector v b) 
            => (k -> a -> b) -> Series v k a -> Series v k b
-{-# INLINE mapWithKey #-}
+{-# INLINABLE mapWithKey #-}
 mapWithKey f (MkSeries ix xs) 
     -- We're using boxed vectors to map because we don't want any restrictions
     -- on the index type, i.e. we don't want the constraint Vector v k
@@ -443,7 +443,7 @@ mapWithKey f (MkSeries ix xs)
 --
 -- In case new keys are conflicting, the first element is kept.
 mapIndex :: (Vector v a, Ord k, Ord g) => Series v k a -> (k -> g) -> Series v g a
-{-# INLINE mapIndex #-}
+{-# INLINABLE mapIndex #-}
 mapIndex (MkSeries index values) f
     -- Note that the order in which items are kept appears to be backwards;
     -- See the examples for Data.Map.Strict.fromListWith
@@ -457,56 +457,56 @@ concatMap :: (Vector v a, Vector v k, Vector v b, Vector v (k, a), Vector v (k, 
           => (a -> Series v k b) 
           -> Series v k a 
           -> Series v k b
-{-# INLINE concatMap #-}
+{-# INLINABLE concatMap #-}
 concatMap f = fromVector 
             . Vector.concatMap (toVector . f . snd) 
             . toVector
 
 
 instance (Vector v a, Ord k) => Semigroup (Series v k a) where
-    {-# INLINE (<>) #-}
+    {-# INLINABLE (<>) #-}
     (<>) :: Series v k a -> Series v k a -> Series v k a
     -- Despite all my effort, merging via conversion to Map remains fastest.
     xs <> ys = toSeries $ toStrictMap xs <> toStrictMap ys
 
-    {-# INLINE sconcat #-}
+    {-# INLINABLE sconcat #-}
     sconcat = toSeries . sconcat . fmap toStrictMap
 
 
 instance (Vector v a, Ord k) => Monoid (Series v k a) where
-    {-# INLINE mempty #-}
+    {-# INLINABLE mempty #-}
     mempty :: Series v k a
     mempty = MkSeries mempty Vector.empty
 
-    {-# INLINE mappend #-}
+    {-# INLINABLE mappend #-}
     mappend :: Series v k a -> Series v k a -> Series v k a
     mappend = (<>)
 
-    {-# INLINE mconcat #-}
+    {-# INLINABLE mconcat #-}
     mconcat :: [Series v k a] -> Series v k a
     mconcat = toSeries . mconcat . fmap toStrictMap
 
 
 instance (Vector v a, Eq k, Eq a) => Eq (Series v k a) where
-    {-# INLINE (==) #-}
+    {-# INLINABLE (==) #-}
     (==) :: Series v k a -> Series v k a -> Bool
     (MkSeries ks1 vs1) == (MkSeries ks2 vs2) = (ks1 == ks2) && (vs1 `Vector.eq` vs2)
 
 
 instance (Vector v a, Ord (v a), Ord k, Ord a) => Ord (Series v k a) where
-    {-# INLINE compare #-}
+    {-# INLINABLE compare #-}
     compare :: Series v k a -> Series v k a -> Ordering
     compare (MkSeries ks1 vs1) (MkSeries ks2 vs2) = compare (ks1, vs1) (ks2, vs2)
 
 
 instance (Functor v) => Functor (Series v k) where
-    {-# INLINE fmap #-}
+    {-# INLINABLE fmap #-}
     fmap :: (a -> b) -> Series v k a -> Series v k b
     fmap f (MkSeries ks vs) = MkSeries ks (fmap f vs)
 
 
 instance (forall a. Vector v a, Functor v) => FunctorWithIndex k (Series v k) where
-    {-# INLINE imap #-}
+    {-# INLINABLE imap #-}
     imap :: (k -> a -> b) -> Series v k a -> Series v k b
     imap = mapWithKey
 
@@ -516,96 +516,96 @@ instance (forall a. Vector v a, Functor v) => FunctorWithIndex k (Series v k) wh
 -- Series to have performance characteristics
 -- be as close as possible to boxed vectors 
 instance (Foldable v) => Foldable (Series v k) where
-    {-# INLINE fold #-}
+    {-# INLINABLE fold #-}
     fold :: Monoid m => Series v k m -> m
     fold = Foldable.fold . values
 
-    {-# INLINE foldMap #-}
+    {-# INLINABLE foldMap #-}
     foldMap :: (Monoid m) => (a -> m) -> Series v k a -> m
     foldMap f = Foldable.foldMap f . values
 
-    {-# INLINE foldMap' #-}
+    {-# INLINABLE foldMap' #-}
     foldMap' :: (Monoid m) => (a -> m) -> Series v k a -> m
     foldMap' f = Foldable.foldMap f . values
 
-    {-# INLINE foldr #-}
+    {-# INLINABLE foldr #-}
     foldr :: (a -> b -> b) -> b -> Series v k a -> b
     foldr f i = Foldable.foldr f i . values
 
-    {-# INLINE foldr' #-}
+    {-# INLINABLE foldr' #-}
     foldr' :: (a -> b -> b) -> b -> Series v k a -> b
     foldr' f i = Foldable.foldr' f i . values
 
-    {-# INLINE foldl #-}
+    {-# INLINABLE foldl #-}
     foldl :: (b -> a -> b) -> b -> Series v k a -> b
     foldl f i = Foldable.foldl f i . values
 
-    {-# INLINE foldl' #-}
+    {-# INLINABLE foldl' #-}
     foldl' :: (b -> a -> b) -> b -> Series v k a -> b
     foldl' f i = Foldable.foldl' f i . values
 
-    {-# INLINE foldr1 #-}
+    {-# INLINABLE foldr1 #-}
     foldr1 :: (a -> a -> a) -> Series v k a -> a
     foldr1 f = Foldable.foldr1 f . values
 
-    {-# INLINE foldl1 #-}
+    {-# INLINABLE foldl1 #-}
     foldl1 :: (a -> a -> a) -> Series v k a -> a
     foldl1 f = Foldable.foldl1 f . values
 
-    {-# INLINE toList #-}
+    {-# INLINABLE toList #-}
     toList :: Series v k a -> [a]
     toList = Foldable.toList . values
 
-    {-# INLINE null #-}
+    {-# INLINABLE null #-}
     null :: Series v k a -> Bool
     null = Foldable.null . values
 
-    {-# INLINE length #-}
+    {-# INLINABLE length #-}
     length :: Series v k a -> Int
     length = Foldable.length . values
 
-    {-# INLINE elem #-}
+    {-# INLINABLE elem #-}
     elem :: Eq a => a -> Series v k a -> Bool
     elem e = Foldable.elem e . values
 
-    {-# INLINE maximum #-}
+    {-# INLINABLE maximum #-}
     maximum :: Ord a => Series v k a -> a
     maximum = Foldable.maximum . values
 
-    {-# INLINE minimum #-}
+    {-# INLINABLE minimum #-}
     minimum :: Ord a => Series v k a -> a
     minimum = Foldable.minimum . values
 
-    {-# INLINE sum #-}
+    {-# INLINABLE sum #-}
     sum :: Num a => Series v k a -> a
     sum = Foldable.sum . values
 
-    {-# INLINE product #-}
+    {-# INLINABLE product #-}
     product :: Num a => Series v k a -> a
     product = Foldable.product . values
 
 
 instance (forall a. Vector v a, Vector v k, Foldable v, Functor v) => FoldableWithIndex k (Series v k) where
-    {-# INLINE ifoldMap #-}
+    {-# INLINABLE ifoldMap #-}
     ifoldMap :: Monoid m => (k -> a -> m) -> Series v k a -> m
     ifoldMap = foldMapWithKey
 
 
 instance (Foldable v) => Bifoldable (Series v) where
-    {-# INLINE bifoldMap #-}
+    {-# INLINABLE bifoldMap #-}
     bifoldMap :: Monoid m => (k -> m) -> (a -> m) -> Series v k a -> m
     bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Foldable.foldMap fv vs
 
 
 instance (Traversable v) => Traversable (Series v k) where
-    {-# INLINE traverse #-}
+    {-# INLINABLE traverse #-}
     traverse :: Applicative f
              => (a -> f b) -> Series v k a -> f (Series v k b)
     traverse f (MkSeries ix vs) = MkSeries ix <$> traverse f vs
 
 
 instance (forall a. Vector v a, Functor v, Foldable v, Ord k, Traversable v) => TraversableWithIndex k (Series v k) where
-    {-# INLINE itraverse #-}
+    {-# INLINABLE itraverse #-}
     itraverse :: Applicative f => (k -> a -> f b) -> Series v k a -> f (Series v k b)
     itraverse = traverseWithKey
 
@@ -620,7 +620,7 @@ fold :: Vector v a
      -> b
 fold (Fold step init' extract) 
     = extract . Vector.foldl' step init' . values
-{-# INLINE fold #-}
+{-# INLINABLE fold #-}
 
 
 -- | \(O(n)\) Execute a monadic 'FoldM' over a 'Series'.
@@ -633,7 +633,7 @@ foldM :: (Monad m, Vector v a)
       -> m b
 foldM (FoldM step init' extract) xs
     = init' >>= \i -> Vector.foldM' step i (values xs) >>= extract
-{-# INLINE foldM #-}
+{-# INLINABLE foldM #-}
 
 
 -- | \(O(n)\) Execute a 'Fold' over a 'Series', where the 'Fold' takes keys into account.
@@ -643,7 +643,7 @@ foldWithKey :: (Vector v a, Vector v k, Vector v (k, a))
             -> b
 foldWithKey (Fold step init' extract) 
     = extract . Vector.foldl' step init' . toVector
-{-# INLINE foldWithKey #-}
+{-# INLINABLE foldWithKey #-}
 
 
 -- | \(O(n)\) Execute a monadic 'FoldM' over a 'Series', where the 'FoldM' takes keys into account.
@@ -653,38 +653,38 @@ foldMWithKey :: (Monad m, Vector v a, Vector v k, Vector v (k, a))
              -> m b
 foldMWithKey (FoldM step init' extract) xs
     = init' >>= \i -> Vector.foldM' step i (toVector xs) >>= extract
-{-# INLINE foldMWithKey #-}
+{-# INLINABLE foldMWithKey #-}
 
 
 -- | \(O(n)\) Fold over elements in a 'Series'.
 foldMap :: (Monoid m, Vector v a) => (a -> m) -> Series v k a -> m
-{-# INLINE foldMap #-}
+{-# INLINABLE foldMap #-}
 foldMap f = Vector.foldMap f . values
 
 
 -- | \(O(n)\) Fold over pairs of keys and elements in a 'Series'.
 -- See also 'bifoldMap'.
 foldMapWithKey :: (Monoid m, Vector v a, Vector v k, Vector v (k, a)) => (k -> a -> m) -> Series v k a -> m
-{-# INLINE foldMapWithKey #-}
+{-# INLINABLE foldMapWithKey #-}
 foldMapWithKey f = Vector.foldMap (uncurry f) . toVector
 
 
 -- | \(O(n)\) Fold over keys and elements separately in a 'Series'.
 -- See also 'foldMapWithKey'.
 bifoldMap :: (Vector v a, Monoid m) => (k -> m) -> (a -> m) -> Series v k a -> m
-{-# INLINE bifoldMap #-}
+{-# INLINABLE bifoldMap #-}
 bifoldMap fk fv (MkSeries ks vs) = P.foldMap fk ks <> Vector.foldMap fv vs
 
 
 -- | \(O(1)\) Extract the length of a 'Series'.
 length :: Vector v a => Series v k a -> Int
-{-# INLINE length #-}
+{-# INLINABLE length #-}
 length = Vector.length . values
 
 
 -- | \(O(1)\) Test whether a 'Series' is empty.
 null :: Vector v a => Series v k a -> Bool
-{-# INLINE null #-}
+{-# INLINABLE null #-}
 null = Vector.null . values
 
 
@@ -692,7 +692,7 @@ null = Vector.null . values
 -- index, yielding a series of results.
 mapWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) 
             => (k -> a -> m b) -> Series v k a -> m (Series v k b)
-{-# INLINE mapWithKeyM #-}
+{-# INLINABLE mapWithKeyM #-}
 mapWithKeyM f xs = let f' (key, val) = (key,) <$> f key val
            in fmap fromList $ traverse f' $ toList xs
 
@@ -701,7 +701,7 @@ mapWithKeyM f xs = let f' (key, val) = (key,) <$> f key val
 -- index, discarding the results.
 mapWithKeyM_ :: (Vector v a, Monad m) 
              => (k -> a -> m b) -> Series v k a -> m ()
-{-# INLINE mapWithKeyM_ #-}
+{-# INLINABLE mapWithKeyM_ #-}
 mapWithKeyM_ f xs = let f' (key, val) = (key,) <$> f key val
            in mapM_ f' $ toList xs
 
@@ -709,14 +709,14 @@ mapWithKeyM_ f xs = let f' (key, val) = (key,) <$> f key val
 -- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- yielding a series of results.
 forWithKeyM :: (Vector v a, Vector v b, Monad m, Ord k) => Series v k a -> (k -> a -> m b) -> m (Series v k b)
-{-# INLINE forWithKeyM #-}
+{-# INLINABLE forWithKeyM #-}
 forWithKeyM = flip mapWithKeyM
 
 
 -- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- discarding the results.
 forWithKeyM_ :: (Vector v a, Monad m) => Series v k a -> (k -> a -> m b) -> m ()
-{-# INLINE forWithKeyM_ #-}
+{-# INLINABLE forWithKeyM_ #-}
 forWithKeyM_ = flip mapWithKeyM_
 
 
@@ -725,7 +725,7 @@ traverseWithKey :: (Applicative t, Ord k, Traversable v, Vector v a, Vector v b,
                 => (k -> a -> t b) 
                 -> Series v k a 
                 -> t (Series v k b)
-{-# INLINE traverseWithKey #-}
+{-# INLINABLE traverseWithKey #-}
 traverseWithKey f = fmap fromVector 
                   . traverse (\(k, x) -> (k,) <$> f k x) 
                   . toVector

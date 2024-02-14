@@ -34,7 +34,7 @@ sharpeRatio :: RealFloat a => Fold a a
 -- Note that the standard deviation of returns and standard deviation of excess returns
 -- are always equal; the standard deviation is invariant under addition of a constant.
 sharpeRatio = (/) <$> Fold.mean <*> Fold.std
-{-# INLINE sharpeRatio #-}
+{-# INLINABLE sharpeRatio #-}
 
 
 -- | \(O(n)\) Sortino ratio of excess returns.
@@ -55,7 +55,7 @@ sortinoRatio :: RealFloat a => Fold a a
 -- Note that the standard deviation of returns and standard deviation of excess returns
 -- are always equal; the standard deviation is invariant under addition of a constant.
 sortinoRatio = (/) <$> Fold.mean <*> Fold.prefilter (<0) Fold.std
-{-# INLINE sortinoRatio #-}
+{-# INLINABLE sortinoRatio #-}
 
 
 -- | Returns the most negative drawdown from a series of returns.
@@ -82,7 +82,7 @@ maxDrawDown = Fold advance (MkDrawDownState 0 0 0) cumulativeMaxDraw
                                  , cumulativeReturn  = newAccumulatedReturn
                                  , cumulativeMaxDraw = min cumulativeMaxDraw draw
                                  }
-{-# INLINE maxDrawDown #-}
+{-# INLINABLE maxDrawDown #-}
 
 data DrawDownState a = MkDrawDownState { cumulativeMax     :: !a 
                                        , cumulativeReturn  :: !a

@@ -16,7 +16,7 @@
 -- an 'Index' be a sequence of unique keys.  A better way to construct an 'Index' is 
 -- to use a 'Data.Set' (`fromSet`)
 --
--- For quick inline definitions of an 'Index', you can also make use of the @OverloadedLists@ extension:
+-- For quick INLINABLE definitions of an 'Index', you can also make use of the @OverloadedLists@ extension:
 -- 
 -- >>> :set -XOverloadedLists
 -- >>> let (ix :: Index Int) = [1,2,3,4,5,5,5]

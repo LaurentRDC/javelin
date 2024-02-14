@@ -143,18 +143,18 @@ type Series = G.Series Vector
 
 
 index :: Series k a -> Index k
-{-# INLINE index #-}
+{-# INLINABLE index #-}
 index = G.index
 
 
 values :: Series k a -> Vector a
-{-# INLINE values #-}
+{-# INLINABLE values #-}
 values = G.values
 
 
 -- | Create a 'Series' with a single element.
 singleton :: Unbox a => k -> a -> Series k a
-{-# INLINE singleton #-}
+{-# INLINABLE singleton #-}
 singleton = G.singleton
 
 
@@ -169,7 +169,7 @@ singleton = G.singleton
 --   'd' |      0
 fromIndex :: Unbox a
           => (k -> a) -> Index k -> Series k a
-{-# INLINE fromIndex #-}
+{-# INLINABLE fromIndex #-}
 fromIndex = G.fromIndex
 
 
@@ -186,7 +186,7 @@ fromIndex = G.fromIndex
 --
 -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
 fromList :: (Ord k, Unbox a) => [(k, a)] -> Series k a
-{-# INLINE fromList #-}
+{-# INLINABLE fromList #-}
 fromList = G.fromList
 
 
@@ -204,7 +204,7 @@ fromList = G.fromList
 -- ('d',1) |     -4
 -- ('d',2) |      7
 fromListDuplicates :: (Ord k, Unbox a) => [(k, a)] -> Series (k, Occurrence) a
-{-# INLINE fromListDuplicates #-}
+{-# INLINABLE fromListDuplicates #-}
 fromListDuplicates = G.fromListDuplicates
 
 
@@ -220,13 +220,13 @@ fromListDuplicates = G.fromListDuplicates
 -- >>> toList xs
 -- [('a',5),('b',0),('d',1)]
 toList :: Unbox a => Series k a -> [(k, a)]
-{-# INLINE toList #-}
+{-# INLINABLE toList #-}
 toList = G.toList
 
 
 -- | Construct a 'Vector' of key-value pairs. The elements are in order sorted by key. 
 toVector :: (Unbox a, Unbox k) => Series k a -> Vector (k, a)
-{-# INLINE toVector #-}
+{-# INLINABLE toVector #-}
 toVector = G.toVector
 
 
@@ -239,7 +239,7 @@ toVector = G.toVector
 -- may not be equivalent if the input list contains duplicate keys.
 fromVector :: (Ord k, Unbox k, Unbox a)
            => Vector (k, a) -> Series k a
-{-# INLINE fromVector #-}
+{-# INLINABLE fromVector #-}
 fromVector = G.fromVector
 
 
@@ -258,42 +258,42 @@ fromVector = G.fromVector
 -- ('d',1) |     -4
 -- ('d',2) |      7
 fromVectorDuplicates :: (Unbox k, Unbox a, Ord k) => Vector (k, a) -> Series (k, Occurrence) a
-{-# INLINE fromVectorDuplicates #-}
+{-# INLINABLE fromVectorDuplicates #-}
 fromVectorDuplicates = G.fromVectorDuplicates
 
 
 -- | Convert a series into a lazy @Map@.
 toLazyMap :: (Unbox a) => Series k a -> ML.Map k a
-{-# INLINE toLazyMap #-}
+{-# INLINABLE toLazyMap #-}
 toLazyMap = G.toLazyMap
 
 
 -- | Construct a series from a lazy @Map@.
 fromLazyMap :: (Unbox a) => ML.Map k a -> Series k a
-{-# INLINE fromLazyMap #-}
+{-# INLINABLE fromLazyMap #-}
 fromLazyMap = G.fromLazyMap
 
 
 -- | Convert a series into a strict @Map@.
 toStrictMap :: (Unbox a) => Series k a -> MS.Map k a
-{-# INLINE toStrictMap #-}
+{-# INLINABLE toStrictMap #-}
 toStrictMap = G.toStrictMap
 
 -- | Construct a series from a strict @Map@.
 fromStrictMap :: (Unbox a) => MS.Map k a -> Series k a
-{-# INLINE fromStrictMap #-}
+{-# INLINABLE fromStrictMap #-}
 fromStrictMap = G.fromStrictMap
 
 
 -- | \(O(n)\) Map every element of a 'Series'.
 map :: (Unbox a, Unbox b) => (a -> b) -> Series k a -> Series k b
-{-# INLINE map #-}
+{-# INLINABLE map #-}
 map = G.map
 
 
 -- | \(O(n)\) Map every element of a 'Series', possibly using the key as well.
 mapWithKey :: (Unbox a, Unbox b) => (k -> a -> b) -> Series k a -> Series k b
-{-# INLINE mapWithKey #-}
+{-# INLINABLE mapWithKey #-}
 mapWithKey = G.mapWithKey
 
 
@@ -317,7 +317,7 @@ mapWithKey = G.mapWithKey
 --   "L" |      4
 --   "P" |      1
 mapIndex :: (Unbox a, Ord k, Ord g) => Series k a -> (k -> g) -> Series g a
-{-# INLINE mapIndex #-}
+{-# INLINABLE mapIndex #-}
 mapIndex = G.mapIndex
 
 
@@ -326,35 +326,35 @@ concatMap :: (Unbox a, Unbox k, Unbox b, Ord k)
           => (a -> Series k b) 
           -> Series k a 
           -> Series k b
-{-# INLINE concatMap #-}
+{-# INLINABLE concatMap #-}
 concatMap = G.concatMap
 
 
 -- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, yielding a series of results.
 mapWithKeyM :: (Unbox a, Unbox b, Monad m, Ord k) => (k -> a -> m b) -> Series k a -> m (Series k b)
-{-# INLINE mapWithKeyM #-}
+{-# INLINABLE mapWithKeyM #-}
 mapWithKeyM = G.mapWithKeyM
 
 
 -- | \(O(n)\) Apply the monadic action to every element of a series and its
 -- index, discarding the results.
 mapWithKeyM_ :: (Unbox a, Monad m) => (k -> a -> m b) -> Series k a -> m ()
-{-# INLINE mapWithKeyM_ #-}
+{-# INLINABLE mapWithKeyM_ #-}
 mapWithKeyM_ = G.mapWithKeyM_
 
 
 -- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- yielding a series of results.
 forWithKeyM :: (Unbox a, Unbox b, Monad m, Ord k) => Series k a -> (k -> a -> m b) -> m (Series k b)
-{-# INLINE forWithKeyM #-}
+{-# INLINABLE forWithKeyM #-}
 forWithKeyM = G.forWithKeyM
 
 
 -- | \(O(n)\) Apply the monadic action to all elements of the series and their associated keys, 
 -- discarding the results.
 forWithKeyM_ :: (Unbox a, Monad m) => Series k a -> (k -> a -> m b) -> m ()
-{-# INLINE forWithKeyM_ #-}
+{-# INLINABLE forWithKeyM_ #-}
 forWithKeyM_ = G.forWithKeyM_
 
 
@@ -374,7 +374,7 @@ forWithKeyM_ = G.forWithKeyM_
 -- "Lisbon" |      4
 -- "London" |      2
 take :: Unbox a => Int -> Series k a -> Series k a
-{-# INLINE take #-}
+{-# INLINABLE take #-}
 take = G.take
 
 
@@ -414,7 +414,7 @@ takeWhile = G.takeWhile
 --  "Paris" |      1
 -- "Vienna" |      5
 drop :: Unbox a => Int -> Series k a -> Series k a
-{-# INLINE drop #-}
+{-# INLINABLE drop #-}
 drop = G.drop
 
 
@@ -450,7 +450,7 @@ dropWhile = G.dropWhile
 --   'b' |     12
 zipWithMatched :: (Unbox a, Unbox b, Unbox c, Ord k) 
                => (a -> b -> c) -> Series k a -> Series k b -> Series k c
-{-# INLINE zipWithMatched #-}
+{-# INLINABLE zipWithMatched #-}
 zipWithMatched = G.zipWithMatched
 
 
@@ -470,7 +470,7 @@ zipWithMatched3 :: (Unbox a, Unbox b, Unbox c, Unbox d, Ord k)
                 -> Series k b 
                 -> Series k c
                 -> Series k d
-{-# INLINE zipWithMatched3 #-}
+{-# INLINABLE zipWithMatched3 #-}
 zipWithMatched3 = G.zipWithMatched3
 
 
@@ -488,7 +488,7 @@ zipWithMatched3 = G.zipWithMatched3
 --   'b' |    110
 zipWithKey :: (Unbox a, Unbox b, Unbox c, Unbox k, Ord k)  
            => (k -> a -> b -> c) -> Series k a -> Series k b -> Series k c
-{-# INLINE zipWithKey #-}
+{-# INLINABLE zipWithKey #-}
 zipWithKey = G.zipWithKey
 
 
@@ -510,7 +510,7 @@ zipWithKey3 :: (Unbox a, Unbox b, Unbox c, Unbox d, Unbox k, Ord k)
             -> Series k b 
             -> Series k c
             -> Series k d
-{-# INLINE zipWithKey3 #-}
+{-# INLINABLE zipWithKey3 #-}
 zipWithKey3 = G.zipWithKey3
 
 
@@ -537,7 +537,7 @@ zipWithStrategy :: (Ord k, Unbox a, Unbox b, Unbox c)
                 -> Series k a
                 -> Series k b 
                 -> Series k c
-{-# INLINE zipWithStrategy #-}
+{-# INLINABLE zipWithStrategy #-}
 zipWithStrategy = G.zipWithStrategy
 
 
@@ -556,7 +556,7 @@ zipWithStrategy3 :: (Ord k, Unbox a, Unbox b, Unbox c, Unbox d)
                 -> Series k c
                 -> Series k d
 zipWithStrategy3 = G.zipWithStrategy3
-{-# INLINE zipWithStrategy3 #-}
+{-# INLINABLE zipWithStrategy3 #-}
 
 
 -- | Zip two 'Series' with a combining function. The value for keys which are missing from
@@ -580,7 +580,7 @@ zipWithMonoid :: ( Monoid a, Monoid b
               -> Series k b 
               -> Series k c
 zipWithMonoid = G.zipWithMonoid
-{-# INLINE zipWithMonoid #-}
+{-# INLINABLE zipWithMonoid #-}
 
 
 -- | Elementwise sum of two 'Series'. Elements missing in one or the other 'Series' is considered 0. 
@@ -598,7 +598,7 @@ esum :: (Ord k, Num a, Unbox a)
      -> Series k a
      -> Series k a
 esum = G.esum
-{-# INLINE esum #-}
+{-# INLINABLE esum #-}
 
 
 -- | Elementwise product of two 'Series'. Elements missing in one or the other 'Series' is considered 1. 
@@ -616,7 +616,7 @@ eproduct :: (Ord k, Num a, Unbox a)
          -> Series k a
          -> Series k a
 eproduct = G.eproduct
-{-# INLINE eproduct #-}
+{-# INLINABLE eproduct #-}
 
 
 -- | \(O(n)\) Unzip a 'Series' of 2-tuples.
@@ -626,7 +626,7 @@ unzip :: (Unbox a, Unbox b)
          , Series k b
          )
 unzip = G.unzip
-{-# INLINE unzip #-}
+{-# INLINABLE unzip #-}
 
 
 -- | \(O(n)\) Unzip a 'Series' of 3-tuples.
@@ -637,7 +637,7 @@ unzip3 :: (Unbox a, Unbox b, Unbox c)
           , Series k c
           )
 unzip3 = G.unzip3
-{-# INLINE unzip3 #-}
+{-# INLINABLE unzip3 #-}
 
 
 -- | Require a series to have a specific `Index`. 
@@ -663,7 +663,7 @@ unzip3 = G.unzip3
 -- "Taipei" |      0
 require :: (Unbox a, Ord k) 
         => (k -> a) -> Series k a -> Index k -> Series k a
-{-# INLINE require #-}
+{-# INLINABLE require #-}
 require f = G.requireWith f id
 
 
@@ -684,7 +684,7 @@ require f = G.requireWith f id
 --     1 |      2
 --     2 |      1
 dropIndex :: Series k a -> Series Int a
-{-# INLINE dropIndex #-}
+{-# INLINABLE dropIndex #-}
 dropIndex = G.dropIndex
 
 
@@ -705,7 +705,7 @@ dropIndex = G.dropIndex
 --
 -- See also 'filterWithKey'.
 filter :: (Unbox a, Ord k) => (a -> Bool) -> Series k a -> Series k a
-{-# INLINE filter #-}
+{-# INLINABLE filter #-}
 filter = G.filter
 
 
@@ -715,7 +715,7 @@ filterWithKey :: (Unbox a, Ord k)
               => (k -> a -> Bool) 
               -> Series k a 
               -> Series k a
-{-# INLINE filterWithKey #-}
+{-# INLINABLE filterWithKey #-}
 filterWithKey = G.filterWithKey
 
 
@@ -768,7 +768,7 @@ select = G.select
 -- "Lisbon" |      4
 -- "London" |      2
 selectWhere :: (Unbox a, Ord k) => Series k a -> Series k Bool -> Series k a
-{-# INLINE selectWhere #-}
+{-# INLINABLE selectWhere #-}
 selectWhere = G.selectWhere
 
 
@@ -780,7 +780,7 @@ selectWhere = G.selectWhere
 -- >>> xs `at` "Sydney"
 -- Nothing
 at :: (Unbox a, Ord k) => Series k a -> k -> Maybe a
-{-# INLINE at #-}
+{-# INLINABLE at #-}
 at = G.at
 
 
@@ -798,7 +798,7 @@ at = G.at
 -- >>> xs `iat` 3
 -- Nothing
 iat :: Unbox a => Series k a -> Int -> Maybe a
-{-# INLINE iat #-}
+{-# INLINABLE iat #-}
 iat = G.iat
 
 
@@ -822,7 +822,7 @@ iat = G.iat
 -- "London" |      2
 --  "Paris" |     99
 replace :: (Unbox a, Ord k) => Series k a -> Series k a -> Series k a
-{-# INLINE replace #-}
+{-# INLINABLE replace #-}
 replace = G.replace
 
 
@@ -844,7 +844,7 @@ replace = G.replace
 -- "London" |      2
 --  "Paris" |     99
 (|->) :: (Unbox a, Ord k) => Series k a -> Series k a -> Series k a
-{-# INLINE (|->) #-}
+{-# INLINABLE (|->) #-}
 (|->) = (G.|->)
 
 
@@ -866,7 +866,7 @@ replace = G.replace
 -- "London" |      2
 --  "Paris" |     99
 (<-|) :: (Unbox a, Ord k) => Series k a -> Series k a -> Series k a
-{-# INLINE (<-|) #-}
+{-# INLINABLE (<-|) #-}
 (<-|) = (G.<-|)
 
 
@@ -889,7 +889,7 @@ replace = G.replace
 fold :: Unbox a 
      => Fold a b -> Series k a -> b
 fold = G.fold
-{-# INLINE fold #-}
+{-# INLINABLE fold #-}
 
 
 -- | \(O(n)\) Execute a monadic 'FoldM' over a 'Series'.
@@ -901,14 +901,14 @@ foldM :: (Monad m, Unbox a)
       -> Series k a 
       -> m b
 foldM = G.foldM
-{-# INLINE foldM #-}
+{-# INLINABLE foldM #-}
 
 
 -- | \(O(n)\) Execute a 'Fold' over a 'Series', taking keys into account.
 foldWithKey :: (Unbox k, Unbox a) 
             => Fold (k, a) b -> Series k a -> b
 foldWithKey = G.foldWithKey
-{-# INLINE foldWithKey #-}
+{-# INLINABLE foldWithKey #-}
 
 
 -- | \(O(n)\) Execute a monadic 'FoldM' over a 'Series', where the 'FoldM' takes keys into account.
@@ -917,27 +917,27 @@ foldMWithKey :: (Monad m, Unbox a, Unbox k)
              -> Series k a 
              -> m b
 foldMWithKey = G.foldMWithKey
-{-# INLINE foldMWithKey #-}
+{-# INLINABLE foldMWithKey #-}
 
 
 -- | \(O(n)\) Map each element of the structure to a monoid and combine
 -- the results.
 foldMap :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
-{-# INLINE foldMap #-}
+{-# INLINABLE foldMap #-}
 foldMap = G.foldMap
 
 
 -- | \(O(n)\) Like 'foldMap', but strict in the accumulator. It uses the same
 -- implementation as the corresponding method of the 'Foldable' type class.
 foldMap' :: (Monoid m, Unbox a) => (a -> m) -> Series k a -> m
-{-# INLINE foldMap' #-}
+{-# INLINABLE foldMap' #-}
 foldMap' f = Vector.foldMap' f . values
 
 
 -- | \(O(n)\) Map each element and associated key of the structure to a monoid and combine
 -- the results.
 foldMapWithKey :: (Monoid m, Unbox a, Unbox k) => (k -> a -> m) -> Series k a -> m
-{-# INLINE foldMapWithKey #-}
+{-# INLINABLE foldMapWithKey #-}
 foldMapWithKey = G.foldMapWithKey
 
 
@@ -964,7 +964,7 @@ foldMapWithKey = G.foldMapWithKey
 groupBy :: Series k a      -- ^ Grouping function
         -> (k -> g)        -- ^ Input series
         -> Grouping k g a  -- ^ Grouped series
-{-# INLINE groupBy #-}
+{-# INLINABLE groupBy #-}
 groupBy = G.groupBy
 
 
@@ -996,7 +996,7 @@ aggregateWith :: (Ord g, Unbox a, Unbox b)
               => Grouping k g a 
               -> (Series k a -> b) 
               -> Series g b
-{-# INLINE aggregateWith #-}
+{-# INLINABLE aggregateWith #-}
 aggregateWith = G.aggregateWith
 
 
@@ -1007,7 +1007,7 @@ foldWith :: (Ord g, Unbox a)
          => Grouping k g a
          -> (a -> a -> a)
          -> Series g a
-{-# INLINE foldWith #-}
+{-# INLINABLE foldWith #-}
 foldWith = G.foldWith
 
 
@@ -1036,7 +1036,7 @@ expanding :: (Unbox a, Unbox b)
           => Series k a        -- ^ Series vector
           -> (Series k a -> b) -- ^ Aggregation function
           -> Series k b        -- ^ Resulting vector
-{-# INLINE expanding #-}
+{-# INLINABLE expanding #-}
 expanding = G.expanding
 
 
@@ -1066,55 +1066,55 @@ windowing :: (Ord k, Unbox a, Unbox b)
           -> (Series k a -> b)
           -> Series k a
           -> Series k b
-{-# INLINE windowing #-}
+{-# INLINABLE windowing #-}
 windowing = G.windowing 
 
 
 -- | \(O(1)\) Test whether a 'Series' is empty.
 null :: Unbox a => Series k a -> Bool
-{-# INLINE null #-}
+{-# INLINABLE null #-}
 null = G.null
 
 
 -- |\(O(1)\) Extract the length of a 'Series'.
 length :: Unbox a => Series k a -> Int
-{-# INLINE length #-}
+{-# INLINABLE length #-}
 length = G.length
 
 
 -- | \(O(n)\) Check if all elements satisfy the predicate.
 all :: Unbox a => (a -> Bool) -> Series k a -> Bool
-{-# INLINE all #-}
+{-# INLINABLE all #-}
 all = G.all
 
 
 -- | \(O(n)\) Check if any element satisfies the predicate.
 any :: Unbox a => (a -> Bool) -> Series k a -> Bool
-{-# INLINE any #-}
+{-# INLINABLE any #-}
 any = G.any
 
 
 -- | \(O(n)\) Check if all elements are 'True'.
 and :: Series k Bool -> Bool
-{-# INLINE and #-}
+{-# INLINABLE and #-}
 and = G.and
 
 
 -- | \(O(n)\) Check if any element is 'True'.
 or :: Series k Bool -> Bool
-{-# INLINE or #-}
+{-# INLINABLE or #-}
 or = G.or
 
 
 -- | \(O(n)\) Compute the sum of the elements.
 sum :: (Unbox a, Num a) => Series k a -> a
-{-# INLINE sum #-}
+{-# INLINABLE sum #-}
 sum = G.sum
 
 
 -- | \(O(n)\) Compute the product of the elements.
 product :: (Unbox a, Num a) => Series k a -> a
-{-# INLINE product #-}
+{-# INLINABLE product #-}
 product = G.product
 
 
@@ -1123,14 +1123,14 @@ product = G.product
 --
 -- See also 'argmax'.
 maximum :: (Ord a, Unbox a) => Series k a -> Maybe a
-{-# INLINE maximum #-}
+{-# INLINABLE maximum #-}
 maximum = G.maximum
 
 
 -- | \(O(n)\) @'maximumOn' f xs@ teturns the maximum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
 maximumOn :: (Ord b, Unbox a) => (a -> b) -> Series k a -> Maybe a
-{-# INLINE maximumOn #-}
+{-# INLINABLE maximumOn #-}
 maximumOn = G.maximumOn
 
 
@@ -1139,14 +1139,14 @@ maximumOn = G.maximumOn
 --
 -- See also 'argmin'.
 minimum :: (Ord a, Unbox a) => Series k a -> Maybe a
-{-# INLINE minimum #-}
+{-# INLINABLE minimum #-}
 minimum = G.minimum
 
 
 -- | \(O(n)\) @'minimumOn' f xs@ teturns the minimum element of the series @xs@, as determined by the function @f@.
 -- In case of a tie, the first occurrence wins. If the 'Series' is empty, @Nothing@ is returned.
 minimumOn :: (Ord b, Unbox a) => (a -> b) -> Series k a -> Maybe a
-{-# INLINE minimumOn #-}
+{-# INLINABLE minimumOn #-}
 minimumOn = G.minimumOn
 
 
@@ -1172,7 +1172,7 @@ argmax :: (Ord a, Unbox a)
        => Series k a
        -> Maybe k
 argmax = G.argmax
-{-# INLINE argmax #-}
+{-# INLINABLE argmax #-}
 
 
 -- | \(O(n)\) Find the index of the minimum element in the input series.
@@ -1196,7 +1196,7 @@ argmin :: (Ord a, Unbox a)
        => Series k a
        -> Maybe k
 argmin = G.argmin
-{-# INLINE argmin #-}
+{-# INLINABLE argmin #-}
 
 
 -- | \(O(n)\) Left-to-right postscan.
@@ -1218,7 +1218,7 @@ argmin = G.argmin
 --     3 |     10
 postscanl :: (Unbox a, Unbox b) 
           => (a -> b -> a) -> a -> Series k b -> Series k a
-{-# INLINE postscanl #-}
+{-# INLINABLE postscanl #-}
 postscanl = G.postscanl
 
 
@@ -1241,7 +1241,7 @@ postscanl = G.postscanl
 --     3 |      6
 prescanl :: (Unbox a, Unbox b) 
          => (a -> b -> a) -> a -> Series k b -> Series k a
-{-# INLINE prescanl #-}
+{-# INLINABLE prescanl #-}
 prescanl = G.prescanl
 
 

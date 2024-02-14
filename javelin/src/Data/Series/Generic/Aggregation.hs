@@ -52,7 +52,7 @@ import           Prelude                        hiding ( last, null, length, all
 groupBy :: Series v k a       -- ^ Input series
         -> (k -> g)           -- ^ Grouping function
         -> Grouping k g v a   -- ^ Grouped series
-{-# INLINE groupBy #-}
+{-# INLINABLE groupBy #-}
 groupBy = MkGrouping
 
 
@@ -85,7 +85,7 @@ aggregateWith :: (Ord g, Vector v a, Vector v b)
               => Grouping k g v a 
               -> (Series v k a -> b) 
               -> Series v g b
-{-# INLINE aggregateWith #-}
+{-# INLINABLE aggregateWith #-}
 aggregateWith (MkGrouping xs by) f
     = GSeries.fromStrictMap 
     $ fmap (f . GSeries.fromDistinctAscList)
@@ -120,7 +120,7 @@ foldWith :: (Ord g, Vector v a)
          => Grouping k g v a
          -> (a -> a -> a)
          -> Series v g a
-{-# INLINE foldWith #-}
+{-# INLINABLE foldWith #-}
 foldWith (MkGrouping xs by) f 
     = GSeries.fromStrictMap 
     -- We're using a list fold to limit the number of 
@@ -158,7 +158,7 @@ expanding :: (Vector v a, Vector v b)
           => Series v k a        -- ^ Series vector
           -> (Series v k a -> b) -- ^ Aggregation function
           -> Series v k b        -- ^ Resulting vector
-{-# INLINE expanding #-}
+{-# INLINABLE expanding #-}
 expanding vs f = MkSeries (index vs) $ Vector.unfoldrExactN (GSeries.length vs) go 0
     where
         -- Recall that `slice` does NOT include the right index
@@ -193,44 +193,44 @@ windowing :: (Ord k, Vector v a, Vector v b)
           -> (Series v k a -> b)
           -> Series v k a
           -> Series v k b
-{-# INLINE windowing #-}
+{-# INLINABLE windowing #-}
 windowing range agg series 
     = GSeries.mapWithKey (\k _ -> agg $ series `select` range k) series
 
 
 -- | \(O(n)\) Check if all elements satisfy the predicate.
 all :: Vector v a => (a -> Bool) -> Series v k a -> Bool
-{-# INLINE all #-}
+{-# INLINABLE all #-}
 all f = Vector.all f . values
 
 
 -- | \(O(n)\) Check if any element satisfies the predicate.
 any :: Vector v a => (a -> Bool) -> Series v k a -> Bool
-{-# INLINE any #-}
+{-# INLINABLE any #-}
 any f = Vector.any f . values
 
 
 -- | \(O(n)\) Check if all elements are 'True'.
 and :: Vector v Bool => Series v k Bool -> Bool
-{-# INLINE and #-}
+{-# INLINABLE and #-}
 and = Vector.and . values
 
 
 -- | \(O(n)\) Check if any element is 'True'.
 or :: Vector v Bool => Series v k Bool -> Bool
-{-# INLINE or #-}
+{-# INLINABLE or #-}
 or = Vector.or . values
 
 
 -- | \(O(n)\) Compute the sum of the elements.
 sum :: (Num a, Vector v a) => Series v k a -> a
-{-# INLINE sum #-}
+{-# INLINABLE sum #-}
 sum = Vector.sum . values
 
 
 -- | \(O(n)\) Compute the product of the elements.
 product :: (Num a, Vector v a) => Series v k a -> a
-{-# INLINE product #-}
+{-# INLINABLE product #-}
 product = Vector.product . values
 
 
@@ -241,7 +241,7 @@ nothingIfEmpty f xs = if GSeries.null xs then Nothing else Just (f xs)
 
 -- | \(O(n)\) Yield the maximum element of the series. In case of a tie, the first occurrence wins.
 maximum :: (Ord a, Vector v a) => Series v k a -> Maybe a
-{-# INLINE maximum #-}
+{-# INLINABLE maximum #-}
 maximum = nothingIfEmpty $ Vector.maximum . values
 
 
@@ -249,14 +249,14 @@ maximum = nothingIfEmpty $ Vector.maximum . values
 -- In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 maximumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a
-{-# INLINE maximumOn #-}
+{-# INLINABLE maximumOn #-}
 maximumOn f = nothingIfEmpty $ Vector.maximumOn f . values
 
 
 -- | \(O(n)\) Yield the minimum element of the series. In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 minimum :: (Ord a, Vector v a) => Series v k a -> Maybe a
-{-# INLINE minimum #-}
+{-# INLINABLE minimum #-}
 minimum = nothingIfEmpty $ Vector.minimum . values
 
 
@@ -264,7 +264,7 @@ minimum = nothingIfEmpty $ Vector.minimum . values
 -- In case of a tie, the first occurrence wins.
 -- If the 'Series' is empty, @Nothing@ is returned.
 minimumOn :: (Ord b, Vector v a) => (a -> b) -> Series v k a -> Maybe a
-{-# INLINE minimumOn #-}
+{-# INLINABLE minimumOn #-}
 minimumOn f = nothingIfEmpty $ Vector.minimumOn f . values
 
 
@@ -289,7 +289,7 @@ minimumOn f = nothingIfEmpty $ Vector.minimumOn f . values
 argmax :: (Ord a, Vector v a)
        => Series v k a
        -> Maybe k
-{-# INLINE argmax #-}
+{-# INLINABLE argmax #-}
 argmax xs | GSeries.null xs = Nothing
           | otherwise = Just 
                       . fst 
@@ -322,5 +322,5 @@ argmax xs | GSeries.null xs = Nothing
 argmin :: (Ord a, Vector v a, Vector v (Down a))
        => Series v k a
        -> Maybe k
-{-# INLINE argmin #-}
+{-# INLINABLE argmin #-}
 argmin = argmax . GSeries.map Down

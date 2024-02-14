@@ -36,7 +36,7 @@ import qualified Data.Vector.Generic            as Vector
 --     2 |      6
 --     3 |     10
 postscanl :: (Vector v a, Vector v b) => (a -> b -> a) -> a -> Series v k b -> Series v k a
-{-# INLINE postscanl #-}
+{-# INLINABLE postscanl #-}
 postscanl f s (MkSeries ix vs) = MkSeries ix $ Vector.postscanl f s vs
 
 
@@ -59,7 +59,7 @@ postscanl f s (MkSeries ix vs) = MkSeries ix $ Vector.postscanl f s vs
 --     2 |      3
 --     3 |      6
 prescanl :: (Vector v a, Vector v b) => (a -> b -> a) -> a -> Series v k b -> Series v k a
-{-# INLINE prescanl #-}
+{-# INLINABLE prescanl #-}
 prescanl f s (MkSeries ix vs) = MkSeries ix $ Vector.prescanl f s vs
 
 
@@ -104,7 +104,7 @@ forwardFill :: (Vector v a, Vector v (Maybe a))
             => a -- ^ Until the first non-'Nothing' is found, 'Nothing' will be filled with this value.
             -> Series v k (Maybe a)
             -> Series v k a
-{-# INLINE forwardFill #-}
+{-# INLINABLE forwardFill #-}
 forwardFill = postscanl go
     where
         go :: a -> Maybe a -> a

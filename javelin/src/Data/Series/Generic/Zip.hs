@@ -59,7 +59,7 @@ zipWith f left right
           unmatchedKeys = allKeys `Index.difference` matchedKeys
           unmatched     = MkSeries unmatchedKeys (Vector.replicate (Index.size unmatchedKeys) Nothing)
        in G.map Just matched <> unmatched
-{-# INLINE zipWith #-}
+{-# INLINABLE zipWith #-}
 
 
 -- | Apply a function elementwise to three series, matching elements
@@ -92,7 +92,7 @@ zipWith3 f left center right
           unmatchedKeys = allKeys `Index.difference` matchedKeys
           unmatched     = MkSeries unmatchedKeys (Vector.replicate (Index.size unmatchedKeys) Nothing)
        in G.map Just matched <> unmatched
-{-# INLINE zipWith3 #-}
+{-# INLINABLE zipWith3 #-}
 
 
 
@@ -120,7 +120,7 @@ zipWithMatched f left right
           (MkSeries _ !ys) = right `selectSubset` matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in MkSeries matchedKeys $ Vector.zipWith f xs ys
-{-# INLINE zipWithMatched #-}
+{-# INLINABLE zipWithMatched #-}
 
 
 -- | Apply a function elementwise to three series, matching elements
@@ -149,7 +149,7 @@ zipWithMatched3 f left center right
           (MkSeries _ !zs) = right  `selectSubset` matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in MkSeries matchedKeys $ Vector.zipWith3 f xs ys zs
-{-# INLINE zipWithMatched3 #-}
+{-# INLINABLE zipWithMatched3 #-}
 
 
 -- | Apply a function elementwise to two series, matching elements
@@ -176,7 +176,7 @@ zipWithKey f left right
           ks              = Index.toAscVector matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in  MkSeries matchedKeys $ Vector.zipWith3 f ks xs ys
-{-# INLINE zipWithKey #-}
+{-# INLINABLE zipWithKey #-}
 
 
 -- | Apply a function elementwise to three series, matching elements
@@ -208,14 +208,14 @@ zipWithKey3 f left center right
           ks              = Index.toAscVector matchedKeys
           -- The following construction relies on the fact that keys are always sorted
        in  MkSeries matchedKeys $ Vector.zipWith4 f ks xs ys zs
-{-# INLINE zipWithKey3 #-}
+{-# INLINABLE zipWithKey3 #-}
 
 
 -- | Replace values from the right series with values from the left series at matching keys.
 -- Keys in the right series but not in the right series are unaffected.
 replace :: (Vector v a, Vector v Int, Ord k) 
         => Series v k a -> Series v k a -> Series v k a
-{-# INLINE replace #-}
+{-# INLINABLE replace #-}
 xs `replace` ys 
     = let keysToReplace = index xs `Index.intersection` index ys
           iixs          = Index.toAscVector $ Index.Internal.mapMonotonic (\k -> Index.Internal.findIndex k (index ys)) keysToReplace
@@ -225,14 +225,14 @@ xs `replace` ys
 -- | Infix version of 'replace'
 (|->) :: (Vector v a, Vector v Int, Ord k)
       => Series v k a -> Series v k a -> Series v k a
-{-# INLINE (|->) #-}
+{-# INLINABLE (|->) #-}
 (|->) = replace
 
 
 -- | Flipped version of '|->',
 (<-|) :: (Vector v a, Vector v Int, Ord k) 
       => Series v k a -> Series v k a -> Series v k a
-{-# INLINE (<-|)  #-}
+{-# INLINABLE (<-|)  #-}
 (<-|) = flip replace
 
 
@@ -258,7 +258,7 @@ type ZipStrategy k a b = (k -> a -> Maybe b)
 --  "beta" |     12
 skipStrategy :: ZipStrategy k a b
 skipStrategy _ _ = Nothing
-{-# INLINE skipStrategy #-}
+{-# INLINABLE skipStrategy #-}
 
 
 -- | This 'ZipStrategy' sets the value at keys which are not present in both 'Series' 
@@ -275,7 +275,7 @@ skipStrategy _ _ = Nothing
 -- "gamma" |      2
 mapStrategy :: (a -> b) -> ZipStrategy k a b
 mapStrategy f _ x = Just (f x)
-{-# INLINE mapStrategy #-}
+{-# INLINABLE mapStrategy #-}
 
 
 -- | This 'ZipStrategy' sets a constant value at keys which are not present in both 'Series'.
@@ -298,7 +298,7 @@ mapStrategy f _ x = Just (f x)
 -- "gamma" |   -100
 constStrategy :: b -> ZipStrategy k a b
 constStrategy v = mapStrategy (const v)
-{-# INLINE constStrategy #-}
+{-# INLINABLE constStrategy #-}
 
 
 -- | Zip two 'Series' with a combining function, applying a 'ZipStrategy' when one key is present in one of the 'Series' but not both.
@@ -329,7 +329,7 @@ zipWithStrategy f whenLeft whenRight left right
         applyStrategy strat = G.toSeries 
                             . Map.mapMaybeWithKey strat
                             . G.fromSeries
-{-# INLINE zipWithStrategy #-}
+{-# INLINABLE zipWithStrategy #-}
 
 
 -- | Zip three 'Series' with a combining function, applying a 'ZipStrategy' when one key is 
@@ -365,7 +365,7 @@ zipWithStrategy3 f whenLeft whenCenter whenRight left center right
         applyStrategy strat = G.toSeries 
                             . Map.mapMaybeWithKey strat
                             . G.fromSeries
-{-# INLINE zipWithStrategy3 #-}
+{-# INLINABLE zipWithStrategy3 #-}
 
 
 -- | Zip two 'Series' with a combining function. The value for keys which are missing from
@@ -399,7 +399,7 @@ zipWithMonoid f left right
           (MkSeries ix ls) = requireWith (const mempty) id left  fullindex
           (MkSeries _ rs)  = requireWith (const mempty) id right fullindex          
         in MkSeries ix $ Vector.zipWith f ls rs
-{-# INLINE zipWithMonoid #-}
+{-# INLINABLE zipWithMonoid #-}
 
 
 -- | Elementwise sum of two 'Series'. Elements missing in one or the other 'Series' is considered 0. 
@@ -417,7 +417,7 @@ esum :: (Ord k, Num a, Vector v a, Vector v (Sum a))
      -> Series v k a
      -> Series v k a
 esum ls rs = G.map getSum $ zipWithMonoid (<>) (G.map Sum ls) (G.map Sum rs)
-{-# INLINE esum #-}
+{-# INLINABLE esum #-}
 
 
 -- | Elementwise product of two 'Series'. Elements missing in one or the other 'Series' is considered 1. 
@@ -435,7 +435,7 @@ eproduct :: (Ord k, Num a, Vector v a, Vector v (Product a))
          -> Series v k a
          -> Series v k a
 eproduct ls rs = G.map getProduct $ zipWithMonoid (<>) (G.map Product ls) (G.map Product rs)
-{-# INLINE eproduct #-}
+{-# INLINABLE eproduct #-}
 
 
 -- | \(O(n)\) Unzip a 'Series' of 2-tuples.
@@ -447,7 +447,7 @@ unzip :: (Vector v a, Vector v b, Vector v (a, b))
 unzip (MkSeries ix vs) 
     = let (left, right) = Vector.unzip vs
        in (MkSeries ix left, MkSeries ix right)
-{-# INLINE unzip #-}
+{-# INLINABLE unzip #-}
 
 
 -- | \(O(n)\) Unzip a 'Series' of 3-tuples.
@@ -460,4 +460,4 @@ unzip3 :: (Vector v a, Vector v b, Vector v c, Vector v (a, b, c))
 unzip3 (MkSeries ix vs) 
     = let (left, center, right) = Vector.unzip3 vs
        in (MkSeries ix left, MkSeries ix center, MkSeries ix right)
-{-# INLINE unzip3 #-}
+{-# INLINABLE unzip3 #-}

@@ -63,20 +63,20 @@ at :: (Vector v a, Ord k) => Series v k a -> k -> Maybe a
 at (MkSeries ks vs) k = do
     ix <- Index.lookupIndex k ks
     pure $ Vector.unsafeIndex vs ix 
-{-# INLINE at #-}
+{-# INLINABLE at #-}
 
 
 -- | \(O(1)\). Extract a single value from a series, by index.
 iat :: Vector v a => Series v k a -> Int -> Maybe a
 iat (MkSeries _ vs) =  (Vector.!?) vs
-{-# INLINE iat #-}
+{-# INLINABLE iat #-}
 
 
 -- | require a series with a new index.
 -- Contrary to 'select', all keys in @'Set' k@ will be present in the re-indexed series.
 require :: (Vector v a, Vector v (Maybe a), Ord k) 
         => Series v k a -> Index k -> Series v k (Maybe a)
-{-# INLINE require #-}
+{-# INLINABLE require #-}
 require = requireWith (const Nothing) Just
 
 
@@ -88,7 +88,7 @@ requireWith :: (Vector v a, Vector v b, Ord k)
             -> Series v k a 
             -> Index k 
             -> Series v k b
-{-# INLINE requireWith #-}
+{-# INLINABLE requireWith #-}
 requireWith replacement f xs ss 
     = let existingKeys = index xs `Index.intersection` ss
           newKeys      = ss `Index.difference` existingKeys
@@ -98,7 +98,7 @@ requireWith replacement f xs ss
 -- | Drop the index of a series by replacing it with an @Int@-based index. Values will
 -- be indexed from 0.
 dropIndex :: Series v k a -> Series v Int a
-{-# INLINE dropIndex #-}
+{-# INLINABLE dropIndex #-}
 dropIndex (MkSeries ks vs) = MkSeries (Index.Internal.fromDistinctAscList [0..Index.size ks - 1]) vs
 
 
@@ -107,7 +107,7 @@ dropIndex (MkSeries ks vs) = MkSeries (Index.Internal.fromDistinctAscList [0..In
 -- to filter while taking keys into account.
 filter :: (Vector v a, Vector v Int, Ord k) 
        => (a -> Bool) -> Series v k a -> Series v k a
-{-# INLINE filter #-}
+{-# INLINABLE filter #-}
 filter predicate xs@(MkSeries ks vs) 
     = let indicesToKeep = Vector.findIndices predicate vs
           keysToKeep = Index.Internal.fromDistinctAscList [Index.Internal.elemAt ix ks | ix <- Vector.toList indicesToKeep]
@@ -120,14 +120,14 @@ filterWithKey :: (Vector v a, Vector v Int, Vector v Bool, Ord k)
               => (k -> a -> Bool) 
               -> Series v k a 
               -> Series v k a
-{-# INLINE filterWithKey #-}
+{-# INLINABLE filterWithKey #-}
 filterWithKey predicate xs = xs `selectWhere` G.mapWithKey predicate xs
 
 
 -- | \(O(n)\) Only keep elements which are @'Just' v@. 
 catMaybes :: (Vector v a, Vector v (Maybe a), Vector v Int, Ord k) 
        => Series v k (Maybe a) -> Series v k a
-{-# INLINE catMaybes #-}
+{-# INLINABLE catMaybes #-}
 catMaybes = G.map fromJust . filter isJust
 
 
@@ -159,7 +159,7 @@ instance Show k => Show (Range k) where
 -- | Find the keys which are in range. In case of an empty 'Series',
 -- the returned value is 'Nothing'.
 keysInRange :: Ord k => Series v k a -> Range k -> Maybe (k, k)
-{-# INLINE keysInRange #-}
+{-# INLINABLE keysInRange #-}
 keysInRange (MkSeries ks _) rng
     = let inrange = inRange rng
        in if Set.null inrange 
@@ -255,7 +255,7 @@ instance Selection Index where
     -- | Select all keys in 'Index' from a series. Keys which are not
     -- in the series are ignored.
     select :: (Vector v a, Ord k) => Series v k a -> Index k -> Series v k a
-    {-# INLINE select #-}
+    {-# INLINABLE select #-}
     select xs ss
         = let selectedKeys = index xs `Index.intersection` ss
             -- Surprisingly, using `Vector.backpermute` does not
@@ -267,7 +267,7 @@ instance Selection Index where
 -- function. Internally, the 'Set' is converted to an index first.
 instance Selection Set where
     select :: (Vector v a, Ord k) => Series v k a -> Set k -> Series v k a
-    {-# INLINE select #-}
+    {-# INLINABLE select #-}
     select xs = select xs . Index.fromSet
 
 
@@ -275,7 +275,7 @@ instance Selection Set where
 -- function. Internally, the list is converted to an index first.
 instance Selection [] where
     select :: (Vector v a, Ord k) => Series v k a -> [k] -> Series v k a
-    {-# INLINE select #-}
+    {-# INLINABLE select #-}
     select xs = select xs . Index.fromList
 
 
@@ -283,7 +283,7 @@ instance Selection [] where
 -- Constructing a @Range@ is most convenient using the 'to' function.
 instance Selection Range where
     select :: (Vector v a, Ord k) => Series v k a -> Range k -> Series v k a
-    {-# INLINE select #-}
+    {-# INLINABLE select #-}
     select series rng = case keysInRange series rng of 
         Nothing              -> mempty
         Just (kstart, kstop) -> let indexOf xs k = Index.Internal.findIndex k (index xs)
@@ -292,7 +292,7 @@ instance Selection Range where
 
 -- | Select a sub-series from a series matching a condition.
 selectWhere :: (Vector v a, Vector v Int, Vector v Bool, Ord k) => Series v k a -> Series v k Bool -> Series v k a
-{-# INLINE selectWhere #-}
+{-# INLINABLE selectWhere #-}
 selectWhere xs ys = xs `select` Index.fromSet keysWhereTrue
     where
         (MkSeries _ cond) = ys `select` index xs
@@ -305,7 +305,7 @@ selectWhere xs ys = xs `select` Index.fromSet keysWhereTrue
 --
 -- This is a performance optimization and therefore is not normally exposed.
 selectSubset :: (Vector v a, Ord k) => Series v k a -> Index k -> Series v k a
-{-# INLINE selectSubset #-}
+{-# INLINABLE selectSubset #-}
 selectSubset (MkSeries ks vs) ss
     -- TODO: 
     --   Is it possible to scan over the series once
@@ -323,7 +323,7 @@ slice :: Vector v a
       -> Int -- ^ End index, which is not included
       -> Series v k a 
       -> Series v k a
-{-# INLINE slice #-}
+{-# INLINABLE slice #-}
 slice start stop (MkSeries ks vs) 
     = let stop' = min (Vector.length vs) stop
     in MkSeries { index  = Index.take (stop' - start) $ Index.drop start ks

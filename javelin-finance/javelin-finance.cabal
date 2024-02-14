@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin-finance
-version:            0.1.0.0
+version:            0.1.1.0
 synopsis:           Technical analysis and financial metrics on Haskell series
 license:            MIT
 license-file:       LICENSE
