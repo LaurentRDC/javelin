@@ -1,10 +1,25 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  $module
+-- Copyright   :  (c) Laurent P. René de Cotret
+-- License     :  MIT
+-- Maintainer  :  laurent.decotret@outlook.com
+-- Portability :  portable
+--
+-- This module contains functions to serialize/deserialize generic 'Series'
+-- to/from bytes.
+--
+-- Use this module if you want to support all types of 'Series'. Otherwise,
+-- you should use either the modules "Data.Series.IO" or "Data.Series.Unboxed.IO". 
 module Data.Series.Generic.IO (
+    -- * Deserialize 'Series'
     readCSV,
     readCSVFromFile,
 
+    -- * Serialize 'Series'
     writeCSV,
     writeCSVToFile,
 ) where
@@ -70,13 +85,14 @@ instance 'FromNamedRecord' City where
 Finally, we're ready to read our stream:
 
 @
-import Data.Series
-import Data.Series.IO
+import "Data.Series.Generic"
+import "Data.Series.Generic.IO"
+import "Data.Vector" 
 
 main :: IO ()
 main = do
     stream <- (...) -- Read the bytestring from somewhere
-    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSV` stream
+    let (latlongs  :: 'Series' Vector City LatLong) = either (error . show) id \<$\> `readCSV` stream
     print latlongs
 @
 -}
@@ -109,13 +125,14 @@ See the documentation for 'readCSV' on how to prepare your types.
 Then, for example, you can use 'readCSVFromFile' as:
 
 @
-import Data.Series
-import Data.Series.IO
+import "Data.Series.Generic"
+import "Data.Series.Generic.IO"
+import "Data.Vector" 
 
 main :: IO ()
 main = do
-    let fp = "path/to/my/file.csv"
-    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSVFromFile` fp
+    stream <- (...) -- Read the bytestring from somewhere
+    let (latlongs  :: 'Series' Vector City LatLong) = either (error . show) id \<$\> `readCSV` stream
     print latlongs
 @
 -}
@@ -188,8 +205,14 @@ writeCSV xs = fromMaybe mempty $ do
     pure $ CSV.encodeByName header $ NE.toList recs
 
 
+-- | This is a helper function to write a 'Series' directly to CSV.
+-- See the documentation for 'writeCSV' on how to prepare your types.
 writeCSVToFile :: (MonadIO m, Vector v a, ToNamedRecord k, ToNamedRecord a)
                => FilePath
                -> Series v k a
                -> m ()
-writeCSVToFile fp xs = liftIO $ BS.writeFile fp $ BL.toStrict $ writeCSV xs
+writeCSVToFile fp 
+    = liftIO 
+    . BS.writeFile fp 
+    . BL.toStrict 
+    . writeCSV

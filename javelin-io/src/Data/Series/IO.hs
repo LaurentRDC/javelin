@@ -1,10 +1,22 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  $module
+-- Copyright   :  (c) Laurent P. René de Cotret
+-- License     :  MIT
+-- Maintainer  :  laurent.decotret@outlook.com
+-- Portability :  portable
+--
+-- This module contains functions to serialize/deserialize 'Series'
+-- to/from bytes.
 module Data.Series.IO (
+    -- * Deserialize 'Series'
     readCSV,
     readCSVFromFile,
 
+    -- * Serialize 'Series'
     writeCSV,
     writeCSVToFile,
 ) where
@@ -60,13 +72,13 @@ instance 'FromNamedRecord' City where
 Finally, we're ready to read our stream:
 
 @
-import Data.Series
-import Data.Series.IO
+import "Data.Series"
+import "Data.Series.IO"
 
 main :: IO ()
 main = do
-    stream <- (...) -- Read the bytestring from somewhere
-    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSV` stream
+    let fp = "path/to/my/file.csv"
+    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSVFromFile` fp
     print latlongs
 @
 -}
@@ -82,8 +94,8 @@ See the documentation for 'readCSV' on how to prepare your types.
 Then, for example, you can use 'readCSVFromFile' as:
 
 @
-import Data.Series
-import Data.Series.IO
+import "Data.Series"
+import "Data.Series.IO"
 
 main :: IO ()
 main = do
@@ -158,6 +170,8 @@ writeCSV :: (ToNamedRecord k, ToNamedRecord a)
 writeCSV = Generic.IO.writeCSV
 
 
+-- | This is a helper function to write a 'Series' directly to CSV.
+-- See the documentation for 'writeCSV' on how to prepare your types.
 writeCSVToFile :: (MonadIO m, ToNamedRecord k, ToNamedRecord a)
                => FilePath
                -> Series k a

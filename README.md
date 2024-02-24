@@ -22,7 +22,6 @@ Locally, you can generate documentation for all packages using `haddock` like so
 ```bash
 cabal haddock javelin
 cabal haddock javelin-io
-cabal haddock javelin-finance
 ```
 
 ## Get involved!

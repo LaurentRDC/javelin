@@ -2,18 +2,31 @@ cabal-version:      3.0
 name:               javelin-io
 version:            0.1.1.0
 synopsis:           IO operations for the `javelin` package
-description:
 license:            MIT
 license-file:       LICENSE
 author:             Laurent P. René de Cotret
 maintainer:         laurent.decotret@outlook.com
-category:           Data
+category:           Data, Data Structures, Data Science
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files: test/data/*.csv
 tested-with:        GHC ==9.8.1 
                      || ==9.6.3
-                     || ==9.4.7  
+                     || ==9.4.7
+description:
+        
+        This package implements serialization/deserialization of 'Series', labeled one-dimensional arrays
+        combining properties from maps and arrays.
+        
+        The important modules are:
+        
+        ["Data.Series.IO"] Serialization/deserialization of series of arbitrary types.
+        
+        ["Data.Series.Unboxed.IO"] Serialization/deserialization of unboxed series for better performance, at the cost of flexibility.
+        
+        ["Data.Series.Generic.IO"] Serialization/deserialization of generic series to manipulate any type of 'Series'.
+        
+        If you don't know where to start, please take a look at the documentation in "Data.Series.IO".
 
 common common
     default-language: GHC2021
@@ -32,14 +45,13 @@ library
     exposed-modules:  Data.Series.IO
                       Data.Series.Generic.IO
                       Data.Series.Unboxed.IO
-    build-depends:    base  >=4.15.0.0,
-                      bytestring,
-                      cassava,
-                      containers,
-                      unordered-containers,
-                      javelin,
-                      text,
-                      vector
+    build-depends:    base >=4.15.0.0 && <4.20,
+                      bytestring >=0.11 && <0.13,
+                      cassava ^>=0.5,
+                      containers >=0.6 && <0.8,
+                      unordered-containers ^>=0.2,
+                      javelin ^>=0.1,
+                      vector >=0.12.3.0 && <0.14,
 
 test-suite javelin-io-test
     import:           common
@@ -49,17 +61,11 @@ test-suite javelin-io-test
     other-modules:    Test.Data.Series.IO
     build-depends:    base,
                       cassava,
-                      containers,
                       filepath,
-                      hedgehog,
-                      ieee754,
                       javelin,
                       javelin-io,
-                      statistics,
                       tasty,
                       tasty-hedgehog,
                       tasty-hunit,
-                      HUnit,
-                      tasty-hspec,
                       temporary,
                       vector

@@ -1,5 +1,5 @@
 # Revision history for javelin-io
 
-## 0.1.0.0 -- YYYY-mm-dd
+## Release 0.1.1.0
 
-* First version. Released on an unsuspecting world.
+* This is the first version of `javelin-io`.

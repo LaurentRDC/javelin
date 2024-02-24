@@ -486,8 +486,10 @@ lookupIndex e (MkIndex ix) = Set.lookupIndex e ix
 {-# INLINABLE lookupIndex #-}
 
 
--- | \(O(\log n)\) Returns the element at some integer index. This function raises
--- an exception if the integer index is out-of-bounds.
+-- | \(O(\log n)\) Returns the element at some integer index. 
+-- 
+-- This function raises an exception if the integer index is out-of-bounds. 
+-- Consider using 'lookupIndex' instead.
 elemAt :: HasCallStack => Int -> Index k -> k
 elemAt n (MkIndex ix) = Set.elemAt n ix
 {-# INLINABLE elemAt #-}
