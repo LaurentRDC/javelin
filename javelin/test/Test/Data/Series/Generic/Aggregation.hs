@@ -1,10 +1,12 @@
 
 module Test.Data.Series.Generic.Aggregation (tests) where
 
+import qualified Data.IntMap.Strict   as IS
 import qualified Data.Map.Strict      as MS
 import qualified Data.Series.Generic  as Series
 import           Data.Series.Generic  ( Series, fromStrictMap, groupBy, aggregateWith, foldWith, windowing, to, expanding)
 import           Data.Vector          ( Vector )
+import qualified Data.Vector          as Vector
 
 import           Hedgehog             ( property, forAll, (===) )
 import qualified Hedgehog.Gen         as Gen
@@ -27,7 +29,7 @@ tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
 
 
 testGroupBy :: TestTree
-testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupBy2 ]
+testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupBy2, testGroupBy3, testGroupBy4 ]
     where
         testGroupBy1 = testCase "groupBy" $ do
             let (series :: Series Vector String Int) = fromStrictMap $ MS.fromList [("aa", 1), ("ab", 2), ("c", 3), ("dc", 4), ("ae", 5)]
@@ -41,6 +43,23 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
             
             assertEqual mempty expectation $ series `groupBy` even `aggregateWith` (Series.sum :: Series Vector Int Int -> Int)
 
+        -- The following example resulted in an exception
+        -- when the implementation of `aggregateWith` didn't aggregate keys in the
+        -- right order
+        testGroupBy3 = testCase "groupBy" $ do
+            let (series :: Series Vector (Int, Int) Int) = fromStrictMap $ MS.fromList [ ((0, 0), 1), ((0, 1), 2) ]
+                expectation = fromStrictMap $ MS.fromList [(0, IS.fromList [(0, 1), (1, 2)])]
+            
+            assertEqual mempty expectation $ series `groupBy` fst `aggregateWith` (IS.fromList . Series.toList . flip Series.mapIndex snd)
+
+        testGroupBy4 = testCase "groupBy" $ do
+            let (series :: Series Vector (Int, Int) Int) = fromStrictMap $ MS.fromList $ zip (zip [0,1,2,3,4,5] [1,1,2,2,3,3]) [2,1,2,1,2,1]
+                expectation = fromStrictMap $ MS.fromList [ (1, Vector.fromList [2,1])
+                                                          , (2, Vector.fromList [2,1])
+                                                          , (3, Vector.fromList [2,1])
+                                                          ]
+            
+            assertEqual mempty expectation $ series `groupBy` snd `aggregateWith` (Series.values)
 
 
 testWindowing :: TestTree

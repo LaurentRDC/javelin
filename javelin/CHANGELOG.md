@@ -1,5 +1,9 @@
 # Revision history for javelin
 
+## Release 0.1.2.0
+
+* Fixed an issue where `Series` could be corrupted while using `aggregateWith`.
+
 ## Release 0.1.1.0
 
 * Added the `Data.Series.Index.indexed` function

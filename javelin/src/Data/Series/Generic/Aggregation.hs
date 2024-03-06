@@ -88,6 +88,9 @@ aggregateWith :: (Ord g, Vector v a, Vector v b)
 {-# INLINABLE aggregateWith #-}
 aggregateWith (MkGrouping xs by) f
     = GSeries.fromStrictMap 
+    -- Using `fromDistinctAscList` is predicated on a particular structure
+    -- created by the `acc` function below.
+    -- This is rather unsafe, and has been the source of bugs in the past
     $ fmap (f . GSeries.fromDistinctAscList)
     -- We're using a list fold to limit the number of 
     -- type constraints. This is about as fast as it is 
@@ -95,7 +98,10 @@ aggregateWith (MkGrouping xs by) f
     $ Data.List.foldl' acc mempty 
     $ GSeries.toList xs
     where
-        acc !m (key, val) = Map.insertWith (<>) (by key) (Data.List.singleton (key, val)) m
+        acc !m (key, val) = Map.insertWith (flip (<>)) -- Flipping arguments to ensure that keys are ordered as expected
+                                           (by key) 
+                                           (Data.List.singleton (key, val)) 
+                                           m
 
 
 -- | Fold over each group in a 'Grouping' using a binary function.
