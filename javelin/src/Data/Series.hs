@@ -1081,6 +1081,21 @@ aggregateWith = G.aggregateWith
 -- | Aggregate each group in a 'Grouping' using a binary function.
 -- While this is not as expressive as 'aggregateWith', users looking for maximum
 -- performance should use 'foldWith' as much as possible.
+--
+-- >>> type Date = (Int, String)
+-- >>> month :: (Date -> String) = snd
+-- >>> :{ 
+--     let xs = Series.fromList [ ((2020, "January") :: Date,  0 :: Int)
+--                              , ((2021, "January"), -5)
+--                              , ((2020, "June")   , 20)
+--                              , ((2021, "June")   , 25) 
+--                              ]
+--      in xs `groupBy` month `foldWith` min
+-- :}
+--     index | values
+--     ----- | ------
+-- "January" |     -5
+--    "June" |     20
 foldWith :: Ord g 
          => Grouping k g a
          -> (a -> a -> a)

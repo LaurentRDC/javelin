@@ -1003,6 +1003,19 @@ aggregateWith = G.aggregateWith
 -- | Aggregate each group in a 'Grouping' using a binary function.
 -- While this is not as expressive as 'aggregateWith', users looking for maximum
 -- performance should use 'foldWith' as much as possible.
+--
+-- >>> :{ 
+--     let xs = Series.fromList [ ((1, 1) :: (Int, Int),  0 :: Int)
+--                              , ((2, 1), -5)
+--                              , ((3, 2), 20)
+--                              , ((4, 2), 25) 
+--                              ]
+--      in xs `groupBy` snd `foldWith` min
+-- :}
+-- index | values
+-- ----- | ------
+--     1 |     -5
+--     2 |     20
 foldWith :: (Ord g, Unbox a) 
          => Grouping k g a
          -> (a -> a -> a)
