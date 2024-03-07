@@ -29,7 +29,13 @@ tests = testGroup "Data.Series.Generic.Aggregation" [ testGroupBy
 
 
 testGroupBy :: TestTree
-testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupBy2, testGroupBy3, testGroupBy4 ]
+testGroupBy = testGroup "Data.Series.Generic.groupBy" 
+            [ testGroupBy1
+            , testGroupBy2
+            , testGroupBy3
+            , testGroupBy4
+            , testGroupBy5 
+            ]
     where
         testGroupBy1 = testCase "groupBy" $ do
             let (series :: Series Vector String Int) = fromStrictMap $ MS.fromList [("aa", 1), ("ab", 2), ("c", 3), ("dc", 4), ("ae", 5)]
@@ -52,6 +58,9 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
             
             assertEqual mempty expectation $ series `groupBy` fst `aggregateWith` (IS.fromList . Series.toList . flip Series.mapIndex snd)
 
+        -- The following example resulted in an exception
+        -- when the implementation of `aggregateWith` didn't aggregate keys in the
+        -- right order
         testGroupBy4 = testCase "groupBy" $ do
             let (series :: Series Vector (Int, Int) Int) = fromStrictMap $ MS.fromList $ zip (zip [0,1,2,3,4,5] [1,1,2,2,3,3]) [2,1,2,1,2,1]
                 expectation = fromStrictMap $ MS.fromList [ (1, Vector.fromList [2,1])
@@ -60,6 +69,17 @@ testGroupBy = testGroup "Data.Series.Generic.groupBy" [ testGroupBy1, testGroupB
                                                           ]
             
             assertEqual mempty expectation $ series `groupBy` snd `aggregateWith` (Series.values)
+        
+        -- The following test ensures that the order of folding in `foldWith` is intuitive.
+        testGroupBy5 = testCase "groupBy" $ do
+            let (series :: Series Vector Int [Int]) = fromStrictMap $ MS.fromList $ zip [0,1,2,3,4,5] [[0],[1],[2],[3],[4],[5]]
+                expectation = fromStrictMap $ MS.fromList [ (True, [0, 2, 4])
+                                                          , (False, [1, 3, 5])
+                                                          ]
+            
+            assertEqual mempty expectation $ series `groupBy` isEven `foldWith` (++)
+                where
+                    isEven i = i `mod` 2 == 0
 
 
 testWindowing :: TestTree

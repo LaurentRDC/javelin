@@ -3,6 +3,7 @@
 ## Release 0.1.3.0
 
 * Improved performance for the `aggregateWith` function.
+* Ensured that arguments are consumed in the expected order using `foldWith`.
 * Documentation improvements.
 
 ## Release 0.1.2.0

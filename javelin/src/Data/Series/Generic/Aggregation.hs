@@ -136,7 +136,9 @@ foldWith (MkGrouping xs by) f
     -- We're using a list fold to limit the number of 
     -- type constraints. This is about as fast as it is 
     -- with a Vector fold
-    $ Data.List.foldl' acc mempty 
+    $ Data.List.foldl' acc mempty
+    -- We want to make sure that the order of folded arguments is intuitive
+    $ reverse
     $ GSeries.toList xs
     where
         acc !m (key, val) = Map.insertWith f (by key) val m
