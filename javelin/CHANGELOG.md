@@ -1,5 +1,9 @@
 # Revision history for javelin
 
+## Release 0.1.3.0
+
+* Improved performance for the `aggregateWith` function.
+
 ## Release 0.1.2.0
 
 * Fixed an issue where `Series` could be corrupted while using `aggregateWith`.

@@ -95,10 +95,14 @@ aggregateWith (MkGrouping xs by) f
     -- We're using a list fold to limit the number of 
     -- type constraints. This is about as fast as it is 
     -- with a Vector fold
-    $ Data.List.foldl' acc mempty 
+    $ Data.List.foldl' acc Map.empty 
+    -- See the performance note for `Data.Map.Strict.insertWith`
+    -- (https://hackage.haskell.org/package/containers-0.7/docs/Data-Map-Strict.html#v:insertWith)
+    -- which explains that reversing the list leads to better performance
+    $ reverse
     $ GSeries.toList xs
     where
-        acc !m (key, val) = Map.insertWith (flip (<>)) -- Flipping arguments to ensure that keys are ordered as expected
+        acc !m (key, val) = Map.insertWith (++)
                                            (by key) 
                                            (Data.List.singleton (key, val)) 
                                            m
