@@ -350,6 +350,12 @@ union = (<>)
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Intersection of two 'Index', containing
 -- elements which are in both the left index and the right index.
+--
+-- Elements of the result come from the first 'Index':
+--
+-- >>> import Data.Semigroup ( Arg(..) )
+-- >>> fromList [ Arg 0 'a' ] `intersection` fromList [ Arg 0 'b', Arg 1 'c' ]
+-- Index [Arg 0 'a']
 intersection :: Ord k => Index k -> Index k -> Index k
 intersection (MkIndex ix) (MkIndex jx) = MkIndex $ ix `Set.intersection` jx
 {-# INLINABLE intersection #-}

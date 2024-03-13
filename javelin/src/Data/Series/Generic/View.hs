@@ -28,10 +28,10 @@ module Data.Series.Generic.View (
 
 
 import           Data.Functor           ( (<&>) )
+import           Data.Maybe             ( fromJust, isJust )
 import           Data.Series.Index      ( Index )
 import qualified Data.Series.Index      as Index
 import qualified Data.Series.Index.Internal as Index.Internal
-import           Data.Maybe             ( fromJust, isJust )
 import           Data.Series.Generic.Definition ( Series(..) )
 import qualified Data.Series.Generic.Definition as G
 import           Data.Set               ( Set )
