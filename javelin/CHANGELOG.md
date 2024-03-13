@@ -1,5 +1,9 @@
 # Revision history for javelin
 
+## Release 0.1.3.1
+
+* Improved performance for the `Foldable` methods that use `Data.Foldable.foldMap'` under the hood.
+
 ## Release 0.1.3.0
 
 * Improved performance for the `aggregateWith` function.

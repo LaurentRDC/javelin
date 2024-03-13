@@ -516,71 +516,71 @@ instance (forall a. Vector v a, Functor v) => FunctorWithIndex k (Series v k) wh
 -- Series to have performance characteristics
 -- be as close as possible to boxed vectors 
 instance (Foldable v) => Foldable (Series v k) where
-    {-# INLINABLE fold #-}
+    {-# INLINE fold #-}
     fold :: Monoid m => Series v k m -> m
     fold = Foldable.fold . values
 
-    {-# INLINABLE foldMap #-}
+    {-# INLINE foldMap #-}
     foldMap :: (Monoid m) => (a -> m) -> Series v k a -> m
     foldMap f = Foldable.foldMap f . values
 
-    {-# INLINABLE foldMap' #-}
+    {-# INLINE foldMap' #-}
     foldMap' :: (Monoid m) => (a -> m) -> Series v k a -> m
-    foldMap' f = Foldable.foldMap f . values
+    foldMap' f = Foldable.foldMap' f . values
 
-    {-# INLINABLE foldr #-}
+    {-# INLINE foldr #-}
     foldr :: (a -> b -> b) -> b -> Series v k a -> b
     foldr f i = Foldable.foldr f i . values
 
-    {-# INLINABLE foldr' #-}
+    {-# INLINE foldr' #-}
     foldr' :: (a -> b -> b) -> b -> Series v k a -> b
     foldr' f i = Foldable.foldr' f i . values
 
-    {-# INLINABLE foldl #-}
+    {-# INLINE foldl #-}
     foldl :: (b -> a -> b) -> b -> Series v k a -> b
     foldl f i = Foldable.foldl f i . values
 
-    {-# INLINABLE foldl' #-}
+    {-# INLINE foldl' #-}
     foldl' :: (b -> a -> b) -> b -> Series v k a -> b
     foldl' f i = Foldable.foldl' f i . values
 
-    {-# INLINABLE foldr1 #-}
+    {-# INLINE foldr1 #-}
     foldr1 :: (a -> a -> a) -> Series v k a -> a
     foldr1 f = Foldable.foldr1 f . values
 
-    {-# INLINABLE foldl1 #-}
+    {-# INLINE foldl1 #-}
     foldl1 :: (a -> a -> a) -> Series v k a -> a
     foldl1 f = Foldable.foldl1 f . values
 
-    {-# INLINABLE toList #-}
+    {-# INLINE toList #-}
     toList :: Series v k a -> [a]
     toList = Foldable.toList . values
 
-    {-# INLINABLE null #-}
+    {-# INLINE null #-}
     null :: Series v k a -> Bool
     null = Foldable.null . values
 
-    {-# INLINABLE length #-}
+    {-# INLINE length #-}
     length :: Series v k a -> Int
     length = Foldable.length . values
 
-    {-# INLINABLE elem #-}
+    {-# INLINE elem #-}
     elem :: Eq a => a -> Series v k a -> Bool
     elem e = Foldable.elem e . values
 
-    {-# INLINABLE maximum #-}
+    {-# INLINE maximum #-}
     maximum :: Ord a => Series v k a -> a
     maximum = Foldable.maximum . values
 
-    {-# INLINABLE minimum #-}
+    {-# INLINE minimum #-}
     minimum :: Ord a => Series v k a -> a
     minimum = Foldable.minimum . values
 
-    {-# INLINABLE sum #-}
+    {-# INLINE sum #-}
     sum :: Num a => Series v k a -> a
     sum = Foldable.sum . values
 
-    {-# INLINABLE product #-}
+    {-# INLINE product #-}
     product :: Num a => Series v k a -> a
     product = Foldable.product . values
 
