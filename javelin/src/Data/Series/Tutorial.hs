@@ -64,7 +64,6 @@ import qualified Data.Set
 import           Data.Map.Strict ( Map )
 import qualified Data.Map.Strict
 import qualified Data.Map.Merge.Strict
-import           Numeric.Natural ( Natural)
 import qualified Data.List
 import qualified Data.Vector
 import qualified Data.Vector.Unboxed
@@ -115,7 +114,7 @@ index | values
   'd' |      4
 
 'Series', like 'Map's, have unique keys; therefore, the output series may 
-not be the same length as the input series. See further below for an 
+not be the same length as the input. See further below for an 
 explanation of how to handle duplicate keys. 
 
 Since 'Series' are like 'Map', it's easy to convert between the two:
@@ -170,13 +169,13 @@ steps of 3:
 >>> Index.range (+3) (1 :: Int) 10
 Index [1,4,7,10]
 
-An 'Index' is very much like a 'Set', so you can 
+An 'Index' is very much like a 'Set', so you can:
 
 * check for membership using 'Index.member';
 * combine two 'Index' using 'Index.union', 'Index.intersection', and 'Index.difference';
 * find the integer index of a key using 'Index.lookupIndex';
 
-and more.
+and more. See the "Data.Series.Index" module for more information.
 
 -}
 
@@ -202,8 +201,8 @@ Nothing
 
 {- $multikey 
 
-Bulk selection, also known as *slicing*, is the method by which we extract a sub-series from a series.
-In the examples below, we'll assume that we have the series @aapl_close@ is available in-scope, which represents
+Bulk selection, also known as _slicing_, is the method by which we extract a sub-series from a 'Series'.
+In the examples below, we'll assume that we have the 'Series' @aapl_close@ is available in-scope, which represents
 the closing price of Apple stock:
 
 >>> :{
@@ -266,8 +265,8 @@ let's look at a 5-day range:
 "2010-01-12" | 6.4047
 
 We've requested a range of 5 days (@"2010-01-08"@, @"2010-01-09"@, @"2010-01-10"@, @"2010-01-11"@, @"2010-01-12"@), 
-but there's no data in our series with the keys @"2010-01-09"@ and @"2010-01-10"@, because it was the week-end 
-(stock markets are usually closed on week-ends). 
+but there's no data in our series with the keys @"2010-01-09"@ and @"2010-01-10"@, because it was the week-end, and 
+stock markets are usually closed on week-ends. 
 
 Sometimes you want to be more specific than a contiguous range of data; 'select' 
 also supports bulk *random* access like so:
@@ -400,7 +399,7 @@ both the mean closing price AND the standard deviation of closing prices.
 >>> Series.fold meanAndStdDev aapl_closing_2021
 (140.61256349206354,14.811663837435361)
 
-See 'Control.Foldl' from the @foldl@ package for more information on 'Fold'.
+See "Control.Foldl" from the @foldl@ package for more information on 'Fold'.
 -}
 
 {- $grouping
@@ -426,7 +425,7 @@ Let's load some stock price data again for this part:
 Grouping involves two steps:
 
   (1) Grouping keys in some way using 'groupBy';
-  (2) Aggregating the values in each group using 'aggregateWith' or other variants.
+  (2) Aggregating the values in each group using 'aggregateWith' or other variants, such as 'foldWith'.
 
 Let's find the highest closing price of each month. First, we need to define
 our grouping function:
@@ -684,7 +683,7 @@ Such 'Data.Series.Unboxed.Series' are much more limited: they can only contain d
 instances of 'Data.Vector.Unboxed.Unbox'. 
 
 This then brings the question: how can you write software which supports both ordinary 'Data.Series.Series'
-__and__ unboxed 'Data.Series.Unboxed.Series'? The answer is to use functions from the "Data.Series.Generic".
+__and__ unboxed 'Data.Series.Unboxed.Series'? The answer is to use functions from the "Data.Series.Generic" module.
 
 For example, we could implement the dot product of two series as:
 
@@ -695,15 +694,17 @@ For example, we could implement the dot product of two series as:
       dot v1 v2 = G.sum $ G.zipWithMatched (*) v1 v2
     :}
 
+The above @dot@ function can be used with any type of 'Series'.
+
 You can convert between the two types of series using the 'Data.Series.Generic.convert' function.
 
 -}
 
 {- $replacement 
 
-'Series.map' allows to map every value of a series. How about replacing *some* 
-values in a series? The function 'Data.Series.replace' (and its infix variant, '|->') replaces values in the right operand 
-which have an analogue in the left operand:
+'Series.map' allows to map every value of a series. How about replacing _some_ 
+values in a series? The function 'Data.Series.replace' (and its infix variant, '|->') 
+replaces values in the right operand which have an analogue in the left operand:
 
 >>> import Data.Series ( (|->) )
 >>> let nan = (0/0) :: Double
