@@ -213,6 +213,21 @@ zipWithKey3 f left center right
 
 -- | Replace values from the right series with values from the left series at matching keys.
 -- Keys in the right series but not in the right series are unaffected.
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> let ys = Series.singleton "Paris" (99::Int)
+-- >>> ys `replace` xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |     99
 replace :: (Vector v a, Vector v Int, Ord k) 
         => Series v k a -> Series v k a -> Series v k a
 {-# INLINABLE replace #-}
@@ -223,13 +238,43 @@ xs `replace` ys
 
 
 -- | Infix version of 'replace'
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> let ys = Series.singleton "Paris" (99::Int)
+-- >>> xs <-| ys
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |     99
 (|->) :: (Vector v a, Vector v Int, Ord k)
       => Series v k a -> Series v k a -> Series v k a
 {-# INLINABLE (|->) #-}
 (|->) = replace
 
 
--- | Flipped version of '|->',
+-- | Flipped version of '|->'
+--
+-- >>> let xs = Series.fromList [("Paris", 1 :: Int), ("London", 2), ("Lisbon", 4)]
+-- >>> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |      1
+-- >>> let ys = Series.singleton "Paris" (99::Int)
+-- >>> ys |-> xs
+--    index | values
+--    ----- | ------
+-- "Lisbon" |      4
+-- "London" |      2
+--  "Paris" |     99
 (<-|) :: (Vector v a, Vector v Int, Ord k) 
       => Series v k a -> Series v k a -> Series v k a
 {-# INLINABLE (<-|)  #-}
