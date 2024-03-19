@@ -25,7 +25,7 @@ module Data.Series.Index.Internal(
     fromAscVector,
     fromDistinctAscVector,
 
-    -- * Functions with unchecked pre-conditions
+    -- * Unsafe functions with pre-conditions
     mapMonotonic,
 
     -- * Unsafe indexing

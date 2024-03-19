@@ -440,10 +440,13 @@ map f (MkIndex ix) = MkIndex $ Set.map f ix
 
 -- | \(O(n)\) Map a monotonic function over keys in the index. /Monotonic/ means that if @a < b@, then @f a < f b@.
 -- Using 'mapMonononic' can be much faster than using 'map' for a large 'Index'.
--- Note that the precondiction that the function be monotonic is not checked.
 --
 -- >>> mapMonotonic (+1) $ fromList [0::Int,1,2,3,4,5]
 -- Index [1,2,3,4,5,6]
+-- 
+-- The precondiction that the function be monotonic __is not checked__. Using 'mapMonotonic'
+-- with a non-monotonic function will __not__ result in an exception; subtle inconsistencies will make you
+-- question your own sanity.
 mapMonotonic :: (k -> g) -> Index k -> Index g
 mapMonotonic f (MkIndex ix) = MkIndex $ Set.mapMonotonic f ix
 {-# INLINABLE mapMonotonic #-}
