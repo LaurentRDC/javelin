@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin-io
-version:            0.1.1.0
+version:            0.1.1.1
 synopsis:           IO operations for the `javelin` package
 license:            MIT
 license-file:       LICENSE

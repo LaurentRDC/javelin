@@ -92,7 +92,7 @@ import "Data.Vector"
 main :: IO ()
 main = do
     stream <- (...) -- Read the bytestring from somewhere
-    let (latlongs  :: 'Series' Vector City LatLong) = either (error . show) id \<$\> `readCSV` stream
+    let (latlongs  :: 'Series' Vector City LatLong) = either error id (`readCSV` stream)
     print latlongs
 @
 -}
@@ -127,12 +127,11 @@ Then, for example, you can use 'readCSVFromFile' as:
 @
 import "Data.Series.Generic"
 import "Data.Series.Generic.IO"
-import "Data.Vector" 
+import "Data.Vector"
 
 main :: IO ()
 main = do
-    stream <- (...) -- Read the bytestring from somewhere
-    let (latlongs  :: 'Series' Vector City LatLong) = either (error . show) id \<$\> `readCSV` stream
+    let (latlongs  :: 'Series' Vector City LatLong) = either error id \<$\> `readCSVFromFile` "somefile.csv"
     print latlongs
 @
 -}
@@ -142,60 +141,7 @@ readCSVFromFile :: (MonadIO m, Vector v a, Ord k, FromNamedRecord k, FromNamedRe
 readCSVFromFile fp = fromFile fp readCSV 
 
 
-
-{-|
-Read a comma-separated value (CSV) bytestream into a series.
-
-Consider the following bytestream read from a file:
-
-@
-latitude,longitude,city
-48.856667,2.352222,Paris
-40.712778,-74.006111,New York City
-25.0375,121.5625,Taipei
--34.603333,-58.381667,Buenos Aires
-@
-
-We want to get a series of the latitude an longitude, indexed by the column "city". First, we need
-to do is to create a datatype representing the latitude and longitude information, and our index:
-
-@
-data LatLong = MkLatLong { latitude  :: Double
-                         , longitude :: Double
-                         }
-    deriving ( Show )
-
-newtype City = MkCity String
-    deriving ( Eq, Ord, Show )
-@
-
-Second, we need to create an instance of `Data.Csv.FromNamedRecord` for our new types:
-
-@
-import "Data.Csv" ( 'FromNamedRecord', '(.:)' )
-
-instance 'FromNamedRecord' LatLong where
-    'parseNamedRecord' r = MkLatLong \<$\> r .: "latitude"
-                                   \<*\> r .: "longitude"
-
-
-instance 'FromNamedRecord' City where
-    'parseNamedRecord' r = MkCity \<$\> r .: "city"
-@
-
-Finally, we're ready to read our stream:
-
-@
-import Data.Series
-import Data.Series.IO
-
-main :: IO ()
-main = do
-    stream <- (...) -- Read the bytestring from somewhere
-    let (latlongs  :: 'Series' City LatLong) = either (error . show) id \<$\> `readCSV` stream
-    print latlongs
-@
--}
+-- | Serialize a 'Series' to bytes. 
 writeCSV :: (Vector v a, ToNamedRecord k, ToNamedRecord a)
          => Series v k a
          -> BL.ByteString
@@ -205,8 +151,7 @@ writeCSV xs = fromMaybe mempty $ do
     pure $ CSV.encodeByName header $ NE.toList recs
 
 
--- | This is a helper function to write a 'Series' directly to CSV.
--- See the documentation for 'writeCSV' on how to prepare your types.
+-- | This is a helper function to write a 'Series' directly to a file.
 writeCSVToFile :: (MonadIO m, Vector v a, ToNamedRecord k, ToNamedRecord a)
                => FilePath
                -> Series v k a

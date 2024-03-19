@@ -43,7 +43,7 @@ instance ToNamedRecord City where
 
 testReadCSVFromFile :: TestTree
 testReadCSVFromFile = testCase "Read CSV data" $ do
-    (latlongs  :: Series Vector City LatLong) <- either (error . show) id <$> readCSVFromFile "test/data/lat-long-city.csv"
+    (latlongs  :: Series Vector City LatLong) <- either error id <$> readCSVFromFile "test/data/lat-long-city.csv"
 
     let latitudes  = fmap lat latlongs
         longitudes = fmap long latlongs
@@ -63,11 +63,11 @@ testReadCSVFromFile = testCase "Read CSV data" $ do
 
 testWriteCSVToFile :: TestTree
 testWriteCSVToFile = testCase "Write CSV data" $ do
-    (latlongs  :: Series Vector City LatLong) <- either (error . show) id <$> readCSVFromFile "test/data/lat-long-city.csv"
+    (latlongs  :: Series Vector City LatLong) <- either error id <$> readCSVFromFile "test/data/lat-long-city.csv"
     
     (written :: Series Vector City LatLong) <- withSystemTempDirectory "test-javelin-op" $ \dirname -> do
         writeCSVToFile (dirname </> "myseries.csv") latlongs
 
-        either (error . show) id <$> readCSVFromFile (dirname </> "myseries.csv")
+        either error id <$> readCSVFromFile (dirname </> "myseries.csv")
     
     assertEqual mempty latlongs written
