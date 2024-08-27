@@ -10,7 +10,8 @@ category:           Data, Data Structures, Data Science
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
                     files/aapl.txt
-tested-with:        GHC ==9.8.2 
+tested-with:        GHC ==9.10.1
+                     || ==9.8.2
                      || ==9.6.4
                      || ==9.4.8  
 description:
@@ -58,7 +59,7 @@ library
                       Data.Series.Generic.View
                       Data.Series.Generic.Zip
                       Data.Series.Index.Definition
-    build-depends:    base                >=4.15.0.0 && <4.20,
+    build-depends:    base                >=4.15.0.0 && <4.21,
                       containers          >=0.6      && <0.8,
                       deepseq             >=1.4      && <1.6,
                       foldl               ^>=1.4,
