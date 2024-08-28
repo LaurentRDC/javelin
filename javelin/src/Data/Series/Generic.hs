@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Series.Generic
+-- Module      :  $header
 -- Copyright   :  (c) Laurent P. René de Cotret
 -- License     :  MIT
 -- Maintainer  :  laurent.decotret@outlook.com

@@ -342,7 +342,7 @@ notMember k = not . member k
 
 
 -- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\) Union of two 'Index', containing
--- elements either in the left index, right right index, or both.
+-- elements either in the left index, right index, or both.
 union :: Ord k => Index k -> Index k -> Index k
 union = (<>)
 {-# INLINABLE union #-}
@@ -522,7 +522,8 @@ delete k (MkIndex ix) = MkIndex $ k `Set.delete` ix
 -- evaluate these actions from left to right, and collect the results.
 --
 -- Note that the data type 'Index' is not a member of 'Traversable'
--- because it is not a 'Functor'.
+-- because it is not a 'Functor' due to the restriction that
+-- members of an 'Index' be a instance of 'Ord'.
 traverse :: (Applicative f, Ord b) => (k -> f b) -> Index k -> f (Index b)
 traverse f = fmap fromList . Traversable.traverse f . toAscList
 {-# INLINABLE traverse #-}

@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Series.Generic.Internal
+-- Module      :  $header
 -- Copyright   :  (c) Laurent P. René de Cotret
 -- License     :  MIT
 -- Maintainer  :  laurent.decotret@outlook.com

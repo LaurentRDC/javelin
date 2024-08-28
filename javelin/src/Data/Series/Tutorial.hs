@@ -1,5 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
-
+-- |
+-- Module      :  $header
+-- Copyright   :  (c) Laurent P. René de Cotret
+-- License     :  MIT
+-- Maintainer  :  laurent.decotret@outlook.com
+-- Portability :  portable
+--
 module Data.Series.Tutorial (
     -- * Introduction
     -- $introduction
