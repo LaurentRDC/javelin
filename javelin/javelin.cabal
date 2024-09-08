@@ -61,7 +61,7 @@ library
                       Data.Series.Index.Definition
     build-depends:    base                >=4.15.0.0 && <4.21,
                       containers          >=0.6      && <0.8,
-                      deepseq             >=1.4      && <1.6,
+                      deepseq             >=1.4      && <1.7,
                       foldl               ^>=1.4,
                       indexed-traversable ^>=0.1,
                       vector              >=0.12.3.0 && <0.14,
