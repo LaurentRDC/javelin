@@ -29,6 +29,10 @@ description:
         
         If you don't know where to start, please take a look at the documentation in "Data.Series.IO".
 
+source-repository head
+  type:     git
+  location: https://github.com/LaurentRDC/javelin
+
 common common
     default-language: GHC2021
     ghc-options: -Wall

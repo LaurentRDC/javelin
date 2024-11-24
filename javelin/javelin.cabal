@@ -30,7 +30,10 @@ description:
         ["Data.Series.Index"] Index containing series keys.
         
         To get started, please take a look at the tutorial ("Data.Series.Tutorial").
-        
+
+source-repository head
+  type:     git
+  location: https://github.com/LaurentRDC/javelin
 
 common common
     default-language: GHC2021
