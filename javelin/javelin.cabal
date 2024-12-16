@@ -62,7 +62,7 @@ library
                       Data.Series.Generic.View
                       Data.Series.Generic.Zip
                       Data.Series.Index.Definition
-    build-depends:    base                >=4.15.0.0 && <4.21,
+    build-depends:    base                >=4.15.0.0 && <4.22,
                       containers          >=0.6      && <0.8,
                       deepseq             >=1.4      && <1.7,
                       foldl               ^>=1.4,
