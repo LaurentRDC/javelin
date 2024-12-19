@@ -15,10 +15,8 @@ jobs:
             run-doctests: true
           - ghc-version: "9.6.6"
             run-doctests: true
-          # For some reason, doctest cannot be easily installed
-          # for GHC 9.8.2
-          - ghc-version: "9.8.2"
-            run-doctests: false
+          - ghc-version: "9.8.4"
+            run-doctests: true
           - ghc-version: "9.10.1"
             run-doctests: true
 
