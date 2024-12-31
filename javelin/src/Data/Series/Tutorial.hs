@@ -136,8 +136,10 @@ index | values
   'c' |      3
   'd' |      4
 
-Of course, 'Series.fromLazyMap' is also available. In fact, conversion to/from 'Series' is supported for
-many types; see the 'IsSeries' typeclass and its methods, 'toSeries' and 'fromSeries'.
+Of course, 'Series.fromLazyMap' is also available. 
+
+In fact, conversion to/from 'Series' is supported for many container types; 
+see the 'IsSeries' typeclass and its methods, 'toSeries', 'toSeriesDuplicates', and 'fromSeries'.
 
 -}
 
@@ -642,8 +644,9 @@ For a more in-depth look at this package, you can read the full documentation fo
 
 {- $duplicates
 
-If you must build a 'Series' with duplicate keys, you can use the 'Data.Series.fromListDuplicates' or 
-'Data.Series.fromVectorDuplicates' functions. 
+If you must build a 'Series' from a container with duplicate keys, you can use the 'Data.Series.toSeriesDuplicates' function,
+or its specializations 'Data.Series.fromListDuplicates' and 'Data.Series.fromVectorDuplicates'.
+ 
 In the example below, the key @\'d\'@ is repeated three times:
 
 >>> Series.fromListDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]

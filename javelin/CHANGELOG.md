@@ -1,5 +1,10 @@
 # Revision history for javelin
 
+## Release 0.1.4.0
+
+* Added the `toSeriesDuplicates` method to the `IsSeries` typeclass, to more easily convert to a series
+  from a container that may contain duplicates.
+
 ## Release 0.1.3.1
 
 * Improved performance for the `Foldable` methods that use `Data.Foldable.foldMap'` under the hood.

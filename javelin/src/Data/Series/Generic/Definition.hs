@@ -131,8 +131,16 @@ fromIndex f ix = MkSeries ix $ Vector.convert
 class IsSeries t v k a where
     -- | Construct a 'Series' from some container of key-values pairs. There is no
     -- condition on the order of pairs. Duplicate keys are silently dropped. If you
-    -- need to handle duplicate keys, see 'fromListDuplicates' or 'fromVectorDuplicates'.
+    -- need to handle duplicate keys, see 'toSeriesDuplicates'.
     toSeries    :: t -> Series v k a
+
+    -- | Construct a 'Series' from some container of key-values pairs, 
+    -- potentially with duplicates.
+    -- Each duplicate key @k@ is affixed with an occurence number, starting
+    -- with 0. 
+    --
+    -- @since 0.1.4.0
+    toSeriesDuplicates :: t -> Series v (k, Occurrence) a
 
     -- | Construct a container from key-value pairs of a 'Series'. 
     -- The elements are returned in ascending order of keys. 
@@ -151,10 +159,31 @@ instance (Ord k, Vector v a) => IsSeries [(k, a)] v k a where
     --   'b' |      0
     --   'd' |      1
     --
-    -- If you need to handle duplicate keys, take a look at `fromListDuplicates`.
+    -- If you need to handle duplicate keys, take a look at `toSeriesDuplicates`.
     toSeries :: [(k, a)] -> Series v k a
     toSeries = toSeries . MS.fromList
     {-# INLINABLE toSeries #-}
+
+    
+    -- | Construct a 'Series' from a list of key-values pairs, 
+    -- potentially with duplicates.
+    -- Each duplicate key @k@ is affixed with an occurence number, starting
+    -- with 0. 
+    --
+    -- >>> let xs = toSeriesDuplicates [('b', 0::Int), ('a', 5), ('d', 1), ('d', -4), ('d', 7) ]
+    -- >>> xs
+    --   index | values
+    --   ----- | ------
+    -- ('a',0) |      5
+    -- ('b',0) |      0
+    -- ('d',0) |      1
+    -- ('d',1) |     -4
+    -- ('d',2) |      7
+    --
+    -- @since 0.1.4.0
+    toSeriesDuplicates :: [(k, a)] -> Series v (k, Occurrence) a
+    toSeriesDuplicates = fromListDuplicates
+    {-# INLINABLE toSeriesDuplicates #-}
 
     -- | Construct a list from key-value pairs. The elements are in order sorted by key:
     --
@@ -209,6 +238,9 @@ deriving instance Vector U.Vector Occurrence
 -- | Construct a series from a list of key-value pairs.
 -- Contrary to 'fromList', values at duplicate keys are preserved. To keep each
 -- key unique, an 'Occurrence' number counts up.
+--
+-- See 'toSeriesDuplicates' for an overloaded version of this function which supports many more
+-- sequence types, without having to convert to a list.
 fromListDuplicates :: (Vector v a, Ord k) => [(k, a)] -> Series v (k, Occurrence) a
 {-# INLINABLE fromListDuplicates #-}
 fromListDuplicates = convert . fromVectorDuplicates . Boxed.fromList
@@ -224,6 +256,9 @@ instance (Ord k) => IsSeries (Boxed.Vector (k, a)) Boxed.Vector k a where
     toSeries = fromVector
     {-# INLINABLE toSeries #-}
 
+    toSeriesDuplicates = fromVectorDuplicates
+    {-# INLINABLE toSeriesDuplicates #-}
+
     fromSeries = toVector
     {-# INLINABLE fromSeries #-}
 
@@ -232,6 +267,10 @@ instance (Ord k, U.Unbox a, U.Unbox k) => IsSeries (U.Vector (k, a)) U.Vector k 
     toSeries :: U.Vector (k, a) -> Series U.Vector k a
     toSeries = fromVector
     {-# INLINABLE toSeries #-}
+
+    toSeriesDuplicates :: U.Vector (k, a) -> Series U.Vector (k, Occurrence) a
+    toSeriesDuplicates = fromVectorDuplicates
+    {-# INLINABLE toSeriesDuplicates #-}
 
     fromSeries :: Series U.Vector k a -> U.Vector (k, a)
     fromSeries = toVector
@@ -269,6 +308,9 @@ fromDistinctAscVector xs
 
 -- | Construct a 'Series' from a 'Vector' of key-value pairs, where there may be duplicate keys. 
 -- There is no condition on the order of pairs.
+--
+-- See 'toSeriesDuplicates' for an overloaded version of this function which supports many more
+-- sequence types, without having to convert to a vector.
 fromVectorDuplicates :: (Ord k, Vector v k, Vector v a, Vector v (k, a), Vector v (k, Occurrence))
                      => v (k, a) -> Series v (k, Occurrence) a
 {-# INLINABLE fromVectorDuplicates #-}
@@ -305,6 +347,10 @@ instance (Vector v a) => IsSeries (Map k a) v k a where
                 , values = Vector.fromListN (MS.size mp) $ MS.elems mp
                 }
     {-# INLINABLE toSeries #-}
+
+    toSeriesDuplicates :: Map k a -> Series v (k, Occurrence) a
+    toSeriesDuplicates = toSeries . MS.mapKeysMonotonic (,0::Occurrence)
+    {-# INLINABLE toSeriesDuplicates #-}
 
     fromSeries :: Series v k a -> Map k a
     fromSeries (MkSeries ks vs)
@@ -345,6 +391,12 @@ instance (Vector v a) => IsSeries (IntMap a) v Int a where
                 }
     {-# INLINABLE toSeries #-}
 
+    toSeriesDuplicates :: IntMap a -> Series v (Int, Occurrence) a
+    toSeriesDuplicates = fromDistinctAscList 
+                       . fmap (\(k::Int, v) -> ( (k, 0::Occurrence), v )) 
+                       . IntMap.toAscList
+    {-# INLINABLE toSeriesDuplicates #-}
+
     fromSeries :: Series v Int a -> IntMap a
     fromSeries (MkSeries ks vs) 
         = IntMap.fromDistinctAscList $ zip (Index.toAscList ks) (Vector.toList vs)
@@ -356,15 +408,23 @@ instance (Ord k, Vector v a) => IsSeries (Seq (k, a)) v k a where
     toSeries = toSeries . Foldable.toList
     {-# INLINABLE toSeries #-}
 
+    toSeriesDuplicates :: Seq (k, a) -> Series v (k, Occurrence) a
+    toSeriesDuplicates = fromListDuplicates . Foldable.toList
+    {-# INLINABLE toSeriesDuplicates #-}
+
     fromSeries :: Series v k a -> Seq (k, a)
     fromSeries = Seq.fromList . fromSeries
     {-# INLINABLE fromSeries #-}
 
 
-instance (Vector v a) => IsSeries (Set (k, a)) v k a where
+instance (Ord k, Vector v a) => IsSeries (Set (k, a)) v k a where
     toSeries :: Set (k, a) -> Series v k a
     toSeries = fromDistinctAscList . Set.toAscList
     {-# INLINABLE toSeries #-}
+
+    toSeriesDuplicates :: Set (k, a) -> Series v (k, Occurrence) a
+    toSeriesDuplicates = fromListDuplicates . Set.toList
+    {-# INLINABLE toSeriesDuplicates #-}
 
     fromSeries :: Series v k a -> Set (k, a)
     fromSeries = Set.fromDistinctAscList . toList
