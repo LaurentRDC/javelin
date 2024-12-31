@@ -81,7 +81,7 @@ test-suite javelin-test
                       Test.Data.Series.Generic.Definition
                       Test.Data.Series.Generic.View
                       Test.Data.Series.Generic.Zip
-    build-depends:    base,
+    build-depends:    base >=4.15.0.0 && <4.22,
                       containers,
                       foldl,
                       hedgehog,
@@ -103,7 +103,7 @@ benchmark comparison-containers
     ghc-options:      -rtsopts
     hs-source-dirs:   benchmarks
     main-is:          Comparison.hs
-    build-depends:    base,
+    build-depends:    base >=4.15.0.0 && <4.22,
                       containers,
                       foldl,
                       mono-traversable,
@@ -124,7 +124,7 @@ benchmark operations
     ghc-options:      -rtsopts
     hs-source-dirs:   benchmarks
     main-is:          Operations.hs
-    build-depends:    base,
+    build-depends:    base >=4.15.0.0 && <4.22,
                       containers,
                       deepseq,
                       foldl,
@@ -136,5 +136,5 @@ executable bench-report
     import:           common
     main-is:          bench-report.hs
     hs-source-dirs:   scripts
-    build-depends:    base, 
+    build-depends:    base >=4.15.0.0 && <4.22, 
                       csv ^>=0.1
