@@ -7,6 +7,7 @@ import           Data.Functor.Identity ( Identity(..))
 import           Data.List            ( nubBy, sortOn )
 import qualified Data.Map.Strict      as MS
 import qualified Data.Map.Lazy        as ML
+import qualified Data.Sequence        as Seq
 import           Data.Series.Generic  ( Series, Occurrence, fromStrictMap, toStrictMap, fromLazyMap, toLazyMap, fromList, toList, fromVector, toVector )
 import qualified Data.Series.Generic  as Series
 import           Data.Vector          ( Vector )
@@ -32,6 +33,7 @@ tests = testGroup "Data.Series.Generic.Definition"
     , testPropRoundtripConversionWithList
     , testPropFromListDuplicatesNeverDrops
     , testPropFromVectorDuplicatesNeverDrops
+    , testPropToSeriesDuplicatesNeverDrops
     , testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder
     , testPropRoundtripConversionWithVector
     , testPropVectorVsList
@@ -129,6 +131,20 @@ testPropFromVectorDuplicatesNeverDrops
     = testProperty "fromVectorDuplicates never drops elements" $ property $ do
         xs <- fmap Vector.fromList $ forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
         Series.length (Series.fromVectorDuplicates xs :: Series Vector (Int, Occurrence) Char) === length xs
+
+
+testPropToSeriesDuplicatesNeverDrops :: TestTree
+testPropToSeriesDuplicatesNeverDrops
+    = testProperty "toSeriesDuplicates never drops elements" $ property $ do
+        xs <- forAll $ Gen.list (Range.linear 0 100) ((,) <$> Gen.int (Range.linear (-10) 10) <*> Gen.alpha)
+        -- List
+        Series.length (Series.toSeriesDuplicates xs :: Series Vector (Int, Occurrence) Char) === length xs
+        -- Vector
+        let vs = Vector.fromList xs
+        Series.length (Series.toSeriesDuplicates vs :: Series Vector (Int, Occurrence) Char) === length vs
+        -- Sequence
+        let ss = Seq.fromList xs
+        Series.length (Series.toSeriesDuplicates ss :: Series Vector (Int, Occurrence) Char) === length ss
 
 
 testPropFromVectorDuplicatesAndFromListDuplicatesHaveSameOrder :: TestTree

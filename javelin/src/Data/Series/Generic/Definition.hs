@@ -256,10 +256,27 @@ instance (Ord k) => IsSeries (Boxed.Vector (k, a)) Boxed.Vector k a where
     toSeries = fromVector
     {-# INLINABLE toSeries #-}
 
+    -- | @since 0.1.4.0
     toSeriesDuplicates = fromVectorDuplicates
     {-# INLINABLE toSeriesDuplicates #-}
 
     fromSeries = toVector
+    {-# INLINABLE fromSeries #-}
+
+
+-- | @since 0.1.4.0
+instance (Vector v a, Ord k) => IsSeries (Series v k a) v k a where
+    toSeries :: Series v k a -> Series v k a
+    toSeries = id
+    {-# INLINABLE toSeries #-}
+
+    -- | @since 0.1.4.0
+    toSeriesDuplicates :: Series v k a -> Series v (k, Occurrence) a
+    toSeriesDuplicates = flip mapIndex (,0::Occurrence)
+    {-# INLINABLE toSeriesDuplicates #-}
+
+    fromSeries :: Series v k a -> Series v k a
+    fromSeries = id
     {-# INLINABLE fromSeries #-}
 
 
@@ -268,6 +285,7 @@ instance (Ord k, U.Unbox a, U.Unbox k) => IsSeries (U.Vector (k, a)) U.Vector k 
     toSeries = fromVector
     {-# INLINABLE toSeries #-}
 
+    -- | @since 0.1.4.0
     toSeriesDuplicates :: U.Vector (k, a) -> Series U.Vector (k, Occurrence) a
     toSeriesDuplicates = fromVectorDuplicates
     {-# INLINABLE toSeriesDuplicates #-}
@@ -348,6 +366,7 @@ instance (Vector v a) => IsSeries (Map k a) v k a where
                 }
     {-# INLINABLE toSeries #-}
 
+    -- | @since 0.1.4.0
     toSeriesDuplicates :: Map k a -> Series v (k, Occurrence) a
     toSeriesDuplicates = toSeries . MS.mapKeysMonotonic (,0::Occurrence)
     {-# INLINABLE toSeriesDuplicates #-}
@@ -391,6 +410,7 @@ instance (Vector v a) => IsSeries (IntMap a) v Int a where
                 }
     {-# INLINABLE toSeries #-}
 
+    -- | @since 0.1.4.0
     toSeriesDuplicates :: IntMap a -> Series v (Int, Occurrence) a
     toSeriesDuplicates = fromDistinctAscList 
                        . fmap (\(k::Int, v) -> ( (k, 0::Occurrence), v )) 
@@ -408,6 +428,7 @@ instance (Ord k, Vector v a) => IsSeries (Seq (k, a)) v k a where
     toSeries = toSeries . Foldable.toList
     {-# INLINABLE toSeries #-}
 
+    -- | @since 0.1.4.0
     toSeriesDuplicates :: Seq (k, a) -> Series v (k, Occurrence) a
     toSeriesDuplicates = fromListDuplicates . Foldable.toList
     {-# INLINABLE toSeriesDuplicates #-}
@@ -422,6 +443,7 @@ instance (Ord k, Vector v a) => IsSeries (Set (k, a)) v k a where
     toSeries = fromDistinctAscList . Set.toAscList
     {-# INLINABLE toSeries #-}
 
+    -- | @since 0.1.4.0
     toSeriesDuplicates :: Set (k, a) -> Series v (k, Occurrence) a
     toSeriesDuplicates = fromListDuplicates . Set.toList
     {-# INLINABLE toSeriesDuplicates #-}

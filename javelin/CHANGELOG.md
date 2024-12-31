@@ -4,6 +4,7 @@
 
 * Added the `toSeriesDuplicates` method to the `IsSeries` typeclass, to more easily convert to a series
   from a container that may contain duplicates.
+* Added `IsSeries` instance for `Series`.
 
 ## Release 0.1.3.1
 
