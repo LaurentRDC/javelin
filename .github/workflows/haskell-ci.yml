@@ -19,6 +19,8 @@ jobs:
             run-doctests: true
           - ghc-version: "9.10.1"
             run-doctests: true
+          - ghc-version: "9.12.1"
+            run-doctests: false
 
     steps:
     - uses: actions/checkout@v4

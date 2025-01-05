@@ -10,7 +10,8 @@ category:           Data, Data Structures, Data Science
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files: test/data/*.csv
-tested-with:        GHC ==9.10.1
+tested-with:        GHC ==9.12.1
+                     || ==9.10.1
                      || ==9.8.4
                      || ==9.6.4
                      || ==9.4.8
