@@ -10,17 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - ghc-version: "9.4.8"
-            run-doctests: true
-          - ghc-version: "9.6.6"
-            run-doctests: true
-          - ghc-version: "9.8.4"
-            run-doctests: true
-          - ghc-version: "9.10.1"
-            run-doctests: true
-          - ghc-version: "9.12.1"
-            run-doctests: false
+        ghc-version: 
+          - "9.4.8"
+          - "9.6.6"
+          - "9.8.4"
+          - "9.10.1"
+          - "9.12.1"
 
     steps:
     - uses: actions/checkout@v4
@@ -30,7 +25,7 @@ jobs:
       id: setup-haskell
       with:
         ghc-version: ${{ matrix.ghc-version }}
-        cabal-version: '3.10.3.0'
+        cabal-version: '3.14.1.1'
     
     - name: Generate freeze file
       run: |
@@ -59,7 +54,6 @@ jobs:
         cabal test all
     
     - name: Run doctests
-      if: ${{ matrix.run-doctests }}
       run: |
         cabal install doctest
         cabal repl javelin --with-ghc=doctest
