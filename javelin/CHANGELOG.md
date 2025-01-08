@@ -1,5 +1,9 @@
 # Revision history for javelin
 
+## Release 0.1.4.1
+
+* Explicit support for GHC 9.12
+
 ## Release 0.1.4.0
 
 * Added the `toSeriesDuplicates` method to the `IsSeries` typeclass, to more easily convert to a series

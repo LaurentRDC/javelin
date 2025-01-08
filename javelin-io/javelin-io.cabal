@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin-io
-version:            0.1.1.1
+version:            0.1.1.2
 synopsis:           IO operations for the `javelin` package
 license:            MIT
 license-file:       LICENSE
@@ -65,7 +65,7 @@ test-suite javelin-io-test
     hs-source-dirs:   test
     main-is:          Main.hs
     other-modules:    Test.Data.Series.IO
-    build-depends:    base,
+    build-depends:    base >=4.15.0.0 && <4.22,
                       cassava,
                       filepath,
                       javelin,

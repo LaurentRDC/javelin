@@ -1,5 +1,9 @@
 # Revision history for javelin-io
 
+## Release 0.1.1.2
+
+* Explicit support for GHC 9.12
+
 ## Release 0.1.1.1
 
 * Documentation fixes
