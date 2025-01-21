@@ -1,0 +1,61 @@
+cabal-version:      3.0
+name:               javelin-frames
+version:            0.1.0.0
+synopsis:           Type-safe data frames based on higher-kinded types.
+-- description:
+license:            MIT
+license-file:       LICENSE
+author:             Laurent P. René de Cotret
+maintainer:         laurent.decotret@outlook.com
+category:           Data, Data Structures, Data Science
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+tested-with:        GHC ==9.12.1
+                     || ==9.10.1
+                     || ==9.8.4
+                     || ==9.6.4
+                     || ==9.4.8
+
+description:
+        
+        This package implements data frames, a data structure
+        where record types defined by the user can be transformed
+        into records of columns.
+
+source-repository head
+  type:     git
+  location: https://github.com/LaurentRDC/javelin
+
+common common
+    default-language: GHC2021
+    ghc-options: -Wall
+                 -Wcompat
+                 -Widentities
+                 -Wincomplete-uni-patterns
+                 -Wincomplete-record-updates
+                 -Wredundant-constraints
+                 -fhide-source-paths
+                 -Wpartial-fields
+
+library
+    import:           common
+    exposed-modules:  Data.Frame
+    build-depends:    base    >=4.15.0.0 && <4.22,
+                      vector  >=0.12.3.0 && <0.14,
+    hs-source-dirs:   src
+    default-language: GHC2021
+
+test-suite javelin-frames-test
+    import:           common
+    default-language: GHC2021
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    other-modules:    Test.Data.Frame
+    build-depends:    base                >=4.15.0.0 && <4.22,
+                      hedgehog,
+                      javelin-frames,
+                      tasty,
+                      tasty-hedgehog,
+                      vector
+
