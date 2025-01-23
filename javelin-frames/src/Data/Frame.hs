@@ -80,7 +80,7 @@ import Data.Functor.Identity (Identity(..))
 import Data.Kind (Type)
 import Data.Vector (Vector)
 import qualified Data.Vector
-import GHC.Generics ( Generic(..), K1(..), M1(..), type (:*:)(..) )
+import GHC.Generics ( Generic(..), K1(..), Rec0, M1(..), type (:*:)(..) )
 
 
 -- | Type family which allows for higher-kinded record types
@@ -107,7 +107,7 @@ type Frame (dt :: (Type -> Type) -> Type) = dt Vector
 class GFromRows tI tV where
     gfromRows :: Vector (tI a) -> (tV a)
 
-instance (v ~ Vector a) => GFromRows (K1 i a) (K1 i v) where
+instance GFromRows (Rec0 a) (Rec0 (Vector a)) where
     gfromRows = K1 . Data.Vector.map unK1
 
 instance (GFromRows tI1 tV1, GFromRows tI2 tV2) 
@@ -123,7 +123,7 @@ instance GFromRows tI tV => GFromRows (M1 i c tI) (M1 i c tV) where
 class GToRows tI tV where
     gtoRows :: tV a -> Vector (tI a)
 
-instance GToRows (K1 i a) (K1 i (Vector a)) where
+instance GToRows (Rec0 a) (Rec0 (Vector a)) where
     gtoRows = Data.Vector.map K1 . unK1
 
 instance (GToRows tI1 tV1, GToRows tI2 tV2) 
