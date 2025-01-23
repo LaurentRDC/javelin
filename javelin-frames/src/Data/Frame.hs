@@ -86,15 +86,14 @@ import GHC.Generics ( Generic(..), K1(..), Rec0, M1(..), type (:*:)(..) )
 -- | Type family which allows for higher-kinded record types
 -- in two forms:
 --
--- * Single record type using `Identity`;
--- * Record type whose elements are arrays, using `Vector`.
+-- * Single record type using `Identity`, where @`Column` Identity a ~ a@ ;
+-- * Record type whose elements are some other functor (usually `Vector`).
 --
 -- Types are created like regular record types, but each element
 -- must have the type @`Column` f a@ instead of @a@.
-type family Column (f :: Type -> Type) a where
+type family Column (f :: Type -> Type) x where
     Column Identity x = x
-
-    Column Vector x = Vector x
+    Column f x        = f x
 
 -- | Type synonym for a record type with scalar elements
 type Row (dt :: (Type -> Type) -> Type) = dt Identity
