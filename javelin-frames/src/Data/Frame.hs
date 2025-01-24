@@ -74,6 +74,9 @@ module Data.Frame (
     Column, Frameable(fromRows, toRows), Row, Frame,
     -- * Basic interface
     mapFrame, filterFrame, zipFramesWith, foldlFrame,
+
+    -- * Indexing operations
+    Indexable(Key, index), lookup
 ) where
 
 import Data.Functor.Identity (Identity(..))
@@ -81,6 +84,7 @@ import Data.Kind (Type)
 import Data.Vector (Vector)
 import qualified Data.Vector
 import GHC.Generics ( Generic(..), K1(..), Rec0, M1(..), type (:*:)(..) )
+import Prelude hiding (lookup)
 
 
 -- | Type family which allows for higher-kinded record types
@@ -211,3 +215,32 @@ foldlFrame :: Frameable t
            -> b
 foldlFrame f start 
     = Data.Vector.foldl' f start . toRows
+
+
+-- | Typeclass for dataframes with an index, a column or set of columns that can 
+-- be used to search through rows.
+--
+-- An index need not be unique, but the type of its keys must be an instance of `Eq`.
+class ( Frameable t
+      , Eq (Key t) -- Effectively required for lookups
+      ) => Indexable t where
+
+    -- | A type representing a lookup key for a dataframe.
+    -- This can be a single field, or a compound key composed
+    -- of multiple fields
+    type Key t
+
+    -- | How to create an index from a @`Frame` t@. This is generally
+    -- done by using record selectors.
+    index :: Frame t -> Vector (Key t)
+
+
+-- | Look up a row in a data frame by key.
+lookup :: (Indexable t)  
+       => Key t
+       -> Frame t
+       -> Maybe (Row t)
+lookup key fr 
+    = do
+        mix <- Data.Vector.findIndex (==key) (index fr)
+        pure $ (toRows fr) Data.Vector.! mix

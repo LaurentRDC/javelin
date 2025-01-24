@@ -53,6 +53,7 @@ test-suite javelin-frames-test
     main-is:          Main.hs
     other-modules:    Test.Data.Frame
     build-depends:    base                >=4.15.0.0 && <4.22,
+                      containers,
                       hedgehog,
                       javelin-frames,
                       tasty,

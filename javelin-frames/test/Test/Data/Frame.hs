@@ -1,7 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies #-}
 module Test.Data.Frame (tests) where
 
-import           Data.Frame
+import           Control.Monad (guard, forM_)
+import           Data.Frame as Frame
+import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 
 import           GHC.Generics (Generic)
@@ -14,7 +17,9 @@ import           Test.Tasty           ( testGroup, TestTree )
 import           Test.Tasty.Hedgehog  ( testProperty )
 
 tests :: TestTree
-tests = testGroup "Data.Frame" [ testToFromRowsTripping ]
+tests = testGroup "Data.Frame" [ testToFromRowsTripping
+                               , testLookup
+                               ]
 
 data User f
     = MkUser { userName :: Column f String
@@ -34,3 +39,29 @@ testToFromRowsTripping = testProperty "Ensure that `toRows` and `fromRows` are i
                             <*> Gen.integral (Range.linear 10 25)
                             )
     users === toRows (fromRows users)
+
+
+instance Indexable User where
+    type Key User = String
+    index = userName
+
+
+testLookup :: TestTree
+testLookup = testProperty "Ensure that `lookup` works" $ property $ do
+    users <- forAll $ Vector.fromList <$> 
+                        Gen.list (Range.linear 0 100) 
+                            (MkUser <$> Gen.string (Range.linear 0 100) Gen.alpha
+                            <*> Gen.integral (Range.linear 10 25)
+                            )
+    
+    -- This property only makes sense for a unique index
+    guard (unique (Vector.map userName users))
+
+    let df = fromRows users
+
+    forM_ users $ \user -> do
+        Frame.lookup (userName user) df === Just user
+    
+    where
+        unique :: Ord a => Vector.Vector a -> Bool
+        unique vs = length (Set.fromList (Vector.toList vs)) == Vector.length vs
