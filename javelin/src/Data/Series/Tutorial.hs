@@ -608,7 +608,7 @@ in both series. In this case, we can use 'Series.zipWithMatched':
 "Poland" | 121.40
 
 Finally, in case we want full control over what to do when a key is missing, 
-we can use @Series.zipWithStrategy'. For example, consider the case where:
+we can use `Series.zipWithStrategy'. For example, consider the case where:
 
 * If population numbers are missing, I want to set the density to 0;
 * If land mass information is missing, I wait to skip calculating the density of this country. 
