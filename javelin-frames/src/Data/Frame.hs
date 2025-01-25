@@ -76,7 +76,7 @@ module Data.Frame (
     mapFrame, filterFrame, zipFramesWith, foldlFrame,
 
     -- * Indexing operations
-    Indexable(Key, index), lookup
+    Indexable(Key, index), lookup, at
 ) where
 
 import Data.Functor.Identity (Identity(..))
@@ -128,14 +128,30 @@ class GToRows tI tV where
 
 instance GToRows (Rec0 a) (Rec0 (Vector a)) where
     gtoRows = Data.Vector.map K1 . unK1
+    {-# INLINEABLE gtoRows #-}
 
 instance (GToRows tI1 tV1, GToRows tI2 tV2) 
     => GToRows (tI1 :*: tI2) (tV1 :*: tV2) where
     gtoRows (xs :*: ys) = Data.Vector.zipWith (:*:) (gtoRows xs) (gtoRows ys)
+    {-# INLINEABLE gtoRows #-}
 
 instance (GToRows tI tV) => GToRows (M1 i c tI) (M1 i c tV) where
     -- gtoRows :: M1 i c tV a -> Vector (M1 i c tI a)
     gtoRows = Data.Vector.map M1 . gtoRows . unM1
+
+
+class GILookup tI tV where
+    gilookup :: Int -> tV a -> Maybe (tI a)
+
+instance GILookup (Rec0 a) (Rec0 (Vector a)) where
+    gilookup ix vs = K1 <$> (unK1 vs) Data.Vector.!? ix
+
+instance (GILookup tI1 tV1, GILookup tI2 tV2)
+    => GILookup (tI1 :*: tI2) (tV1 :*: tV2) where
+        gilookup ix (xs :*: ys) = liftA2 (:*:) (gilookup ix xs) (gilookup ix ys)
+
+instance (GILookup tI tV) => GILookup (M1 i c tI) (M1 i c tV) where
+    gilookup ix = fmap M1 . gilookup ix . unM1
 
 
 -- | Typeclass that endows any record type @t@ with the ability to be packaged
@@ -168,6 +184,20 @@ class Frameable t where
                      => Frame t 
                      -> Vector (Row t) 
     toRows = Data.Vector.map to . gtoRows . from
+
+
+    -- | Look up a row from the frame by integer index
+    ilookup :: Int -> Frame t -> Maybe (Row t)
+
+    default ilookup :: ( Generic (t Identity)
+                       , Generic (t Vector)
+                       , GILookup (Rep (Row t)) (Rep (Frame t))
+                       )
+                    => Int
+                    -> Frame t
+                    -> Maybe (Row t)
+    ilookup ix = fmap to . gilookup ix . from
+
 
 
 -- | Map a function over each row individually.
@@ -241,6 +271,18 @@ lookup :: (Indexable t)
        -> Frame t
        -> Maybe (Row t)
 lookup key fr 
-    = do
-        mix <- Data.Vector.findIndex (==key) (index fr)
-        pure $ (toRows fr) Data.Vector.! mix
+    = Data.Vector.findIndex (==key) (index fr) 
+    >>= flip ilookup fr
+
+
+-- | Lookup an element of a frame by row and column.
+--
+-- This is much more efficient than looking up an entire row 
+-- using `lookup`, and then selecting a specific field from a row.
+at :: (Indexable t)
+   => (Key t, Frame t -> Vector a)
+   -> Frame t
+   -> Maybe a
+at (row, col) fr 
+    = Data.Vector.findIndex (==row) (index fr)
+    >>= \ix -> (col fr) Data.Vector.!? ix

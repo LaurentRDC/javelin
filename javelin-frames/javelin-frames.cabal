@@ -60,3 +60,14 @@ test-suite javelin-frames-test
                       tasty-hedgehog,
                       vector
 
+benchmark bench-frames
+    import:           common
+    type:             exitcode-stdio-1.0
+    ghc-options:      -rtsopts
+    hs-source-dirs:   benchmarks
+    main-is:          Main.hs
+    build-depends:    base >=4.15.0.0 && <4.22,
+                      criterion ^>=1.6,
+                      deepseq,
+                      javelin-frames,
+                      vector
