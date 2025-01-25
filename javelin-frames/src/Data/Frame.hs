@@ -71,11 +71,14 @@
 -- 
 -- TODO: complete the tutorial
 module Data.Frame (
-    Column, Frameable(fromRows, toRows), Row, Frame,
+    Column, Frameable, Row, Frame,
     -- * Basic interface
-    mapFrame, filterFrame, zipFramesWith, foldlFrame,
+    fromRows, toRows, mapFrame, filterFrame, zipFramesWith, foldlFrame,
 
     -- * Indexing operations
+    -- ** Based on integer indices
+    ilookup, iat,
+    -- ** Based on indexable frames
     Indexable(Key, index), lookup, at
 ) where
 
@@ -148,7 +151,10 @@ instance GILookup (Rec0 a) (Rec0 (Vector a)) where
 
 instance (GILookup tI1 tV1, GILookup tI2 tV2)
     => GILookup (tI1 :*: tI2) (tV1 :*: tV2) where
-        gilookup ix (xs :*: ys) = liftA2 (:*:) (gilookup ix xs) (gilookup ix ys)
+        gilookup ix (xs :*: ys) 
+            = (:*:) 
+                <$> (gilookup ix xs) 
+                <*> (gilookup ix ys)
 
 instance (GILookup tI tV) => GILookup (M1 i c tI) (M1 i c tV) where
     gilookup ix = fmap M1 . gilookup ix . unM1
@@ -187,6 +193,9 @@ class Frameable t where
 
 
     -- | Look up a row from the frame by integer index
+    --
+    -- If you need to look up a particular row index and column, 
+    -- `iat` is much faster.
     ilookup :: Int -> Frame t -> Maybe (Row t)
 
     default ilookup :: ( Generic (t Identity)
@@ -266,6 +275,9 @@ class ( Frameable t
 
 
 -- | Look up a row in a data frame by key.
+--
+-- If you need to look up a particular row and column, 
+-- `at` is much faster.
 lookup :: (Indexable t)  
        => Key t
        -> Frame t
@@ -280,9 +292,19 @@ lookup key fr
 -- This is much more efficient than looking up an entire row 
 -- using `lookup`, and then selecting a specific field from a row.
 at :: (Indexable t)
-   => (Key t, Frame t -> Vector a)
-   -> Frame t
+   => Frame t 
+   -> (Key t, Frame t -> Vector a)
    -> Maybe a
-at (row, col) fr 
+fr `at` (row, col) 
     = Data.Vector.findIndex (==row) (index fr)
     >>= \ix -> (col fr) Data.Vector.!? ix
+
+
+-- | Lookup an element of the frame by row index and column
+--
+-- This is much more efficient than looking up an entire row 
+-- using `ilookup`, and then selecting a specific field from a row.
+iat :: Frame t 
+    -> (Int, Frame t -> Vector a)
+    -> Maybe a
+fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx

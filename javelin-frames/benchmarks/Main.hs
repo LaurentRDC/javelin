@@ -41,5 +41,7 @@ main = do
         [ bench "fromRows" $ nf (Frame.fromRows) rs
         , bench "toRows"   $ nf (Frame.toRows) fr
         , bench "lookup"   $ nf (Frame.lookup 100) fr 
-        , bench "at"       $ nf (Frame.at (100, field5)) fr 
+        , bench "ilookup"  $ nf (Frame.ilookup 99) fr 
+        , bench "at"       $ nf (`Frame.at` (100, field5)) fr 
+        , bench "iat"      $ nf (`Frame.iat` (99, field5)) fr 
         ]
