@@ -9,28 +9,31 @@
 -- Maintainer  :  laurent.decotret@outlook.com
 -- Portability :  portable
 --
--- This is an experimental interface to frames.
+-- This is an experimental interface to dataframes.
 --
 -- This module defines the type machinery and some functions to
 -- process data frames. Data frames are structures where every
 -- row corresponds to an object, but data is stored in
 -- contiguous arrays known as columns.
 --
--- To define a data frame, first create a record type using @data@:
+-- To define a data frame, create a record type using @data@ 
+-- and derive an instance of `Generic` and `Frameable`:
 --
 --     data User f = 
 --          MkUser { userName :: Column f String
 --                 , userAge  :: Column f Int
 --                 }
---          deriving (Generic)
---
--- There are two special things with this type definition:
+--          deriving (Generic, Frameable)
+--  
+-- There are three special things with this type definition:
 --    * @User@ is a higher-kinded type, and admits a type constructor @f@. This
 --      type constructor @f@ is used to distinguish between single rows and data frames, as we
 --      will see in a second
---    * The type @User@ has an instance of `Generic` automatically derived.
+--    * Every field (e.g. @userName@) uses the `Column` type family (described below);
+--    * The type @User@ has an instance of `Generic` automatically derived, and `Frameable`.
+--      Both instances are required for the functionality of this module.
 --
--- In practice, the @f@ in @User f@ can only have two values: `Identity` and `Vector`.
+-- In practice, the @f@ in @User f@ can only have two types: `Identity` and `Vector`.
 -- @User `Identity`@ corresponds to a single row of a dataframe, while @User `Vector`@
 -- corresponds to a data frame where each column (@userName@ and @userAge@) are really
 -- arrays of values.
@@ -42,20 +45,17 @@
 --         MkUser { userName :: String
 --                , userAge  :: Int
 --                }
+-- 
+-- Each field (e.g. @userName@) must involve the type family `Column` because 
+-- @`Column` `Identity` a@ simplifies to @a@. This is why @`Row` User@ is exactly
+-- like a normal, non-higher-kinded record type.
 --
--- and `Frame User` is equivalent to:
+-- On the other hand, `Frame User` is equivalent to:
 -- 
 --     data User =
 --         MkUser { userName :: Vector String
 --                , userAge  :: Vector Int
 --                }
---
--- In order to unlock dataframe functionality, we need to derive an instance of `Frameable`
--- for @User@. This can be done automatically using:
---
---     instance Frameable User
---
--- The instance will be automatically generated through the @`Generic` User@ instance.
 --
 -- One small annoyance we must put up with is that deriving instances of `Show`, `Eq`, etc. 
 -- for @User@ is now a little different:
@@ -71,9 +71,12 @@
 -- 
 -- TODO: complete the tutorial
 module Data.Frame (
+    -- * Defining dataframe types
     Column, Frameable, Row, Frame,
-    -- * Basic interface
-    fromRows, toRows, mapFrame, filterFrame, zipFramesWith, foldlFrame,
+    -- * Construction and deconstruction
+    fromRows, toRows, 
+    -- * Operations on rows
+    mapFrame, filterFrame, zipFramesWith, foldlFrame,
 
     -- * Indexing operations
     -- ** Based on integer indices
@@ -82,12 +85,142 @@ module Data.Frame (
     Indexable(Key, index), lookup, at
 ) where
 
-import Data.Functor.Identity (Identity(..))
-import Data.Kind (Type)
+
+import qualified Data.Foldable
 import Data.Vector (Vector)
 import qualified Data.Vector
+import Prelude hiding (lookup)
+import Data.Functor.Identity (Identity(..))
+import Data.Kind (Type)
 import GHC.Generics ( Generic(..), K1(..), Rec0, M1(..), type (:*:)(..) )
 import Prelude hiding (lookup)
+
+
+-- | Build a dataframe from a container of rows.
+--
+-- For the inverse operation, see `toRows`.
+fromRows :: (Frameable t, Foldable f)
+         => f (Row t)
+         -> Frame t
+fromRows = pack . Data.Vector.fromList . Data.Foldable.toList
+
+
+-- | Deconstruct a dataframe into its rows.
+--
+-- For the inverse operation, see `fromRows`.
+toRows :: Frameable t 
+       => Frame t
+       -> Vector (Row t)
+toRows = unpack
+
+
+-- | Map a function over each row individually.
+mapFrame :: (Frameable t1, Frameable t2)
+         => (Row t1 -> Row t2)
+         -> Frame t1
+         -> Frame t2
+mapFrame f = fromRows 
+          . Data.Vector.map f 
+          . toRows
+
+
+-- | Filter rows from a @`Frame` t@, only keeping
+-- the rows where the predicate is `True`.
+filterFrame :: (Frameable t)
+            => (Row t -> Bool)
+            -> Frame t
+            -> Frame t
+filterFrame f = fromRows 
+             . Data.Vector.filter f
+             . toRows
+
+
+-- | Zip two frames together using a combination function.
+-- Rows from each frame are matched in order; the resulting
+-- frame will only contain as many rows as the shortest of
+-- the two input frames
+zipFramesWith :: (Frameable t1, Frameable t2, Frameable t3)
+              => (Row t1 -> Row t2 -> Row t3)
+              -> Frame t1
+              -> Frame t2
+              -> Frame t3
+zipFramesWith f xs ys 
+    = fromRows 
+    $ Data.Vector.zipWith f 
+                          (toRows xs)
+                          (toRows ys)
+
+
+-- | Left-associative fold of a structure but with strict application of the operator.
+foldlFrame :: Frameable t
+           => (b -> Row t -> b) -- ^ Reduction function that takes in individual rows
+           -> b                 -- ^ Initial value for the accumulator
+           -> Frame t           -- ^ Data frame
+           -> b
+foldlFrame f start 
+    = Data.Vector.foldl' f start . toRows
+
+
+-- | Access a row from a dataframe by its integer index. Indexing
+-- starts at 0, representing the first row.
+--
+-- If the index is larger than the number of rows, this function
+-- returns `Nothing`.
+--
+-- To access a specific row AND column, `iat` is much more efficient.
+--
+-- To lookup a row based on a non-integer index, see `lookup`.
+ilookup :: Frameable t
+        => Int
+        -> Frame t
+        -> Maybe (Row t)
+ilookup = iindex
+
+
+-- | Look up a row in a data frame by key. The specific key
+-- is defined by the `Indexable` instance of type @t@.
+--
+-- The first row whose index matches the supplied key is 
+-- returned. If no row has a matching key, returns `Nothing`.
+--
+-- If you need to look up a particular row and column, 
+-- `at` is much more efficient.
+--
+-- To lookup a row based on an integer index, see `ilookup`.
+lookup :: (Indexable t)  
+       => Key t
+       -> Frame t
+       -> Maybe (Row t)
+lookup key fr 
+    = Data.Vector.findIndex (==key) (index fr) 
+    >>= flip ilookup fr
+
+
+-- | Lookup an element of a frame by row and column.
+--
+-- This is much more efficient than looking up an entire row 
+-- using `lookup`, and then selecting a specific field from a row.
+--
+-- To lookup an element by integer row index instead, see `iat`.
+at :: (Indexable t)
+   => Frame t 
+   -> (Key t, Frame t -> Vector a)
+   -> Maybe a
+fr `at` (row, col) 
+    = Data.Vector.findIndex (==row) (index fr)
+    >>= \ix -> (col fr) Data.Vector.!? ix
+
+
+-- | Lookup an element of the frame by row index and column
+--
+-- This is much more efficient than looking up an entire row 
+-- using `ilookup`, and then selecting a specific field from a row.
+--
+-- To lookup an element by row key instead, see `at`.
+iat :: Frame t 
+    -> (Int, Frame t -> Vector a)
+    -> Maybe a
+fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx
 
 
 -- | Type family which allows for higher-kinded record types
@@ -168,92 +301,39 @@ instance (GILookup tI tV) => GILookup (M1 i c tI) (M1 i c tV) where
 class Frameable t where
 
     -- | Package single rows of type @t@ into a @`Frame` t@.
-    --
-    -- To convert a @`Frame` t@ to rows, see `toRows`
-    fromRows :: Vector (Row t) -> Frame t
+    pack :: Vector (Row t) -> Frame t
     
-    default fromRows :: ( Generic (Row t)
+    default pack :: ( Generic (Row t)
                         , Generic (Frame t)
                         , GFromRows (Rep (Row t)) (Rep (Frame t))
                         ) 
                      => Vector (Row t) 
                      -> Frame t
-    fromRows = to . gfromRows . Data.Vector.map from
+    pack = to . gfromRows . Data.Vector.map from
 
-    -- | Package single rows of type @t@ into a @`Frame` t@.
-    toRows :: Frame t -> Vector (Row t)
+    -- | Unpack a dataframe into rows
+    unpack :: Frame t -> Vector (Row t)
     
-    default toRows :: ( Generic (t Identity)
+    default unpack :: ( Generic (t Identity)
                       , Generic (t Vector)
                       , GToRows (Rep (Row t)) (Rep (Frame t))
                       ) 
                      => Frame t 
                      -> Vector (Row t) 
-    toRows = Data.Vector.map to . gtoRows . from
+    unpack = Data.Vector.map to . gtoRows . from
 
 
     -- | Look up a row from the frame by integer index
-    --
-    -- If you need to look up a particular row index and column, 
-    -- `iat` is much faster.
-    ilookup :: Int -> Frame t -> Maybe (Row t)
+    iindex :: Int -> Frame t -> Maybe (Row t)
 
-    default ilookup :: ( Generic (t Identity)
+    default iindex :: ( Generic (t Identity)
                        , Generic (t Vector)
                        , GILookup (Rep (Row t)) (Rep (Frame t))
                        )
                     => Int
                     -> Frame t
                     -> Maybe (Row t)
-    ilookup ix = fmap to . gilookup ix . from
-
-
-
--- | Map a function over each row individually.
-mapFrame :: (Frameable t1, Frameable t2)
-         => (Row t1 -> Row t2)
-         -> Frame t1
-         -> Frame t2
-mapFrame f = fromRows 
-          . Data.Vector.map f 
-          . toRows
-
-
--- | Filter rows from a @`Frame` t@, only keeping
--- the rows where the predicate is `True`.
-filterFrame :: (Frameable t)
-            => (Row t -> Bool)
-            -> Frame t
-            -> Frame t
-filterFrame f = fromRows 
-             . Data.Vector.filter f
-             . toRows
-
-
--- | Zip two frames together using a combination function.
--- Rows from each frame are matched in order; the resulting
--- frame will only contain as many rows as the shortest of
--- the two input frames
-zipFramesWith :: (Frameable t1, Frameable t2, Frameable t3)
-              => (Row t1 -> Row t2 -> Row t3)
-              -> Frame t1
-              -> Frame t2
-              -> Frame t3
-zipFramesWith f xs ys 
-    = fromRows 
-    $ Data.Vector.zipWith f 
-                          (toRows xs)
-                          (toRows ys)
-
-
--- | Left-associative fold of a structure but with strict application of the operator.
-foldlFrame :: Frameable t
-           => (b -> Row t -> b) -- ^ Reduction function that takes in individual rows
-           -> b                 -- ^ Initial value for the accumulator
-           -> Frame t           -- ^ Data frame
-           -> b
-foldlFrame f start 
-    = Data.Vector.foldl' f start . toRows
+    iindex ix = fmap to . gilookup ix . from
 
 
 -- | Typeclass for dataframes with an index, a column or set of columns that can 
@@ -272,39 +352,3 @@ class ( Frameable t
     -- | How to create an index from a @`Frame` t@. This is generally
     -- done by using record selectors.
     index :: Frame t -> Vector (Key t)
-
-
--- | Look up a row in a data frame by key.
---
--- If you need to look up a particular row and column, 
--- `at` is much faster.
-lookup :: (Indexable t)  
-       => Key t
-       -> Frame t
-       -> Maybe (Row t)
-lookup key fr 
-    = Data.Vector.findIndex (==key) (index fr) 
-    >>= flip ilookup fr
-
-
--- | Lookup an element of a frame by row and column.
---
--- This is much more efficient than looking up an entire row 
--- using `lookup`, and then selecting a specific field from a row.
-at :: (Indexable t)
-   => Frame t 
-   -> (Key t, Frame t -> Vector a)
-   -> Maybe a
-fr `at` (row, col) 
-    = Data.Vector.findIndex (==row) (index fr)
-    >>= \ix -> (col fr) Data.Vector.!? ix
-
-
--- | Lookup an element of the frame by row index and column
---
--- This is much more efficient than looking up an entire row 
--- using `ilookup`, and then selecting a specific field from a row.
-iat :: Frame t 
-    -> (Int, Frame t -> Vector a)
-    -> Maybe a
-fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx
