@@ -20,13 +20,16 @@
 -- To define a data frame, create a record type using @data@ 
 -- and derive an instance of `Generic` and `Frameable`:
 --
---     data User f = 
---          MkUser { userName :: Column f String
---                 , userAge  :: Column f Int
---                 }
---          deriving (Generic, Frameable)
+-- @
+-- data User f = 
+--      MkUser { userName :: `Column` f `String`
+--             , userAge  :: `Column` f `Int`
+--             }
+--      deriving (`Generic`, `Frameable`)
+-- @
 --  
 -- There are three special things with this type definition:
+--
 --    * @User@ is a higher-kinded type, and admits a type constructor @f@. This
 --      type constructor @f@ is used to distinguish between single rows and data frames, as we
 --      will see in a second
@@ -42,10 +45,12 @@
 -- To make it more obvious, the type synonyms `Row` and `Frame` are provided, where 
 -- @`Row` User@ is equivalent to:
 --
---     data User =
---         MkUser { userName :: String
---                , userAge  :: Int
---                }
+-- @
+-- data User =
+--     MkUser { userName :: `String`
+--            , userAge  :: `Int`
+--            }
+-- @
 -- 
 -- Each field (e.g. @userName@) must involve the type family `Column` because 
 -- @`Column` `Identity` a@ simplifies to @a@. This is why @`Row` User@ is exactly
@@ -53,24 +58,55 @@
 --
 -- On the other hand, `Frame User` is equivalent to:
 -- 
---     data User =
---         MkUser { userName :: Vector String
---                , userAge  :: Vector Int
---                }
+-- @
+-- data User =
+--     MkUser { userName :: `Vector` `String`
+--            , userAge  :: `Vector` `Int`
+--            }
+-- @
 --
 -- One small annoyance we must put up with is that deriving instances of `Show`, `Eq`, etc. 
 -- for @User@ is now a little different:
 --
---     deriving instance Show (Row User)
---     deriving instance Eq (Row User)
+-- @
+-- deriving instance `Show` (`Row` User)
+-- deriving instance `Eq` (`Row` User)
+-- @
 --
--- Finally, we are ready to do some data processing. First, we must build a dataframe
--- using `fromRows`:
---
--- >>> import Data.Vector as Vector
--- >>> users = fromRows $ Vector.fromList [MkUser "Albert" 12, MkUser "Beatrice" 35, MkUser "Clara" 24]
+-- Let's look at a real example. First, let's get some setup out of the way. We must 
+-- activate @-XDeriveAnyClass@ to automatically derive `Frameable`:
 -- 
--- TODO: complete the tutorial
+-- >>> :set -XDeriveAnyClass
+--
+-- and we'll import the "Data.Vector" module as well:
+-- 
+-- >>> import Data.Vector as Vector
+--
+-- We define
+--
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+-- :}
+--
+-- We use `fromRows` to pack individual students into a dataframe:
+--
+-- >>> students = fromRows $ Vector.fromList [MkStudent "Albert" 12 'C', MkStudent "Beatrice" 13 'B', MkStudent "Clara" 12 'A']
+--
+-- We can render the dataframe @students@ into a nice string using `display` 
+-- (and print it out using using `putStrLn`):
+-- 
+-- >>> putStrLn (display students)
+-- studentName | studentAge | studentMathGrade
+-- ----------- | ---------- | ----------------
+--    "Albert" |         12 |              'C' 
+--  "Beatrice" |         13 |              'B'
+--     "Clara" |         12 |              'A'
+--
 module Data.Frame (
     -- * Defining dataframe types
     Column, Frameable, Row, Frame,
@@ -94,14 +130,19 @@ import Data.Bifunctor (second)
 import qualified Data.Foldable
 import Data.Functor.Identity (Identity(..))
 import Data.Kind (Type)
-import Data.List ( intersperse )
+import qualified Data.List as List ( intersperse, foldl' )
 import Data.Maybe (catMaybes)
 import Data.Semigroup (Max(..))
+import qualified Data.Set as Set
 import Data.Vector (Vector)
 import qualified Data.Vector
 import Prelude hiding (lookup, null, length)
 import qualified Prelude
 import GHC.Generics ( Selector, Generic(..), S, D, C, K1(..), Rec0, M1(..), type (:*:)(..), selName )
+
+
+-- $setup
+-- >>> import qualified Data.Vector as Vector
 
 
 -- | Build a dataframe from a container of rows.
@@ -406,6 +447,7 @@ class ( Frameable t
     index :: Frame t -> Vector (Key t)
 
 
+-- | Control how `displayWith` behaves.
 data DisplayOptions t
     = DisplayOptions
     { maximumNumberOfRows  :: Int
@@ -425,13 +467,63 @@ defaultDisplayOptions
                      }
 
 
--- | Display a 'Series' using default 'DisplayOptions'.
+-- | Display a @`Frame` t@ using default 'DisplayOptions'.
+--
+-- Example:
+-- 
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+-- :}
+--
+-- >>> students = fromRows $ Vector.fromList [MkStudent "Albert" 12 'C', MkStudent "Beatrice" 13 'B', MkStudent "Clara" 12 'A']
+-- >>> putStrLn (display students)
+-- studentName | studentAge | studentMathGrade
+-- ----------- | ---------- | ----------------
+--    "Albert" |         12 |              'C' 
+--  "Beatrice" |         13 |              'B'
+--     "Clara" |         12 |              'A'
 display :: Frameable t
         => Frame t
         -> String
 display = displayWith defaultDisplayOptions
 
 
+-- | Display a @`Frame` t@ using custom 'DisplayOptions'.
+--
+-- Example:
+-- 
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+-- :}
+--
+-- >>> :{
+--     students = fromRows 
+--              $ Vector.fromList 
+--              [ MkStudent "Albert" 12 'C'
+--              , MkStudent "Beatrice" 13 'B'
+--              , MkStudent "Clara" 12 'A'
+--              , MkStudent "David" 13 'A'
+--              , MkStudent "Erika" 13 'D'
+--              , MkStudent "Frank" 11 'C'
+--              ]
+-- :}
+--
+-- >>> putStrLn (displayWith (defaultDisplayOptions{maximumNumberOfRows=2}) students)
+-- studentName | studentAge | studentMathGrade
+-- ----------- | ---------- | ----------------
+--    "Albert" |         12 |              'C' 
+--         ... |        ... |              ...
+--     "Frank" |         11 |              'C'
 displayWith :: (Frameable t)
             => DisplayOptions t
             -> Frame t
@@ -445,8 +537,12 @@ displayWith DisplayOptions{..} df
     where
         len = length df
         n = max 1 (maximumNumberOfRows `div` 2)
-        headRows = catMaybes [ilookup i df | i <- [0 .. n - 1]]
-        tailRows = catMaybes [ilookup j df | j <- [len - n ..len]]
+        -- We prevent overlap between the 'head' rows and 'tail' rows
+        -- by favoring removing duplicate integer indices from the tail rows
+        headIxs = Set.fromList [0 .. n - 1]
+        tailIxs = Set.fromList [len - n ..len] `Set.difference` headIxs
+        headRows = catMaybes [ilookup i df | i <- Set.toList headIxs]
+        tailRows = catMaybes [ilookup j df | j <- Set.toList tailIxs]
 
         firstRow = case headRows of
             [] -> error "Impossible!" -- We already checked that `df` won't be empty
@@ -462,20 +558,21 @@ displayWith DisplayOptions{..} df
         (headerLengths :: [(String, Int)]) = (map (\(k, _) -> (k, Prelude.length k)) (fields firstRow)) 
         (colWidths :: [(String, Int)]) 
             = map (second getMax) 
-            $ foldl' (\acc mp -> zipWith (\(k1, v1) (k2, v2) -> ((assert (k1 == k2) k1, v1 <> v2))) acc (map (second (Max . Prelude.length)) mp)) 
-                     (map (second Max) headerLengths) 
-                     rows
+            $ List.foldl' 
+                (\acc mp -> zipWith (\(k1, v1) (k2, v2) -> ((assert (k1 == k2) k1, v1 <> v2))) acc (map (second (Max . Prelude.length)) mp)) 
+                (map (second Max) headerLengths) 
+                rows
 
         -- | Format a grid represented by a list of rows, where every row is a list of items
         -- All columns will have a fixed width
         formatGrid :: [ [(String, String)]] -- List of rows
                    -> String
-        formatGrid rs = unlines
-                                  $ [ mconcat $ intersperse " | " [ (pad w k) | (k, w) <- colWidths]]
-                                 ++ [ mconcat $ intersperse " | " [ (pad w (replicate w '-')) | (_, w) <- colWidths]]
-                                 ++ [ mconcat $ intersperse " | " [ (pad w v)
-                                                                  | ((_, v), (_, w)) <- zip mp colWidths
-                                                                  ]
+        formatGrid rs = mconcat $ List.intersperse "\n"
+                                  $ [ mconcat $ List.intersperse " | " [ (pad w k) | (k, w) <- colWidths]]
+                                 ++ [ mconcat $ List.intersperse " | " [ (pad w (replicate w '-')) | (_, w) <- colWidths]]
+                                 ++ [ mconcat $ List.intersperse " | " [ (pad w v)
+                                                                       | ((_, v), (_, w)) <- zip mp colWidths
+                                                                       ]
                                     | mp <- rs
                                     ]
             where

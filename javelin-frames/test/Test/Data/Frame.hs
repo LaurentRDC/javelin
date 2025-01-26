@@ -4,6 +4,7 @@ module Test.Data.Frame (tests) where
 
 import           Control.Monad (guard, forM_)
 import           Data.Frame as Frame hiding (length)
+import qualified Data.List as List (intersperse)
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 
@@ -89,23 +90,25 @@ testDisplay =
     in testGroup "displaytWith" [
         testCase "Appropriately displaying all rows" $ do
                 let displayed = Frame.displayWith (Frame.defaultDisplayOptions {maximumNumberOfRows = 4}) frame
-                    expectation = unlines [ "userName | userAge"
-                                          , "-------- | -------"
-                                          , " \"Alice\" |      37"
-                                          , "   \"Bob\" |      38"
-                                          , " \"Clara\" |      39"
-                                          , " \"David\" |      40"
-                                          ]
+                    expectation = unlines' [ "userName | userAge"
+                                           , "-------- | -------"
+                                           , " \"Alice\" |      37"
+                                           , "   \"Bob\" |      38"
+                                           , " \"Clara\" |      39"
+                                           , " \"David\" |      40"
+                                           ]
             
                 assertEqual mempty expectation displayed,
         testCase "Appropriately eliding some rows" $ do
                 let displayed = Frame.displayWith (Frame.defaultDisplayOptions {maximumNumberOfRows = 2}) frame
-                    expectation = unlines [ "userName | userAge"
-                                          , "-------- | -------"
-                                          , " \"Alice\" |      37"
-                                          , "     ... |     ..."
-                                          , " \"David\" |      40"
-                                          ]
+                    expectation = unlines' [ "userName | userAge"
+                                           , "-------- | -------"
+                                           , " \"Alice\" |      37"
+                                           , "     ... |     ..."
+                                           , " \"David\" |      40"
+                                           ]
             
                 assertEqual mempty expectation displayed
     ]
+    where
+        unlines' = mconcat . List.intersperse "\n"

@@ -58,3 +58,4 @@ jobs:
         cabal install doctest
         cabal repl javelin --with-ghc=doctest
         cabal repl javelin-io --with-ghc=doctest
+        cabal repl javelin-frames --with-ghc=doctest

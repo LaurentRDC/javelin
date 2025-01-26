@@ -41,6 +41,7 @@ library
     import:           common
     exposed-modules:  Data.Frame
     build-depends:    base       >=4.15.0.0 && <4.22,
+                      containers >=0.6      && <0.8,
                       vector     >=0.12.3.0 && <0.14,
     hs-source-dirs:   src
     default-language: GHC2021
