@@ -40,8 +40,8 @@ common common
 library
     import:           common
     exposed-modules:  Data.Frame
-    build-depends:    base    >=4.15.0.0 && <4.22,
-                      vector  >=0.12.3.0 && <0.14,
+    build-depends:    base       >=4.15.0.0 && <4.22,
+                      vector     >=0.12.3.0 && <0.14,
     hs-source-dirs:   src
     default-language: GHC2021
 
@@ -58,6 +58,7 @@ test-suite javelin-frames-test
                       javelin-frames,
                       tasty,
                       tasty-hedgehog,
+                      tasty-hunit,
                       vector
 
 benchmark bench-frames

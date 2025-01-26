@@ -1,6 +1,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RecordWildCards #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Frame
@@ -74,9 +75,11 @@ module Data.Frame (
     -- * Defining dataframe types
     Column, Frameable, Row, Frame,
     -- * Construction and deconstruction
-    fromRows, toRows, 
+    fromRows, toRows, fields,
     -- * Operations on rows
-    mapFrame, filterFrame, zipFramesWith, foldlFrame,
+    null, length, mapFrame, filterFrame, zipFramesWith, foldlFrame,
+    -- * Displaying frames
+    DisplayOptions(..), defaultDisplayOptions, display, displayWith,
 
     -- * Indexing operations
     -- ** Based on integer indices
@@ -86,14 +89,19 @@ module Data.Frame (
 ) where
 
 
+import Control.Exception (assert)
+import Data.Bifunctor (second)
 import qualified Data.Foldable
-import Data.Vector (Vector)
-import qualified Data.Vector
-import Prelude hiding (lookup)
 import Data.Functor.Identity (Identity(..))
 import Data.Kind (Type)
-import GHC.Generics ( Generic(..), K1(..), Rec0, M1(..), type (:*:)(..) )
-import Prelude hiding (lookup)
+import Data.List ( intersperse )
+import Data.Maybe (catMaybes)
+import Data.Semigroup (Max(..))
+import Data.Vector (Vector)
+import qualified Data.Vector
+import Prelude hiding (lookup, null, length)
+import qualified Prelude
+import GHC.Generics ( Selector, Generic(..), S, D, C, K1(..), Rec0, M1(..), type (:*:)(..), selName )
 
 
 -- | Build a dataframe from a container of rows.
@@ -113,6 +121,24 @@ toRows :: Frameable t
        -> Vector (Row t)
 toRows = unpack
 
+
+-- | Returns `True` if a dataframe has no rows.
+null :: Frameable t
+     => Frame t
+     -> Bool
+-- TODO: we can use yet another typeclass deriving
+-- from generic to only look at ONE of the columns,
+-- rather than reconstructing the first row
+null = Data.Vector.null . toRows
+
+
+length :: Frameable t
+       => Frame t
+       -> Int
+-- TODO: we can use yet another typeclass deriving
+-- from generic to only look at ONE of the columns,
+-- rather than reconstructing all rows.
+length = Data.Vector.length . toRows
 
 -- | Map a function over each row individually.
 mapFrame :: (Frameable t1, Frameable t2)
@@ -293,6 +319,21 @@ instance (GILookup tI tV) => GILookup (M1 i c tI) (M1 i c tV) where
     gilookup ix = fmap M1 . gilookup ix . unM1
 
 
+class GFields r where
+    gfields :: r a -> [(String, String)]
+
+instance GFields r => GFields (M1 D x r) where
+    gfields = gfields . unM1 
+
+instance GFields t => GFields (M1 C x t) where
+    gfields = gfields . unM1 
+
+instance (Show r, Selector s) => GFields (M1 S s (Rec0 r)) where
+    gfields (M1 (K1 r)) = [(selName (undefined :: M1 S s (Rec0 r) ()), show r)]
+
+instance (GFields f, GFields g) => GFields (f :*: g) where
+    gfields (x :*: y) = gfields x ++ gfields y
+
 -- | Typeclass that endows any record type @t@ with the ability to be packaged
 -- as a dataframe.
 --
@@ -314,8 +355,8 @@ class Frameable t where
     -- | Unpack a dataframe into rows
     unpack :: Frame t -> Vector (Row t)
     
-    default unpack :: ( Generic (t Identity)
-                      , Generic (t Vector)
+    default unpack :: ( Generic (Row t)
+                      , Generic (Frame t)
                       , GToRows (Rep (Row t)) (Rep (Frame t))
                       ) 
                      => Frame t 
@@ -326,14 +367,25 @@ class Frameable t where
     -- | Look up a row from the frame by integer index
     iindex :: Int -> Frame t -> Maybe (Row t)
 
-    default iindex :: ( Generic (t Identity)
-                       , Generic (t Vector)
-                       , GILookup (Rep (Row t)) (Rep (Frame t))
-                       )
+    default iindex :: ( Generic (Frame t)
+                      , Generic (Row t)
+                      , GILookup (Rep (Row t)) (Rep (Frame t))
+                      )
                     => Int
                     -> Frame t
                     -> Maybe (Row t)
     iindex ix = fmap to . gilookup ix . from
+
+    -- | Return the field names associated with a row or frame.
+    -- This is useful to display frames
+    fields :: Row t -> [(String, String)]
+    
+    default fields :: ( Generic (Row t)
+                      , GFields (Rep (Row t))
+                      )
+                   => Row t
+                   -> [(String, String)]
+    fields = gfields . from
 
 
 -- | Typeclass for dataframes with an index, a column or set of columns that can 
@@ -352,3 +404,83 @@ class ( Frameable t
     -- | How to create an index from a @`Frame` t@. This is generally
     -- done by using record selectors.
     index :: Frame t -> Vector (Key t)
+
+
+data DisplayOptions t
+    = DisplayOptions
+    { maximumNumberOfRows  :: Int
+    -- ^ Maximum number of rows shown. These rows will be distributed evenly
+    -- between the start of the frame and the end
+    , rowDisplayFunction :: Row t -> [(String, String)]
+    -- ^ Function used to display rows from the frame. This should be a map from
+    -- record name to value.
+    }
+
+
+-- | Default 'Series' display options.
+defaultDisplayOptions :: Frameable t => DisplayOptions t
+defaultDisplayOptions 
+    = DisplayOptions { maximumNumberOfRows  = 6
+                     , rowDisplayFunction = fields
+                     }
+
+
+-- | Display a 'Series' using default 'DisplayOptions'.
+display :: Frameable t
+        => Frame t
+        -> String
+display = displayWith defaultDisplayOptions
+
+
+displayWith :: (Frameable t)
+            => DisplayOptions t
+            -> Frame t
+            -> String
+displayWith DisplayOptions{..} df 
+    = if null df
+        then "<Empty dataframe>" -- TODO: it IS possible to determine the record names
+                                 --       without having any rows
+        else formatGrid rows
+
+    where
+        len = length df
+        n = max 1 (maximumNumberOfRows `div` 2)
+        headRows = catMaybes [ilookup i df | i <- [0 .. n - 1]]
+        tailRows = catMaybes [ilookup j df | j <- [len - n ..len]]
+
+        firstRow = case headRows of
+            [] -> error "Impossible!" -- We already checked that `df` won't be empty
+            [xs] -> xs
+            (xs:_) -> xs
+
+        spacerRow = 
+            if len > maximumNumberOfRows
+                then [(map (second (const "...")) (fields firstRow))]
+                else mempty
+        rows = (fields <$> headRows) ++ spacerRow ++ (fields <$> tailRows)
+
+        (headerLengths :: [(String, Int)]) = (map (\(k, _) -> (k, Prelude.length k)) (fields firstRow)) 
+        (colWidths :: [(String, Int)]) 
+            = map (second getMax) 
+            $ foldl' (\acc mp -> zipWith (\(k1, v1) (k2, v2) -> ((assert (k1 == k2) k1, v1 <> v2))) acc (map (second (Max . Prelude.length)) mp)) 
+                     (map (second Max) headerLengths) 
+                     rows
+
+        -- | Format a grid represented by a list of rows, where every row is a list of items
+        -- All columns will have a fixed width
+        formatGrid :: [ [(String, String)]] -- List of rows
+                   -> String
+        formatGrid rs = unlines
+                                  $ [ mconcat $ intersperse " | " [ (pad w k) | (k, w) <- colWidths]]
+                                 ++ [ mconcat $ intersperse " | " [ (pad w (replicate w '-')) | (_, w) <- colWidths]]
+                                 ++ [ mconcat $ intersperse " | " [ (pad w v)
+                                                                  | ((_, v), (_, w)) <- zip mp colWidths
+                                                                  ]
+                                    | mp <- rs
+                                    ]
+            where
+                -- | Pad a string to a minimum of @n@ characters wide.
+                pad :: Int -> String -> String 
+                pad minNumChars s
+                    | minNumChars <= Prelude.length s = s
+                    | otherwise     = replicate (minNumChars - Prelude.length s) ' ' <> s
