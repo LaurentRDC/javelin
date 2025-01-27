@@ -34,8 +34,6 @@ data User f
              }
     deriving (Generic)
 
-f :: Frame User -> Int
-f = Frame.foldlFrame (\acc (MkUser _ age) -> acc + age) 0 
 
 instance Frameable User
 deriving instance Show (Row User)

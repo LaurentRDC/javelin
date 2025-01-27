@@ -1,34 +1,24 @@
-# Haskell implementation of labeled one-dimensional arrays
+# Haskell implementation of data structures for data science
 
-Packages in this repository implement series, or labeled one-dimensional arrays, and associated functions.
-
-Like [`Data.Map.Strict`](https://hackage.haskell.org/package/containers/docs/Data-Map-Strict.html), series support efficient:
-
-* random access by key ( $\mathcal{O}\left( \log n \right)$ ) ;
-* slice by key ( $\mathcal{O}\left( \log n \right)$ ).
-
-Like [`Data.Vector.Vector`](https://hackage.haskell.org/package/vector/docs/Data-Vector.html), series support efficient:
-
-* random access by integer index ( $\mathcal{O}\left( 1 \right)$ );
-* slice by integer index ( $\mathcal{O}\left( 1 \right)$ );
-* numerical operations.
+Packages in this repository implement series and dataframes, data structures which are ubiquitous in data science.
 
 ## Tutorial and documentation
 
-A tutorial and interface documentation for the most recent published version are [available here](https://hackage.haskell.org/package/javelin). 
+A tutorial and interface documentation for the most recent published version are [available here for series](https://hackage.haskell.org/package/javelin). A tutorial and interface documentation for dataframes is coming.
 
 Locally, you can generate documentation for all packages using `haddock` like so:
 
 ```bash
 cabal haddock javelin
 cabal haddock javelin-io
+cabal haddock javelin-frames
 ```
 
 ## Get involved!
 
 Do not hesitate to make feature requests or report bugs via the [issue tracker](https://github.com/LaurentRDC/javelin/issues).
 
-## Preliminary benchmarks
+## Preliminary benchmarks for series
 
 Looking up random integers:
 
