@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-inline-rule-shadowing #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Frame
@@ -17,96 +18,8 @@
 -- row corresponds to an object, but data is stored in
 -- contiguous arrays known as columns.
 --
--- To define a data frame, create a record type using @data@ 
--- and derive an instance of `Generic` and `Frameable`:
---
--- @
--- data User f = 
---      MkUser { userName :: `Column` f `String`
---             , userAge  :: `Column` f `Int`
---             }
---      deriving (`Generic`, `Frameable`)
--- @
---  
--- There are three special things with this type definition:
---
---    * @User@ is a higher-kinded type, and admits a type constructor @f@. This
---      type constructor @f@ is used to distinguish between single rows and data frames, as we
---      will see in a second
---    * Every field (e.g. @userName@) uses the `Column` type family (described below);
---    * The type @User@ has an instance of `Generic` automatically derived, and `Frameable`.
---      Both instances are required for the functionality of this module.
---
--- In practice, the @f@ in @User f@ can only have two types: `Identity` and `Vector`.
--- @User `Identity`@ corresponds to a single row of a dataframe, while @User `Vector`@
--- corresponds to a data frame where each column (@userName@ and @userAge@) are really
--- arrays of values.
---
--- To make it more obvious, the type synonyms `Row` and `Frame` are provided, where 
--- @`Row` User@ is equivalent to:
---
--- @
--- data User =
---     MkUser { userName :: `String`
---            , userAge  :: `Int`
---            }
--- @
--- 
--- Each field (e.g. @userName@) must involve the type family `Column` because 
--- @`Column` `Identity` a@ simplifies to @a@. This is why @`Row` User@ is exactly
--- like a normal, non-higher-kinded record type.
---
--- On the other hand, `Frame User` is equivalent to:
--- 
--- @
--- data User =
---     MkUser { userName :: `Vector` `String`
---            , userAge  :: `Vector` `Int`
---            }
--- @
---
--- One small annoyance we must put up with is that deriving instances of `Show`, `Eq`, etc. 
--- for @User@ is now a little different:
---
--- @
--- deriving instance `Show` (`Row` User)
--- deriving instance `Eq` (`Row` User)
--- @
---
--- Let's look at a real example. First, let's get some setup out of the way. We must 
--- activate @-XDeriveAnyClass@ to automatically derive `Frameable`:
--- 
--- >>> :set -XDeriveAnyClass
---
--- and we'll import the "Data.Vector" module as well:
--- 
--- >>> import Data.Vector as Vector
---
--- We define
---
--- >>> :{
---      data Student f
---          = MkStudent { studentName      :: Column f String
---                      , studentAge       :: Column f Int
---                      , studentMathGrade :: Column f Char
---                      }
---          deriving (Generic, Frameable)
--- :}
---
--- We use `fromRows` to pack individual students into a dataframe:
---
--- >>> students = fromRows $ Vector.fromList [MkStudent "Albert" 12 'C', MkStudent "Beatrice" 13 'B', MkStudent "Clara" 12 'A']
---
--- We can render the dataframe @students@ into a nice string using `display` 
--- (and print it out using using `putStrLn`):
--- 
--- >>> putStrLn (display students)
--- studentName | studentAge | studentMathGrade
--- ----------- | ---------- | ----------------
---    "Albert" |         12 |              'C' 
---  "Beatrice" |         13 |              'B'
---     "Clara" |         12 |              'A'
---
+-- A user guide is provided in the "Data.Frame.Tutorial" module.
+
 module Data.Frame (
     -- * Defining dataframe types
     Column, Frameable, Row, Frame,
@@ -144,7 +57,6 @@ import GHC.Generics ( Selector, Generic(..), S, D, C, K1(..), Rec0, M1(..), type
 -- $setup
 -- >>> import qualified Data.Vector as Vector
 
-
 -- | Build a dataframe from a container of rows.
 --
 -- For the inverse operation, see `toRows`.
@@ -152,7 +64,7 @@ fromRows :: (Frameable t, Foldable f)
          => f (Row t)
          -> Frame t
 fromRows = pack . Data.Vector.fromList . Data.Foldable.toList
-
+{-# INLINE[1] fromRows #-}
 
 -- | Deconstruct a dataframe into its rows.
 --
@@ -161,7 +73,18 @@ toRows :: Frameable t
        => Frame t
        -> Vector (Row t)
 toRows = unpack
+{-# INLINE[1] toRows #-}
 
+-- TODO: Chaining operations such as `mapFrame` and `filterFrame`
+--       should benefit from optimizing as `toRows . fromRows = id`
+--       ( and `fromRows . toRows = id` as well).
+--       See the rules below.
+--       It's not clear if I'm using the rewrite system correctly,
+--       by looking at the benchmark resuylts
+{-# RULES
+"fromRows/toRows" [2] forall xs. fromRows (toRows xs) = xs
+"toRows/fromRows" [2] forall xs. toRows (fromRows xs) = xs 
+  #-}
 
 -- | Returns `True` if a dataframe has no rows.
 null :: Frameable t
@@ -315,14 +238,17 @@ class GFromRows tI tV where
 
 instance GFromRows (Rec0 a) (Rec0 (Vector a)) where
     gfromRows = K1 . Data.Vector.map unK1
+    {-# INLINEABLE gfromRows #-}
 
 instance (GFromRows tI1 tV1, GFromRows tI2 tV2) 
     => GFromRows (tI1 :*: tI2) (tV1 :*: tV2) where
     gfromRows vs = let (xs, ys) = Data.Vector.unzip $ Data.Vector.map (\(x :*: y) -> (x, y)) vs
                     in gfromRows xs :*: gfromRows ys
+    {-# INLINEABLE gfromRows #-}
 
 instance GFromRows tI tV => GFromRows (M1 i c tI) (M1 i c tV) where
     gfromRows vs = M1 (gfromRows (Data.Vector.map unM1 vs))
+    {-# INLINEABLE gfromRows #-}
 
 
 -- | Typeclass to generically derive the function `toRows`.
@@ -341,7 +267,7 @@ instance (GToRows tI1 tV1, GToRows tI2 tV2)
 instance (GToRows tI tV) => GToRows (M1 i c tI) (M1 i c tV) where
     -- gtoRows :: M1 i c tV a -> Vector (M1 i c tI a)
     gtoRows = Data.Vector.map M1 . gtoRows . unM1
-
+    {-# INLINEABLE gtoRows #-}
 
 class GILookup tI tV where
     gilookup :: Int -> tV a -> Maybe (tI a)
@@ -392,6 +318,7 @@ class Frameable t where
                      => Vector (Row t) 
                      -> Frame t
     pack = to . gfromRows . Data.Vector.map from
+    {-# INLINABLE pack #-}
 
     -- | Unpack a dataframe into rows
     unpack :: Frame t -> Vector (Row t)
@@ -403,6 +330,7 @@ class Frameable t where
                      => Frame t 
                      -> Vector (Row t) 
     unpack = Data.Vector.map to . gtoRows . from
+    {-# INLINABLE unpack #-}
 
 
     -- | Look up a row from the frame by integer index

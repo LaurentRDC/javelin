@@ -3,7 +3,7 @@
 
 import           Control.DeepSeq    ( NFData, rnf )
 import           Control.Exception  ( evaluate )
-import           Criterion.Main     ( bench, nf, defaultMain )
+import           Criterion.Main     ( bench, bgroup, nf, defaultMain )
 
 import           Data.Frame ( Column, Frameable, Indexable, Row, Frame )
 import qualified Data.Frame as Frame
@@ -38,10 +38,16 @@ main = do
     evaluate $ rnf rs
     evaluate $ rnf fr
     defaultMain
-        [ bench "fromRows" $ nf (Frame.fromRows) rs
-        , bench "toRows"   $ nf (Frame.toRows) fr
-        , bench "lookup"   $ nf (Frame.lookup 100) fr 
-        , bench "ilookup"  $ nf (Frame.ilookup 99) fr 
-        , bench "at"       $ nf (`Frame.at` (100, field5)) fr 
-        , bench "iat"      $ nf (`Frame.iat` (99, field5)) fr 
+        [ bgroup "Row-wise operations" 
+          [ bench "fromRows" $ nf (Frame.fromRows) rs
+          , bench "toRows"   $ nf (Frame.toRows) fr
+          , bench "toRows . fromRows" $ nf (Frame.fromRows . Frame.toRows) fr
+          , bench "fromRows . toRows" $ nf (Frame.toRows . Frame.fromRows) rs
+          ]
+        , bgroup "Lookups" 
+          [ bench "lookup"   $ nf (Frame.lookup 100) fr 
+          , bench "ilookup"  $ nf (Frame.ilookup 99) fr 
+          , bench "at"       $ nf (`Frame.at` (100, field5)) fr 
+          , bench "iat"      $ nf (`Frame.iat` (99, field5)) fr 
+          ]
         ]
