@@ -26,7 +26,7 @@ module Data.Frame (
     -- * Construction and deconstruction
     fromRows, toRows, fields,
     -- * Operations on rows
-    null, length, mapFrame, filterFrame, zipFramesWith, foldlFrame,
+    null, length, mapFrame, mapFrameM, filterFrame, zipFramesWith, foldlFrame,
     -- * Displaying frames
     DisplayOptions(..), defaultDisplayOptions, display, displayWith,
 
@@ -64,7 +64,7 @@ fromRows :: (Frameable t, Foldable f)
          => f (Row t)
          -> Frame t
 fromRows = pack . Data.Vector.fromList . Data.Foldable.toList
-{-# INLINE[1] fromRows #-}
+{-# INLINE[~2] fromRows #-}
 
 -- | Deconstruct a dataframe into its rows.
 --
@@ -73,7 +73,7 @@ toRows :: Frameable t
        => Frame t
        -> Vector (Row t)
 toRows = unpack
-{-# INLINE[1] toRows #-}
+{-# INLINE[~2] toRows #-}
 
 -- TODO: Chaining operations such as `mapFrame` and `filterFrame`
 --       should benefit from optimizing as `toRows . fromRows = id`
@@ -82,8 +82,8 @@ toRows = unpack
 --       It's not clear if I'm using the rewrite system correctly,
 --       by looking at the benchmark resuylts
 {-# RULES
-"fromRows/toRows" [2] forall xs. fromRows (toRows xs) = xs
-"toRows/fromRows" [2] forall xs. toRows (fromRows xs) = xs 
+"fromRows/toRows" [2] fromRows . toRows = id
+"toRows/fromRows" [2] toRows . fromRows = id 
   #-}
 
 -- | Returns `True` if a dataframe has no rows.
@@ -104,14 +104,31 @@ length :: Frameable t
 -- rather than reconstructing all rows.
 length = Data.Vector.length . toRows
 
+
 -- | Map a function over each row individually.
+--
+-- For mapping with a monadic action, see `mapFrameM`.
 mapFrame :: (Frameable t1, Frameable t2)
          => (Row t1 -> Row t2)
          -> Frame t1
          -> Frame t2
 mapFrame f = fromRows 
-          . Data.Vector.map f 
-          . toRows
+           . Data.Vector.map f 
+           . toRows
+
+
+-- | Map each element of a dataframe to a monadic action, evaluate
+-- these actions from left to right, and collect the result
+-- in a new dataframe.
+--
+-- For mapping without a monadic action, see `mapFrame`.
+mapFrameM :: (Frameable t1, Frameable t2, Monad m)
+          => (Row t1 -> m (Row t2))
+          -> Frame t1
+          -> m (Frame t2)
+mapFrameM f = fmap fromRows
+            . Data.Vector.mapM f
+            . toRows
 
 
 -- | Filter rows from a @`Frame` t@, only keeping
@@ -312,11 +329,11 @@ class Frameable t where
     pack :: Vector (Row t) -> Frame t
     
     default pack :: ( Generic (Row t)
-                        , Generic (Frame t)
-                        , GFromRows (Rep (Row t)) (Rep (Frame t))
-                        ) 
-                     => Vector (Row t) 
-                     -> Frame t
+                    , Generic (Frame t)
+                    , GFromRows (Rep (Row t)) (Rep (Frame t))
+                    ) 
+                    => Vector (Row t) 
+                    -> Frame t
     pack = to . gfromRows . Data.Vector.map from
     {-# INLINABLE pack #-}
 
