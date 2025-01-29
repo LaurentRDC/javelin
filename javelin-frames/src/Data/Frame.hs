@@ -57,6 +57,7 @@ import qualified Data.List as List ( intersperse, foldl' )
 import Data.Maybe (catMaybes)
 import Data.Semigroup (Max(..))
 import qualified Data.Set as Set
+import Data.Tuple (swap)
 import Data.Vector (Vector)
 import qualified Data.Vector
 import qualified Data.Vector.Algorithms.Tim as TimSort (sortBy)
@@ -302,7 +303,23 @@ sortRowsBy cmp df
 sortRowsByKey :: (Ord (Key t), Indexable t)
               => Frame t
               -> Frame t
-sortRowsByKey = sortRowsBy (compare `on` index)
+sortRowsByKey df =
+    -- I had trouble defining a method whereby one could either
+    -- build a vector of keys from a `Frame` (without converting to rows), 
+    -- or extract a key from a single `Row`.
+    --
+    -- Instead, we extract the index vector, sort it while keeping track
+    -- of the initial integer positions, and finally backpermuting.
+    let ix = Data.Vector.map swap 
+           $ Data.Vector.indexed (index df)
+        -- TODO: is it possible to run `Data.Vector.map snd` 
+        -- within the `ST` context?
+        sortedIx = Data.Vector.map snd $ runST $ do
+            mutVec <- Data.Vector.thaw ix
+            TimSort.sortBy (compare `on` fst) mutVec
+
+            Data.Vector.freeze mutVec <&> Data.Vector.force
+     in fromRows $ Data.Vector.backpermute (toRows df) sortedIx --  sortRowsBy (compare `on` index)
 {-# INLINABLE sortRowsByKey #-}
 
 
@@ -509,9 +526,117 @@ class ( Frameable t
     -- of multiple fields
     type Key t
 
-    -- | How to create an index from a record (@`Row` t@) or frame (@`Frame`@ t). 
+    -- | How to create an index from a frame (@`Frame` t@). 
     -- This is generally done by using record selectors.
+    index :: Frame t -> Vector (Key t)
+
+{-
+Ideally, the `Indexable` class provides two methods:
+
+* key   :: Row t   -> Key t
+* index :: Frame t -> Vector (Key t)
+
+However, asking users to implement both methods is redundant and 
+could lead to errors, since both methods must be coherent 
+with each other. Consider the following example:
+
+@
+data Person f
+    = MkPerson { firstName :: Column f String
+               , lastName  :: Column f String
+               }
+    deriving (Generic, Frameable)
+
+instance Indexable Person where
+    type Key Person = String
+    key = firstName
+    index = lastName -- oops
+@
+
+We could instead use the `key` function to build the `index`, but this requires
+converting a `Frame t` to rows, which is wasteful:
+
+class Indexable t where
+    type Key t
+
+    key :: Row t -> Key t
+
+    index :: Frame t -> Vector (Key t)
+    index = Data.Vector.fromList . map key . toRows
+
+Ideally, we would have a single method in the `Indexable` class:
+
+@
+class Indexable t where
+    type Key t
+
     index :: t f -> Column f (Key t)
+@
+
+which would work for both f=`Identity` and f=`Vector`. This actually works
+for simple record selectors, e.g.:
+
+@
+instance Indexable Person where
+    type Key Person = String
+    index :: Person f -> Column f (Key Person)
+    index = firstName
+@
+
+The problem arises with compound keys. How would you write this?
+
+@
+instance Indexable Person where
+    type Key Person = (String, String)
+    index :: Person f -> Column f (Key Person)
+    -- Implementation for `Row t`:
+    index row = (,) <$> firstName row <*> lastName row
+    -- implementation for `Frame t`:
+    index frame = Data.Vector.zipWith (,) (firstName frame) (lastName frame)
+@
+
+We can unify the signature of `index` in this case with:
+
+@
+    index x = compound (firstName x, lastName x)
+        where
+            compound :: ( Person f -> Column f a
+                        , Person f -> Column f b
+                        )
+                     -> Person f
+                     -> Column f (a, b)
+@
+
+We can create a typeclass to do this (and implement instances for f=`Identity`
+and f=`Vector`):
+
+@
+class Compound f where
+    compound :: ( Person f -> Column f a
+                , Person f -> Column f b
+                )
+                -> Person f
+                -> Column f (a, b)
+
+instance Compound Identity where
+    compound (f, g) x = (f x, g x)
+
+instance Compound Vector where
+    compound (f, g) x = Data.Vector.zipWith (,) (f x) (g x)
+@
+
+Unfortunately, even with AllowAmbiguousTypes, I haven't been able to write 
+an instance where type inference worked, e.g.:
+
+@
+instance Indexable Person where
+    type Key Person = (String, String)
+
+    index :: Compound f => Person f -> Column f (Key Person)
+    index = compound (firstName, lastName)
+@
+
+-}
 
 
 -- | Control how `displayWith` behaves.

@@ -370,7 +370,7 @@ which creates a compound key:
     instance Indexable Actor where
         type Key Actor = (String, String)
         index :: Frame Actor -> Vector (Key Actor)
-        index = Vector.zip <$> actorFirstName <*> actorLastName
+        index df = Vector.zipWith (,) (actorFirstName df) (actorLastName df)
 :}
 
 We define some data
