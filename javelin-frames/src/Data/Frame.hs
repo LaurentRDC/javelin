@@ -23,12 +23,19 @@
 module Data.Frame (
     -- * Defining dataframe types
     Column, Frameable, Row, Frame,
+
     -- * Construction and deconstruction
     fromRows, toRows, fields,
+
     -- * Operations on rows
     null, length, mapFrame, mapFrameM, filterFrame, zipFramesWith, foldlFrame,
+    -- ** Sorting rows in frames
+    sortRowsBy, sortRowsByKey,
+
     -- * Displaying frames
-    DisplayOptions(..), defaultDisplayOptions, display, displayWith,
+    display,
+    -- ** Customizing the display of frames
+    displayWith, DisplayOptions(..), defaultDisplayOptions, 
 
     -- * Indexing operations
     -- ** Based on integer indices
@@ -39,8 +46,11 @@ module Data.Frame (
 
 
 import Control.Exception (assert)
+import Control.Monad.ST ( runST )
 import Data.Bifunctor (second)
 import qualified Data.Foldable
+import Data.Function (on)
+import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity(..))
 import Data.Kind (Type)
 import qualified Data.List as List ( intersperse, foldl' )
@@ -49,6 +59,7 @@ import Data.Semigroup (Max(..))
 import qualified Data.Set as Set
 import Data.Vector (Vector)
 import qualified Data.Vector
+import qualified Data.Vector.Algorithms.Tim as TimSort (sortBy)
 import Prelude hiding (lookup, null, length)
 import qualified Prelude
 import GHC.Generics ( Selector, Generic(..), S, D, C, K1(..), Rec0, M1(..), type (:*:)(..), selName )
@@ -138,8 +149,8 @@ filterFrame :: (Frameable t)
             -> Frame t
             -> Frame t
 filterFrame f = fromRows 
-             . Data.Vector.filter f
-             . toRows
+              . Data.Vector.filter f
+              . toRows
 
 
 -- | Zip two frames together using a combination function.
@@ -182,6 +193,117 @@ ilookup :: Frameable t
         -> Frame t
         -> Maybe (Row t)
 ilookup = iindex
+
+
+-- | Sort the rows of a frame using a custom comparison function.
+--
+-- Use the function `on` from "Data.Function" to easily create 
+-- comparison functions. See the example below. 
+--
+-- If your dataframe has an instance of `Indexable`, see `sortRowsByKey`.
+--
+-- For example, let's say we want to sort
+-- a dataframe of students by their first name:
+-- 
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+-- :}
+--
+-- >>> :{
+--     students = fromRows 
+--              $ Vector.fromList 
+--              [ MkStudent "Erika" 13 'D'
+--              , MkStudent "Beatrice" 13 'B'
+--              , MkStudent "David" 13 'A'
+--              , MkStudent "Albert" 12 'C'
+--              , MkStudent "Frank" 11 'C'
+--              , MkStudent "Clara" 12 'A'
+--              ]
+-- :}
+--
+-- >>> import Data.Function (on)
+-- >>> putStrLn $ display $ sortRowsBy (compare `on` studentName) students
+-- studentName | studentAge | studentMathGrade
+-- ----------- | ---------- | ----------------
+--    "Albert" |         12 |              'C' 
+--  "Beatrice" |         13 |              'B'
+--     "Clara" |         12 |              'A'
+--     "David" |         13 |              'A'
+--     "Erika" |         13 |              'D'
+--     "Frank" |         11 |              'C'
+--
+-- The underlying sorting algorithm is timsort (via 
+-- `Data.Vector.Algorithms.Tim.sortBy`), which minimizes the number 
+-- of comparisons used.
+sortRowsBy :: Frameable t
+           => (Row t -> Row t -> Ordering)
+           -> Frame t
+           -> Frame t
+sortRowsBy cmp df
+    = let rs = toRows df 
+       in fromRows $ runST $ do
+        mutVec <- Data.Vector.thaw rs
+        TimSort.sortBy cmp mutVec
+        Data.Vector.freeze mutVec <&> Data.Vector.force
+{-# INLINABLE sortRowsBy #-}
+
+
+-- | Sort the rows of a frame using the index defined by
+-- the `Indexable` typeclass. 
+--
+-- If your dataframe does not have an instance of `Indexable`, 
+-- see `sortRowsBy`.
+-- 
+-- For example:
+-- 
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+--      instance Indexable Student where
+--          type Key Student = String
+--          index = studentName
+-- :}
+--
+-- >>> :{
+--     students = fromRows 
+--              $ Vector.fromList 
+--              [ MkStudent "Erika" 13 'D'
+--              , MkStudent "Beatrice" 13 'B'
+--              , MkStudent "David" 13 'A'
+--              , MkStudent "Albert" 12 'C'
+--              , MkStudent "Frank" 11 'C'
+--              , MkStudent "Clara" 12 'A'
+--              ]
+-- :}
+--
+-- >>> import Data.Function (on)
+-- >>> putStrLn $ display $ sortRowsByKey students
+-- studentName | studentAge | studentMathGrade
+-- ----------- | ---------- | ----------------
+--    "Albert" |         12 |              'C' 
+--  "Beatrice" |         13 |              'B'
+--     "Clara" |         12 |              'A'
+--     "David" |         13 |              'A'
+--     "Erika" |         13 |              'D'
+--     "Frank" |         11 |              'C'
+--
+-- The underlying sorting algorithm is timsort (via 
+-- `Data.Vector.Algorithms.Tim.sortBy`), which minimizes the number 
+-- of comparisons used.
+sortRowsByKey :: (Ord (Key t), Indexable t)
+              => Frame t
+              -> Frame t
+sortRowsByKey = sortRowsBy (compare `on` index)
+{-# INLINABLE sortRowsByKey #-}
 
 
 -- | Look up a row in a data frame by key. The specific key
@@ -387,9 +509,9 @@ class ( Frameable t
     -- of multiple fields
     type Key t
 
-    -- | How to create an index from a @`Frame` t@. This is generally
-    -- done by using record selectors.
-    index :: Frame t -> Vector (Key t)
+    -- | How to create an index from a record (@`Row` t@) or frame (@`Frame`@ t). 
+    -- This is generally done by using record selectors.
+    index :: t f -> Column f (Key t)
 
 
 -- | Control how `displayWith` behaves.
@@ -413,6 +535,13 @@ defaultDisplayOptions
 
 
 -- | Display a @`Frame` t@ using default 'DisplayOptions'.
+--
+-- Although this is up to you, we strongly recommend that the `Show` 
+-- instance for @`Frame` t@ be:
+--
+-- @
+-- instance Show (Frame t) where show = display
+-- @
 --
 -- Example:
 -- 

@@ -5,6 +5,7 @@ import           Control.DeepSeq    ( NFData, rnf )
 import           Control.Exception  ( evaluate )
 import           Criterion.Main     ( bench, bgroup, nf, defaultMain )
 
+import           Data.Function (on)
 import           Data.Frame ( Column, Frameable, Indexable, Row, Frame )
 import qualified Data.Frame as Frame
 import qualified Data.Vector as Vector
@@ -35,14 +36,17 @@ main :: IO ()
 main = do
     let rs = Vector.fromList [MkBench ix 0 0 0 0 0 | ix <- [0::Int .. 100_000]]
         fr = Frame.fromRows rs
+        reversed = Frame.fromRows $ Vector.reverse rs
     evaluate $ rnf rs
     evaluate $ rnf fr
+    evaluate $ rnf reversed
     defaultMain
         [ bgroup "Row-wise operations" 
           [ bench "fromRows" $ nf (Frame.fromRows) rs
           , bench "toRows"   $ nf (Frame.toRows) fr
           , bench "toRows . fromRows" $ nf (Frame.fromRows . Frame.toRows) fr
           , bench "fromRows . toRows" $ nf (Frame.toRows . Frame.fromRows) rs
+          , bench "sortRowsBy" $ nf (Frame.sortRowsBy (compare `on` field1)) reversed
           ]
         , bgroup "Lookups" 
           [ bench "lookup"   $ nf (Frame.lookup 100) fr 
