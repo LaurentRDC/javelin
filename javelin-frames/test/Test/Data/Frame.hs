@@ -12,13 +12,13 @@ import qualified Data.Vector as Vector
 
 import           GHC.Generics (Generic)
 
-import           Hedgehog             ( property, forAll, (===) )
+import           Hedgehog             ( property, forAll, (===), assert )
 import qualified Hedgehog.Gen         as Gen
 import qualified Hedgehog.Range       as Range
 
 import           Test.Tasty           ( testGroup, TestTree ) 
 import           Test.Tasty.Hedgehog  ( testProperty )
-import           Test.Tasty.HUnit     
+import           Test.Tasty.HUnit     ( testCase, assertEqual )     
 
 tests :: TestTree
 tests = testGroup "Data.Frame" [ testToFromRowsTripping
@@ -26,6 +26,7 @@ tests = testGroup "Data.Frame" [ testToFromRowsTripping
                                , testFields
                                , testSortRowsBy
                                , testSortRowsByKey
+                               , testMergeWithStrategy
                                , testDisplay
                                ]
 
@@ -171,6 +172,59 @@ testSortRowsByKey
             where
                 unique :: Ord a => Vector.Vector a -> Bool
                 unique vs = length (Set.fromList (Vector.toList vs)) == Vector.length vs
+
+
+testMergeWithStrategy :: TestTree
+testMergeWithStrategy 
+    = testGroup "mergeWithStrategy"
+    [ testMergeWithStrategyUnion
+    , testMergeWithStrategySelf
+    ]
+    where
+        testMergeWithStrategyUnion :: TestTree
+        testMergeWithStrategyUnion 
+            = testProperty "The index of a merged dataframe contains a subset of the union of the indices" 
+            $ property 
+            $ do
+
+                users1 <- fmap fromRows <$> forAll $ 
+                                    Gen.list (Range.linear 0 50)
+                                        (MkUser <$> Gen.string (Range.linear 0 100) Gen.alpha
+                                        <*> Gen.integral (Range.linear 10 25)
+                                        )
+
+                users2 <- fmap fromRows <$> forAll $ 
+                                    Gen.list (Range.linear 0 25)
+                                        (MkUser <$> Gen.string (Range.linear 0 100) Gen.alpha
+                                        <*> Gen.integral (Range.linear 10 25)
+                                        )
+
+                let merged = Frame.mergeWithStrategy strategy users1 users2
+                    mergedIx = Set.fromList $ Vector.toList (index merged) 
+                    ix1 = Set.fromList $ Vector.toList (index users1)
+                    ix2 = Set.fromList $ Vector.toList (index users2)
+
+                
+                assert (mergedIx `Set.isSubsetOf` (ix1 `Set.union` ix2))
+        
+            where
+                strategy :: String -> These (Row User) (Row User) -> Maybe (Row User)
+                strategy _ (This left) = Just left
+                strategy _ (That right) = Just right
+                strategy name (These _ _) = Just $ MkUser name 18
+        
+        testMergeWithStrategySelf :: TestTree
+        testMergeWithStrategySelf 
+            = testProperty "Merging a dataframe onto itself should be the identity function if the index is unique"
+            $ property $ do
+                users <- fmap fromRows <$> forAll $ 
+                                    Gen.list (Range.linear 0 50)
+                                        (MkUser <$> Gen.string (Range.linear 0 100) Gen.alpha
+                                        <*> Gen.integral (Range.linear 10 25)
+                                        )
+
+                Frame.mergeWithStrategy (Frame.matchedStrategy (\_ u _ -> u)) users users === Frame.sortRowsByKeyUnique users
+                
 
 
 testDisplay :: TestTree

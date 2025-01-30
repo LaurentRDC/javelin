@@ -43,6 +43,7 @@ library
                       Data.Frame.Tutorial
     build-depends:    base >=4.15.0.0 && <4.22,
                       containers >=0.6 && <0.8,
+                      these ^>=1.2,
                       vector >=0.12.3.0 && <0.14,
                       vector-algorithms ^>=0.9
     hs-source-dirs:   src

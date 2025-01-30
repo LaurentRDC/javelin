@@ -28,9 +28,9 @@ module Data.Frame (
     fromRows, toRows, fields,
 
     -- * Operations on rows
-    null, length, mapFrame, mapFrameM, filterFrame, zipFramesWith, foldlFrame,
+    null, length, mapFrame, mapFrameM, filterFrame, foldlFrame,
     -- ** Sorting rows in frames
-    sortRowsBy, sortRowsByKey,
+    sortRowsBy, sortRowsByUnique, sortRowsByKey, sortRowsByKeyUnique,
 
     -- * Displaying frames
     display,
@@ -41,7 +41,15 @@ module Data.Frame (
     -- ** Based on integer indices
     ilookup, iat,
     -- ** Based on indexable frames
-    Indexable(Key, index), lookup, at
+    Indexable(Key, index), lookup, at,
+
+    -- * Merging dataframes
+    -- ** Zipping rows in order
+    zipFramesWith,
+    -- ** Merging using an index
+    mergeWithStrategy, matchedStrategy,
+    -- *** Defining your own strategies
+    These(..),
 ) where
 
 
@@ -55,12 +63,15 @@ import Data.Functor.Identity (Identity(..))
 import Data.Kind (Type)
 import qualified Data.List as List ( intersperse, foldl' )
 import Data.Maybe (catMaybes)
+import Data.Sequence (Seq(..))
+import qualified Data.Sequence as Seq
 import Data.Semigroup (Max(..))
 import qualified Data.Set as Set
+import Data.These (These(..))
 import Data.Tuple (swap)
 import Data.Vector (Vector)
 import qualified Data.Vector
-import qualified Data.Vector.Algorithms.Tim as TimSort (sortBy)
+import qualified Data.Vector.Algorithms.Tim as TimSort (sortBy, sortUniqBy)
 import Prelude hiding (lookup, null, length)
 import qualified Prelude
 import GHC.Generics ( Selector, Generic(..), S, D, C, K1(..), Rec0, M1(..), type (:*:)(..), selName )
@@ -201,6 +212,7 @@ ilookup = iindex
 -- Use the function `on` from "Data.Function" to easily create 
 -- comparison functions. See the example below. 
 --
+-- If you wish to prune rows with duplicates, see `sortRowsByUnique`. 
 -- If your dataframe has an instance of `Indexable`, see `sortRowsByKey`.
 --
 -- For example, let's say we want to sort
@@ -254,11 +266,70 @@ sortRowsBy cmp df
 {-# INLINABLE sortRowsBy #-}
 
 
+-- | Sort the rows of a frame using a custom comparison function.
+--
+-- Use the function `on` from "Data.Function" to easily create 
+-- comparison functions. See the example below. 
+--
+-- If your dataframe has an instance of `Indexable`, see `sortRowsByKey`.
+--
+-- For example, let's say we want to sort
+-- a dataframe of students by their first name:
+-- 
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+-- :}
+--
+-- >>> :{
+--     students = fromRows 
+--              $ Vector.fromList 
+--              [ MkStudent "Erika" 13 'D'
+--              , MkStudent "Beatrice" 13 'B'
+--              , MkStudent "David" 13 'A'
+--              , MkStudent "Albert" 12 'C'
+--              , MkStudent "Frank" 11 'C'
+--              , MkStudent "Clara" 12 'A'
+--              ]
+-- :}
+--
+-- >>> import Data.Function (on)
+-- >>> putStrLn $ display $ sortRowsBy (compare `on` studentName) students
+-- studentName | studentAge | studentMathGrade
+-- ----------- | ---------- | ----------------
+--    "Albert" |         12 |              'C' 
+--  "Beatrice" |         13 |              'B'
+--     "Clara" |         12 |              'A'
+--     "David" |         13 |              'A'
+--     "Erika" |         13 |              'D'
+--     "Frank" |         11 |              'C'
+--
+-- The underlying sorting algorithm is timsort (via 
+-- `Data.Vector.Algorithms.Tim.sortBy`), which minimizes the number 
+-- of comparisons used.
+sortRowsByUnique :: Frameable t
+           => (Row t -> Row t -> Ordering)
+           -> Frame t
+           -> Frame t
+sortRowsByUnique cmp df
+    = let rs = toRows df 
+       in fromRows $ runST $ do
+        mutVec <- Data.Vector.thaw rs
+        TimSort.sortUniqBy cmp mutVec >>= Data.Vector.freeze <&> Data.Vector.force
+{-# INLINABLE sortRowsByUnique #-}
+
+
 -- | Sort the rows of a frame using the index defined by
 -- the `Indexable` typeclass. 
 --
 -- If your dataframe does not have an instance of `Indexable`, 
 -- see `sortRowsBy`.
+--
+-- To prune rows with duplicate keys, see `sortRowsByKeyUnique`.
 -- 
 -- For example:
 -- 
@@ -300,7 +371,7 @@ sortRowsBy cmp df
 -- The underlying sorting algorithm is timsort (via 
 -- `Data.Vector.Algorithms.Tim.sortBy`), which minimizes the number 
 -- of comparisons used.
-sortRowsByKey :: (Ord (Key t), Indexable t)
+sortRowsByKey :: (Indexable t)
               => Frame t
               -> Frame t
 sortRowsByKey df =
@@ -321,6 +392,33 @@ sortRowsByKey df =
             Data.Vector.freeze mutVec <&> Data.Vector.force
      in fromRows $ Data.Vector.backpermute (toRows df) sortedIx --  sortRowsBy (compare `on` index)
 {-# INLINABLE sortRowsByKey #-}
+
+
+-- | Sort the rows of a frame using the index defined by
+-- the `Indexable` typeclass, but prune rows with duplicate keys.
+--
+-- The underlying sorting algorithm is timsort (via 
+-- `Data.Vector.Algorithms.Tim.sortBy`), which minimizes the number 
+-- of comparisons used.
+sortRowsByKeyUnique :: (Indexable t)
+                    => Frame t
+                    -> Frame t
+sortRowsByKeyUnique df =
+    -- I had trouble defining a method whereby one could either
+    -- build a vector of keys from a `Frame` (without converting to rows), 
+    -- or extract a key from a single `Row`.
+    --
+    -- Instead, we extract the index vector, sort it while keeping track
+    -- of the initial integer positions, and finally backpermuting.
+    let ix = Data.Vector.map swap 
+           $ Data.Vector.indexed (index df)
+        -- TODO: is it possible to run `Data.Vector.map snd` 
+        -- within the `ST` context?
+        sortedIx = Data.Vector.map snd $ runST $ do
+            mutVec <- Data.Vector.thaw ix
+            TimSort.sortUniqBy (compare `on` fst) mutVec >>= Data.Vector.freeze <&> Data.Vector.force
+     in fromRows $ Data.Vector.backpermute (toRows df) sortedIx --  sortRowsBy (compare `on` index)
+{-# INLINABLE sortRowsByKeyUnique #-}
 
 
 -- | Look up a row in a data frame by key. The specific key
@@ -367,6 +465,86 @@ iat :: Frame t
     -> (Int, Frame t -> Vector a)
     -> Maybe a
 fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx
+
+
+-- | Merge two dataframes using a merging strategy.
+--
+-- A merging strategy handles the possibility of rows missing in the 
+-- left and/or right dataframes. Merge strategies can be user-defined,
+-- or you can use predefined strategies (e.g. `matchedStrategy`).
+--
+-- 
+--
+-- Note that (@`Key` t1 ~ `Key` t2@) means that the type of keys in
+-- in both dataframes must be the same.
+mergeWithStrategy :: ( Indexable t1, Indexable t2, Indexable t3
+                     , Key t1 ~ Key t2
+                     )
+                  => MergeStrategy (Key t1) t1 t2 t3
+                  -> Frame t1
+                  -> Frame t2
+                  -> Frame t3
+mergeWithStrategy strat df1Unsorted df2Unsorted   
+    = let df1 = sortRowsByKeyUnique df1Unsorted
+          df2 = sortRowsByKeyUnique df2Unsorted
+          ix1 = index df1
+          ix2 = index df2
+          -- Since df1 and df2 are sorted by key and their keys are unique, we 
+          -- can safely use `Set.fromDistinctAscList`.
+          fullIx = (Set.fromDistinctAscList $ Data.Vector.toList ix1) 
+                                `Set.union` 
+                   (Set.fromDistinctAscList $ Data.Vector.toList ix2)
+          
+          fullLeft  = reindex fullIx (Data.Vector.zip ix1 (toRows df1))
+          fullRight = reindex fullIx (Data.Vector.zip ix2 (toRows df2))
+       in fromRows $ Data.Vector.catMaybes 
+                   $ Data.Vector.zipWith (\t1 t2 -> uncurry strat (asThese t1 t2))
+                                         fullLeft
+                                         fullRight
+    
+    where
+        asThese :: (k, Maybe a) -> (k, Maybe b) -> (k, These a b)
+        asThese (k, Just a) (_, Nothing) = (k, This a)
+        asThese (k, Nothing) (_, Just b) = (k, That b)
+        asThese (k, Just a) (_, Just b)  = (k, These a b)
+        asThese _ _                      = error "impossible"
+        
+        reindex :: Ord k => Set.Set k -> Vector (k, Row t) -> Vector (k, Maybe (Row t))
+        reindex fullix vs = Data.Vector.fromListN (Set.size fullix) 
+                          $ Data.Foldable.toList 
+                          $ go Empty 
+                               (Seq.fromList $ Set.toAscList fullix) 
+                               (Seq.fromList $ Data.Vector.toList vs)
+            where
+                -- We use `Seq` for the O(1) append
+                -- Note that this function REQUIRES the rows to be sorted in
+                -- ascending values of their key
+                go :: Ord k 
+                   => Seq (k, Maybe (Row t)) -- Accumulator
+                   -> Seq k                  -- Full index
+                   -> Seq (k, Row t)         -- Rows
+                   -> Seq (k, Maybe (Row t))
+                go acc Empty _ = acc
+                go acc keys Empty = acc Seq.>< fmap (, Nothing) keys
+                go acc (k:<|ks) queue@((rk, row):<|rs) = case k `compare` rk of
+                    EQ -> go (acc Seq.|> (k, Just row)) ks rs
+                    LT -> go (acc Seq.|> (k, Nothing)) ks queue
+                    -- Since the full index includes all keys, it's not possible
+                    -- the following case
+                    GT -> error "impossible"
+
+type MergeStrategy k t1 t2 t3
+    = (k -> These (Row t1) (Row t2) -> Maybe (Row t3))
+
+-- | Merge strategy which only works if both the left and right
+-- rows are found.
+--
+-- If you are familiar with relational databases, `matchedStrategy`
+-- is an inner join.
+matchedStrategy :: (k -> Row t1 -> Row t2 -> Row t3)
+                -> MergeStrategy k t1 t2 t3
+matchedStrategy f k (These r1 r2) = Just $ f k r1 r2
+matchedStrategy _ _ _ = Nothing
 
 
 -- | Type family which allows for higher-kinded record types
@@ -519,6 +697,7 @@ class Frameable t where
 -- An index need not be unique, but the type of its keys must be an instance of `Eq`.
 class ( Frameable t
       , Eq (Key t) -- Effectively required for lookups
+      , Ord (Key t) -- Effectively required for joins
       ) => Indexable t where
 
     -- | A type representing a lookup key for a dataframe.
@@ -730,7 +909,8 @@ displayWith :: (Frameable t)
 displayWith DisplayOptions{..} df 
     = if null df
         then "<Empty dataframe>" -- TODO: it IS possible to determine the record names
-                                 --       without having any rows
+                                 --       without having any rows, but it requires
+                                 --       an additional generic typeclass
         else formatGrid rows
 
     where

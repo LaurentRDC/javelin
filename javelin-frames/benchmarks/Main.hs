@@ -47,6 +47,7 @@ main = do
           , bench "toRows . fromRows" $ nf (Frame.fromRows . Frame.toRows) fr
           , bench "fromRows . toRows" $ nf (Frame.toRows . Frame.fromRows) rs
           , bench "sortRowsBy" $ nf (Frame.sortRowsBy (compare `on` field1)) reversed
+          , bench "sortRowsByKey" $ nf (Frame.sortRowsByKey) reversed
           ]
         , bgroup "Lookups" 
           [ bench "lookup"   $ nf (Frame.lookup 100) fr 
@@ -54,4 +55,7 @@ main = do
           , bench "at"       $ nf (`Frame.at` (100, field5)) fr 
           , bench "iat"      $ nf (`Frame.iat` (99, field5)) fr 
           ]
+        , bgroup "Merging" 
+            [ bench "mergeWithStrategy" $ nf (Frame.mergeWithStrategy (Frame.matchedStrategy (\_ r1 _ -> r1)) fr) reversed
+            ]
         ]
