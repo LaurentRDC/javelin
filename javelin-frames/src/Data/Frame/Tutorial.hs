@@ -109,12 +109,12 @@ module to operate on columns.
 Many operations that treat a dataframe as an array
 of rows are provided.
 
-There's `mapFrame` to map each row to a new structure:
+There's `mapRows` to map each row to a new structure:
 
 >>> :{
     putStrLn 
         $ display 
-            $ mapFrame 
+            $ mapRows 
                 (\(MkStudent name age grade) -> MkStudent name (2*age) grade) 
                 students
 :}
@@ -124,12 +124,12 @@ studentName | studentAge | studentMathGrade
  "Beatrice" |         26 |              'B'
     "Clara" |         24 |              'A'
 
-There's `filterFrame` to keep specific rows:
+There's `filterRows` to keep specific rows:
 
 >>> :{
     putStrLn 
         $ display 
-            $ filterFrame 
+            $ filterRows 
                 (\(MkStudent _ _ grade) -> grade < 'C') 
                 students
 :}
@@ -138,11 +138,11 @@ studentName | studentAge | studentMathGrade
  "Beatrice" |         13 |              'B'
     "Clara" |         12 |              'A'
 
-Finally, there's `foldlFrame` to summarize a dataframe by using whole rows:
+Finally, there's `foldlRows` to summarize a dataframe by using whole rows:
 
 >>> import Data.Char (ord)
 >>> :{
-    foldlFrame 
+    foldlRows 
         (\acc (MkStudent _ age grade) -> acc + age + ord grade) 
         (0 :: Int) 
         students

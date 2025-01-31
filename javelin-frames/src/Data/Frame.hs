@@ -28,7 +28,7 @@ module Data.Frame (
     fromRows, toRows, fields,
 
     -- * Operations on rows
-    null, length, mapFrame, mapFrameM, filterFrame, foldlFrame,
+    null, length, mapRows, mapRowsM, filterRows, foldlRows,
     -- ** Sorting rows in frames
     sortRowsBy, sortRowsByUnique, sortRowsByKey, sortRowsByKeyUnique,
 
@@ -89,6 +89,7 @@ fromRows :: (Frameable t, Foldable f)
 fromRows = pack . Data.Vector.fromList . Data.Foldable.toList
 {-# INLINE[~2] fromRows #-}
 
+
 -- | Deconstruct a dataframe into its rows.
 --
 -- For the inverse operation, see `fromRows`.
@@ -98,7 +99,8 @@ toRows :: Frameable t
 toRows = unpack
 {-# INLINE[~2] toRows #-}
 
--- TODO: Chaining operations such as `mapFrame` and `filterFrame`
+
+-- TODO: Chaining operations such as `mapRows` and `filterRows`
 --       should benefit from optimizing as `toRows . fromRows = id`
 --       ( and `fromRows . toRows = id` as well).
 --       See the rules below.
@@ -130,12 +132,12 @@ length = Data.Vector.length . toRows
 
 -- | Map a function over each row individually.
 --
--- For mapping with a monadic action, see `mapFrameM`.
-mapFrame :: (Frameable t1, Frameable t2)
-         => (Row t1 -> Row t2)
-         -> Frame t1
-         -> Frame t2
-mapFrame f = fromRows 
+-- For mapping with a monadic action, see `mapRowsM`.
+mapRows :: (Frameable t1, Frameable t2)
+        => (Row t1 -> Row t2)
+        -> Frame t1
+        -> Frame t2
+mapRows f = fromRows 
            . Data.Vector.map f 
            . toRows
 
@@ -144,23 +146,23 @@ mapFrame f = fromRows
 -- these actions from left to right, and collect the result
 -- in a new dataframe.
 --
--- For mapping without a monadic action, see `mapFrame`.
-mapFrameM :: (Frameable t1, Frameable t2, Monad m)
-          => (Row t1 -> m (Row t2))
-          -> Frame t1
-          -> m (Frame t2)
-mapFrameM f = fmap fromRows
+-- For mapping without a monadic action, see `mapRows`.
+mapRowsM :: (Frameable t1, Frameable t2, Monad m)
+         => (Row t1 -> m (Row t2))
+         -> Frame t1
+         -> m (Frame t2)
+mapRowsM f = fmap fromRows
             . Data.Vector.mapM f
             . toRows
 
 
 -- | Filter rows from a @`Frame` t@, only keeping
 -- the rows where the predicate is `True`.
-filterFrame :: (Frameable t)
-            => (Row t -> Bool)
-            -> Frame t
-            -> Frame t
-filterFrame f = fromRows 
+filterRows :: (Frameable t)
+           => (Row t -> Bool)
+           -> Frame t
+           -> Frame t
+filterRows f = fromRows 
               . Data.Vector.filter f
               . toRows
 
@@ -182,12 +184,12 @@ zipFramesWith f xs ys
 
 
 -- | Left-associative fold of a structure but with strict application of the operator.
-foldlFrame :: Frameable t
-           => (b -> Row t -> b) -- ^ Reduction function that takes in individual rows
-           -> b                 -- ^ Initial value for the accumulator
-           -> Frame t           -- ^ Data frame
-           -> b
-foldlFrame f start 
+foldlRows :: Frameable t
+          => (b -> Row t -> b) -- ^ Reduction function that takes in individual rows
+          -> b                 -- ^ Initial value for the accumulator
+          -> Frame t           -- ^ Data frame
+          -> b
+foldlRows f start 
     = Data.Vector.foldl' f start . toRows
 
 
@@ -473,8 +475,6 @@ fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx
 -- left and/or right dataframes. Merge strategies can be user-defined,
 -- or you can use predefined strategies (e.g. `matchedStrategy`).
 --
--- 
---
 -- Note that (@`Key` t1 ~ `Key` t2@) means that the type of keys in
 -- in both dataframes must be the same.
 mergeWithStrategy :: ( Indexable t1, Indexable t2, Indexable t3
@@ -503,11 +503,13 @@ mergeWithStrategy strat df1Unsorted df2Unsorted
                                          fullRight
     
     where
-        asThese :: (k, Maybe a) -> (k, Maybe b) -> (k, These a b)
-        asThese (k, Just a) (_, Nothing) = (k, This a)
-        asThese (k, Nothing) (_, Just b) = (k, That b)
-        asThese (k, Just a) (_, Just b)  = (k, These a b)
-        asThese _ _                      = error "impossible"
+        asThese :: Eq k => (k, Maybe a) -> (k, Maybe b) -> (k, These a b)
+        asThese (k1, Just a) (k2, Nothing) = assert (k1==k2) (k1, This a)
+        asThese (k1, Nothing) (k2, Just b) = assert (k1==k2) (k1, That b)
+        asThese (k1, Just a) (k2, Just b)  = assert (k1==k2) (k1, These a b)
+        -- The following line is unreachable since we know that the key `k`
+        -- will be present in at least one of the two rows.
+        asThese _ _ = error "impossible"
         
         reindex :: Ord k => Set.Set k -> Vector (k, Row t) -> Vector (k, Maybe (Row t))
         reindex fullix vs = Data.Vector.fromListN (Set.size fullix) 
@@ -533,8 +535,22 @@ mergeWithStrategy strat df1Unsorted df2Unsorted
                     -- the following case
                     GT -> error "impossible"
 
+
+-- | A `MergeStrategy` is a function that describes how to
+-- merge two rows together.
+--
+-- A merge strategy must handle three cases:
+-- 
+-- * Only the left row;
+-- * Only the right row;
+-- * Both the left and right rows.
+--
+-- The simplest merge strategy is `matchedStrategy`. 
+--
+-- See examples in the documentation of `mergeWithStrategy`.
 type MergeStrategy k t1 t2 t3
     = (k -> These (Row t1) (Row t2) -> Maybe (Row t3))
+
 
 -- | Merge strategy which only works if both the left and right
 -- rows are found.
