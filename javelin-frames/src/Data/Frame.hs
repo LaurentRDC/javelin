@@ -30,7 +30,8 @@ module Data.Frame (
     -- * Operations on rows
     null, length, mapRows, mapRowsM, filterRows, foldlRows,
     -- ** Sorting rows in frames
-    sortRowsBy, sortRowsByUnique, sortRowsByKey, sortRowsByKeyUnique,
+    sortRowsBy, sortRowsByUnique, 
+    sortRowsByKey, sortRowsByKeyUnique, sortRowsByKeyUniqueOn,
 
     -- * Displaying frames
     display,
@@ -47,7 +48,7 @@ module Data.Frame (
     -- ** Zipping rows in order
     zipRowsWith,
     -- ** Merging using an index
-    mergeWithStrategy, matchedStrategy,
+    mergeWithStrategy, mergeWithStrategyOn, matchedStrategy,
     -- *** Defining your own strategies
     These(..),
 ) where
@@ -405,7 +406,21 @@ sortRowsByKey df =
 sortRowsByKeyUnique :: (Indexable t)
                     => Frame t
                     -> Frame t
-sortRowsByKeyUnique df =
+sortRowsByKeyUnique = sortRowsByKeyUniqueOn id
+
+
+-- | Sort the rows of a frame by mapping the index defined by
+-- the `Indexable` typeclass, to another key type @k@. 
+-- Also prune rows with duplicate keys.
+--
+-- The underlying sorting algorithm is timsort (via 
+-- `Data.Vector.Algorithms.Tim.sortBy`), which minimizes the number 
+-- of comparisons used.
+sortRowsByKeyUniqueOn :: (Ord k, Indexable t)
+                      => (Key t -> k)
+                      -> Frame t
+                      -> Frame t
+sortRowsByKeyUniqueOn mapkey df =
     -- I had trouble defining a method whereby one could either
     -- build a vector of keys from a `Frame` (without converting to rows), 
     -- or extract a key from a single `Row`.
@@ -413,14 +428,14 @@ sortRowsByKeyUnique df =
     -- Instead, we extract the index vector, sort it while keeping track
     -- of the initial integer positions, and finally backpermuting.
     let ix = Data.Vector.map swap 
-           $ Data.Vector.indexed (index df)
+           $ Data.Vector.indexed (Data.Vector.map mapkey $ index df)
         -- TODO: is it possible to run `Data.Vector.map snd` 
         -- within the `ST` context?
         sortedIx = Data.Vector.map snd $ runST $ do
             mutVec <- Data.Vector.thaw ix
             TimSort.sortUniqBy (compare `on` fst) mutVec >>= Data.Vector.freeze <&> Data.Vector.force
      in fromRows $ Data.Vector.backpermute (toRows df) sortedIx --  sortRowsBy (compare `on` index)
-{-# INLINABLE sortRowsByKeyUnique #-}
+{-# INLINABLE sortRowsByKeyUniqueOn #-}
 
 
 -- | Look up a row in a data frame by key. The specific key
@@ -469,7 +484,9 @@ iat :: Frame t
 fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx
 
 
--- | Merge two dataframes using a merging strategy.
+-- | Merge two dataframes using a merging strategy, where the indexes
+-- of the dataframes have the same type. See `mergeWithStrategyOn`
+-- to merge dataframes with different indexes.
 --
 -- A merging strategy handles the possibility of rows missing in the 
 -- left and/or right dataframes. Merge strategies can be user-defined,
@@ -559,11 +576,25 @@ mergeWithStrategy :: ( Indexable t1, Indexable t2, Frameable t3
                   -> Frame t1
                   -> Frame t2
                   -> Frame t3
-mergeWithStrategy strat df1Unsorted df2Unsorted   
-    = let df1 = sortRowsByKeyUnique df1Unsorted
-          df2 = sortRowsByKeyUnique df2Unsorted
-          ix1 = index df1
-          ix2 = index df2
+mergeWithStrategy = mergeWithStrategyOn id id
+
+
+-- | Merge two dataframes using a merging strategy, where the indexes
+-- of the dataframes are mapped to some key of type @k@.
+--
+-- See `mergeWithStrategy` for further notes and examples.
+mergeWithStrategyOn :: ( Ord k, Indexable t1, Indexable t2, Frameable t3)
+                    => (Key t1 -> k) -- ^ How to map the index of the left dataframe onto a key of type @k@
+                    -> (Key t2 -> k) -- ^ How to map the index of the right dataframe onto a key of type @k@
+                    -> MergeStrategy k t1 t2 t3
+                    -> Frame t1
+                    -> Frame t2
+                    -> Frame t3
+mergeWithStrategyOn mapk1 mapk2 strat df1Unsorted df2Unsorted   
+    = let df1 = sortRowsByKeyUniqueOn mapk1 df1Unsorted
+          df2 = sortRowsByKeyUniqueOn mapk2 df2Unsorted
+          ix1 = Data.Vector.map mapk1 $ index df1
+          ix2 = Data.Vector.map mapk2 $ index df2
           -- Since df1 and df2 are sorted by key and their keys are unique, we 
           -- can safely use `Set.fromDistinctAscList`.
           fullIx = (Set.fromDistinctAscList $ Data.Vector.toList ix1) 

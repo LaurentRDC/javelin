@@ -179,6 +179,7 @@ testMergeWithStrategy
     = testGroup "mergeWithStrategy"
     [ testMergeWithStrategyUnion
     , testMergeWithStrategySelf
+    , testMergeWithStrategyOn
     ]
     where
         testMergeWithStrategyUnion :: TestTree
@@ -225,7 +226,30 @@ testMergeWithStrategy
 
                 Frame.mergeWithStrategy (Frame.matchedStrategy (\_ u _ -> u)) users users === Frame.sortRowsByKeyUnique users
                 
+        testMergeWithStrategyOn :: TestTree
+        testMergeWithStrategyOn = testCase "mergeWithStrategyOn" $ do
+            let users1 = fromRows [ MkUser "A" 39
+                                  , MkUser "BB" 98
+                                  , MkUser "CCC" 51
+                                  , MkUser "DDDD" 37
+                                  ]
+                users2 = fromRows [ MkUser "X" 1
+                                  , MkUser "XXX" 3
+                                  , MkUser "XX" 2
+                                  , MkUser "XXXXXXXXX" 37
+                                  ]
 
+                expectation = fromRows [ MkUser "1" (39 + 1)
+                                       , MkUser "2" (98 + 2)
+                                       , MkUser "3" (51 + 3)
+                                       ]
+            -- We join the frames on the LENGTH of the names.
+            assertEqual mempty expectation 
+                $ Frame.mergeWithStrategyOn length
+                                            length
+                                            (Frame.matchedStrategy $ \k (MkUser _ age1) (MkUser _ age2) -> MkUser (show k) (age1 + age2))
+                                            users1
+                                            users2 
 
 testDisplay :: TestTree
 testDisplay = 
