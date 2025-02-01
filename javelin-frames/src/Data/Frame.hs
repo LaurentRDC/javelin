@@ -45,7 +45,7 @@ module Data.Frame (
 
     -- * Merging dataframes
     -- ** Zipping rows in order
-    zipFramesWith,
+    zipRowsWith,
     -- ** Merging using an index
     mergeWithStrategy, matchedStrategy,
     -- *** Defining your own strategies
@@ -171,12 +171,12 @@ filterRows f = fromRows
 -- Rows from each frame are matched in order; the resulting
 -- frame will only contain as many rows as the shortest of
 -- the two input frames
-zipFramesWith :: (Frameable t1, Frameable t2, Frameable t3)
+zipRowsWith :: (Frameable t1, Frameable t2, Frameable t3)
               => (Row t1 -> Row t2 -> Row t3)
               -> Frame t1
               -> Frame t2
               -> Frame t3
-zipFramesWith f xs ys 
+zipRowsWith f xs ys 
     = fromRows 
     $ Data.Vector.zipWith f 
                           (toRows xs)
@@ -477,7 +477,82 @@ fr `iat` (rowIx, col) = (col fr) Data.Vector.!? rowIx
 --
 -- Note that (@`Key` t1 ~ `Key` t2@) means that the type of keys in
 -- in both dataframes must be the same.
-mergeWithStrategy :: ( Indexable t1, Indexable t2, Indexable t3
+--
+-- In the example below, we have two dataframes: one containing
+-- store names, and one containing addresses. Both dataframes
+-- have use a unique identification number to relate their data
+-- to specific stores.
+--
+-- We want to build a summary of information about stores,
+-- containing each store's name and address.
+--
+-- >>> :{
+--      data Store f
+--          = MkStore { storeId   :: Column f Int
+--                    , storeName :: Column f String
+--                    }
+--          deriving (Generic, Frameable)
+--      instance Indexable Store where
+--          type Key Store = Int
+--          index = storeId
+-- :}
+--
+-- >>> :{
+--      data Address f
+--          = MkAddress { addressStoreId     :: Column f Int
+--                      , addressCivicNumber :: Column f Int
+--                      , addressStreetName  :: Column f String
+--                      }
+--          deriving (Generic, Frameable)
+--      instance Show (Row Address) where
+--          show (MkAddress _ civicNum streetName) = mconcat [show civicNum, " ", streetName]
+--      instance Indexable Address where
+--          type Key Address = Int
+--          index = addressStoreId
+-- :}
+--
+-- >>> :{
+--      data StoreSummary f
+--          = MkStoreSummary { storeSummaryName    :: Column f String
+--                           , storeSummaryAddress :: Column f (Row Address)
+--                           }
+--          deriving (Generic, Frameable)
+--      deriving instance Show (Row StoreSummary)
+-- :}
+--
+-- >>> :{
+--     stores = fromRows 
+--              [ MkStore 1 "Maxi"
+--              , MkStore 2 "Metro"
+--              , MkStore 3 "Sobeys"
+--              , MkStore 4 "Loblaws"
+--              ]
+-- :}
+--
+-- >>> :{
+--     addresses = fromRows
+--                 [ MkAddress 1 1982 "14th Avenue"
+--                 , MkAddress 2 10   "Main Street"
+--                 , MkAddress 3 914  "Prima Street"
+--                 -- Missing address for store id 4
+--                 , MkAddress 5 1600 "Cosgrove Lane"
+--                 ]
+-- :}
+--
+-- >>> :{
+--      putStrLn
+--          $ display
+--              $ mergeWithStrategy 
+--                    (matchedStrategy (\_ store address -> MkStoreSummary (storeName store) address))
+--                    stores
+--                    addresses
+-- :}
+-- storeSummaryName | storeSummaryAddress
+-- ---------------- | -------------------
+--           "Maxi" |    1982 14th Avenue
+--          "Metro" |      10 Main Street
+--         "Sobeys" |    914 Prima Street
+mergeWithStrategy :: ( Indexable t1, Indexable t2, Frameable t3
                      , Key t1 ~ Key t2
                      )
                   => MergeStrategy (Key t1) t1 t2 t3

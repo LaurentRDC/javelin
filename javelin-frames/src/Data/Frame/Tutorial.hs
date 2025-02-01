@@ -21,10 +21,14 @@ module Data.Frame.Tutorial (
     -- * Advanced indexing
     -- $advindexing
 
+    -- * Merging dataframes
+    -- $merging
+
 ) where
 
 import Data.Frame as Frame
 import Data.Functor.Identity (Identity)
+import Data.These (These(..))
 import Data.Vector as Vector
 import GHC.Generics (Generic)
 
@@ -389,4 +393,259 @@ Finally, we can look up George Clooney's age using `at`:
 >>> actors `at` ( ("George", "Clooney"), actorAge )
 Just 63
 
+-}
+
+{- $merging
+
+How can we combine two dataframes together? Two mechanisms are provided.
+
+== Zipping
+
+The simplest way to combine dataframes is analogous to the `zipWith` operation
+for lists: two dataframes can be combined row-by-row, in order, using `zipRowsWith`.
+
+Here is an example:
+
+>>> data Race = Cat | Dog deriving Show
+>>> :{
+    data Pet f
+        = MkPet { petName :: Column f String
+                , petAge  :: Column f Int
+                }
+        deriving (Generic, Frameable)
+    pets = fromRows
+         [ MkPet "Milo"    10
+         , MkPet "Litchi"  4
+         , MkPet "Piccolo" 15
+         , MkPet "Cloud"   3
+         ]
+:}
+
+>>> :{
+    data PetInfo f
+        = MkPetInfo { petInfoName  :: Column f String
+                    , petInfoRace  :: Column f Race
+                    }
+        deriving (Generic, Frameable)
+    petInfos = fromRows
+             [ MkPetInfo "Milo"    Cat
+             , MkPetInfo "Cloud"   Cat
+             , MkPetInfo "Piccolo" Dog
+             , MkPetInfo "Litchi"  Dog
+             ]
+:}
+
+>>> :{
+    data PetSummary f
+        = MkPetSummary { petSummaryName :: Column f String
+                       , petSummaryAge  :: Column f Int
+                       , petSummaryRace :: Column f Race
+                       }
+        deriving (Generic, Frameable)
+    deriving instance Show (Row PetSummary)
+:}
+
+>>> :{
+    putStrLn
+        $ display
+            $ zipRowsWith 
+                (\(MkPet name age) (MkPetInfo _ race) -> MkPetSummary name age race)
+                pets
+                petInfos
+:}
+petSummaryName | petSummaryAge | petSummaryRace
+-------------- | ------------- | --------------
+        "Milo" |            10 |            Cat
+      "Litchi" |             4 |            Cat
+     "Piccolo" |            15 |            Dog
+       "Cloud" |             3 |            Dog
+
+
+Hmm this doesn't look right, if you manually inspect the two source dataframes.
+This is because rows are combined in order. You may want to sort rows using 
+`sortRowsBy` or `sortRowsByUnique`, before applying `zipRowsWith`:
+
+>>> import Data.Function (on)
+>>> :{
+    putStrLn
+        $ display
+            $ zipRowsWith 
+                (\(MkPet name age) (MkPetInfo _ race) -> MkPetSummary name age race)
+                (sortRowsBy (compare `on` petName) pets)
+                (sortRowsBy (compare `on` petInfoName) petInfos)
+:}
+petSummaryName | petSummaryAge | petSummaryRace
+-------------- | ------------- | --------------
+       "Cloud" |             3 |            Cat
+      "Litchi" |             4 |            Dog
+        "Milo" |            10 |            Cat
+     "Piccolo" |            15 |            Dog
+
+There is a more robust way to merge dataframes, if each dataframe has a natural
+key (in the case above, pet names). See below.
+
+== Merging by key
+
+If you want to merge dataframes whose rows have a natural key (i.e. have an instance of `Indexable`), 
+then you should take a look at `mergeWithStrategy`. 
+In this function, for each key present in __either__ dataframe, 
+a _merging strategy_ is applied. This strategy encodes how the merge should proceed in three cases:
+
+* The key is present in the left dataframe, but not the right;
+* The key is present in the right dataframe, but not the left;
+* The key is present in both dataframes.
+
+Let's see how to make use of this functionality by combining the information
+about containers being shipped. Unfortunately, the data is spotty, so
+we will need to make decisions about missing data.
+
+>>> :{
+    data ContainerOrigin f
+        = MkContainerOrigin { containerOriginId      :: Column f Int
+                            , containerOriginCountry :: Column f String
+                            }
+        deriving (Generic, Frameable)
+    instance Indexable ContainerOrigin where
+        type Key ContainerOrigin = Int
+        index = containerOriginId
+    containerOrigins = fromRows
+                     [ MkContainerOrigin 1 "Canada"
+                     , MkContainerOrigin 2 "Mexico"
+                     -- missing container origin for container #3
+                     , MkContainerOrigin 4 "Poland"
+                     , MkContainerOrigin 5 "N/A" -- bad data
+                     ]
+:}
+
+>>> :{
+    data ContainerDest f -- Container destination
+        = MkContainerDest { containerDestId      :: Column f Int
+                          , containerDestCountry :: Column f String
+                          }
+        deriving (Generic, Frameable)
+    instance Indexable ContainerDest where
+        type Key ContainerDest = Int
+        index = containerDestId
+    containerDests = fromRows
+                   [ MkContainerDest 1 "Japan"
+                   , MkContainerDest 2 "Canada"
+                   , MkContainerDest 3 "USA"
+                   -- missing container destination for #4 
+                   , MkContainerDest 5 "France"
+                   ]
+:}
+
+We will first start by merging the dataframes only when we have complete data 
+(i.e. an inner join). We first define the shape of the resulting dataframe:
+
+>>> :{
+    data ContainerJourney f
+        = MkContainerJourney { containerJourneyId   :: Column f Int
+                             , containerJourneyOrig :: Column f String
+                             , containerJourneyDest :: Column f String
+                             }
+        deriving (Generic, Frameable)
+    deriving instance Show (Row ContainerJourney)
+:}
+
+and define our merging strategy. The three row-wise merge cases are handled by the constructor
+fro "Data.These", namely the constructors:
+
+* `This`: The key is present in the left dataframe, but not the right;
+* `That`: The key is present in the right dataframe, but not the left;
+* `These`: The key is present in both dataframes (not to be confused with `These` the type).
+
+In the simplest case, we only care about keys present in both dataframe (`These`)
+>>> :{
+    completeDataStrategy :: Int -> These (Row ContainerOrigin) (Row ContainerDest) -> Maybe (Row ContainerJourney)
+    completeDataStrategy containerId (These (MkContainerOrigin _ origin) (MkContainerDest _ dest))
+        = Just $ MkContainerJourney containerId origin dest
+    completeDataStrategy _ _ = Nothing -- not enough data
+:}
+
+Sidenote: @completeDataStrategy@ is equivalent to `matchedStrategy`. We re-defined it for illustrative purposes.
+>>> :{
+    putStrLn
+        $ display
+            $ mergeWithStrategy 
+                completeDataStrategy
+                containerOrigins
+                containerDests
+:}  
+containerJourneyId | containerJourneyOrig | containerJourneyDest
+------------------ | -------------------- | --------------------
+                 1 |             "Canada" |              "Japan"
+                 2 |             "Mexico" |             "Canada"
+                 5 |                "N/A" |             "France"
+
+As expected, we do not have enough information to reconstruct the journey for container 3 (no known origin)
+and container 4 (no known destination).
+However, container 5's origin isn't valid data. We can further tweak the merge strategy to take this into account.
+
+We crudely define what is a valid country name:
+
+>>> validCountry name = not (name == "N/A")
+
+and we can now define a new merging strategy. Returning a `Nothing` result from a merging strategy
+effectively cancels the merge:
+
+>>> :{
+    completeDataStrategy' :: Int -> These (Row ContainerOrigin) (Row ContainerDest) -> Maybe (Row ContainerJourney)
+    completeDataStrategy' containerId (These (MkContainerOrigin _ origin) (MkContainerDest _ dest))
+        | validCountry origin && validCountry dest = Just $ MkContainerJourney containerId origin dest
+        | otherwise                                = Nothing 
+    completeDataStrategy' _ _ = Nothing -- not enough data
+:}
+
+>>> :{
+    putStrLn
+        $ display
+            $ mergeWithStrategy 
+                completeDataStrategy'
+                containerOrigins
+                containerDests
+:}  
+containerJourneyId | containerJourneyOrig | containerJourneyDest
+------------------ | -------------------- | --------------------
+                 1 |             "Canada" |              "Japan"
+                 2 |             "Mexico" |             "Canada"
+
+What if we can tolerate some missing data? Here, we only care where the container is going, but not
+necessarily its origin. Let's redefine our resulting dataframe to take this into account:
+
+>>> :{
+    data PartialContainerJourney f
+        = MkPartialContainerJourney { partialContainerJourneyId   :: Column f Int
+                                    , partialContainerJourneyOrig :: Column f (Maybe String)
+                                    , partialContainerJourneyDest :: Column f String
+                                    }
+        deriving (Generic, Frameable)
+    deriving instance Show (Row PartialContainerJourney)
+:}
+
+>>> :{
+    maybeOriginStrategy :: Int -> These (Row ContainerOrigin) (Row ContainerDest) -> Maybe (Row PartialContainerJourney)
+    maybeOriginStrategy containerId (These (MkContainerOrigin _ origin) (MkContainerDest _ dest))
+        | validCountry origin && validCountry dest = Just $ MkPartialContainerJourney containerId (Just origin) dest
+        | validCountry dest                        = Just $ MkPartialContainerJourney containerId Nothing       dest
+        | otherwise                                = Nothing
+    maybeOriginStrategy containerId (That (MkContainerDest _ dest)) 
+                                                   = Just $ MkPartialContainerJourney containerId Nothing       dest
+    maybeOriginStrategy _           (This _)       = Nothing -- we require a destination
+:}
+
+>>> :{
+    putStrLn
+        $ display
+            $ mergeWithStrategy 
+                maybeOriginStrategy
+                containerOrigins
+                containerDests
+:}
+partialContainerJourneyId | partialContainerJourneyOrig | partialContainerJourneyDest
+------------------------- | --------------------------- | ---------------------------
+                        1 |               Just "Canada" |                     "Japan"
+                        2 |               Just "Mexico" |                    "Canada"
+                        3 |                     Nothing |                       "USA"
+                        5 |                     Nothing |                    "France"
 -}
