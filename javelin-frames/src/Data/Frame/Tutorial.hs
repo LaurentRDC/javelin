@@ -21,15 +21,21 @@ module Data.Frame.Tutorial (
     -- * Advanced indexing
     -- $advindexing
 
-    -- * Merging dataframes
+    -- * Merging dataframes    
+    -- ** Zipping
+    -- $zipping
+    
+    -- ** Merging by key
     -- $merging
 
 ) where
 
-import Data.Frame as Frame
+import Data.Frame as Frame hiding (These(..))
 import Data.Functor.Identity (Identity)
+import qualified Data.List
 import Data.These (These(..))
-import Data.Vector as Vector
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 import GHC.Generics (Generic)
 
 {- $introduction
@@ -75,10 +81,10 @@ We use `fromRows` to pack individual students into a dataframe:
 
 >>> :{
     students = fromRows 
-             $ Vector.fromList [ MkStudent "Albert" 12 'C'
-                               , MkStudent "Beatrice" 13 'B'
-                               , MkStudent "Clara" 12 'A'
-                               ]
+             [ MkStudent "Albert" 12 'C'
+             , MkStudent "Beatrice" 13 'B'
+             , MkStudent "Clara" 12 'A'
+             ]
     :}
 
 We can render the dataframe @students@ into a nice string using `display` 
@@ -266,7 +272,7 @@ Note that deriving an instance of `Frameable` requires that our type @Store@ hav
 a `Generic` instance. This allows @javelin-frames@ to inspect our type @Store@
 and write an implementation of `Frameable` automatically.
 
-== Limitations
+** Limitations
 
 At this time, `Frameable` can only be derived for higher-kinded record types that
 do NOT nest. For example, consider the following hierarchy:
@@ -307,7 +313,7 @@ This key is similar to primary keys in databases.
 We can derive an instance of `Indexable` to allow us to query data from a 
 dataframe not by the integer index of the rows, but by some key instead.
 
-== Simple keys
+** Simple keys
 
 The simplest example is that of keys derived from a single column. 
 
@@ -337,8 +343,7 @@ therefore use it as a key. All we need to do is derive an instance of `Indexable
 As an example, let's build a dataframe of stores:
 
 >>> :{
-    stores = fromRows
-           $ Vector.fromList 
+    stores = fromRows 
            [ MkStore "Store A" (Addr "8712 1st Avenue") 787123745
            , MkStore "Store B" (Addr "90 2st Street")   188712313
            , MkStore "Store C" (Addr "109 3rd Street")  910823870
@@ -350,7 +355,7 @@ Finally, we can look up @Store A@ by its unique ID using `Frame.lookup`:
 >>> Frame.lookup 787123745 stores
 Just (MkStore {storeName = "Store A", storeAddress = Addr "8712 1st Avenue", storeId = 787123745})
 
-== Compound keys
+** Compound keys
 
 Sometimes, it is preferable to identify rows through multiple columns. Again in
 in analogy with databases, the key is a _compound key_.
@@ -380,8 +385,7 @@ which creates a compound key:
 We define some data
 
 >>> :{
-    actors = fromRows
-           $ Vector.fromList 
+    actors = fromRows 
            [ MkActor "George" "Clooney" 63
            , MkActor "Brad"   "Pitt"    61
            , MkActor "George" "Takei"   87
@@ -395,13 +399,9 @@ Just 63
 
 -}
 
-{- $merging
+{- $zipping
 
-How can we combine two dataframes together? Two mechanisms are provided.
-
-== Zipping
-
-The simplest way to combine dataframes is analogous to the `zipWith` operation
+The simplest way to combine dataframes is analogous to the `Data.List.zipWith` operation
 for lists: two dataframes can be combined row-by-row, in order, using `zipRowsWith`.
 
 Here is an example:
@@ -483,13 +483,14 @@ petSummaryName | petSummaryAge | petSummaryRace
 
 There is a more robust way to merge dataframes, if each dataframe has a natural
 key (in the case above, pet names). See below.
+-}
 
-== Merging by key
+{- $merging
 
 If you want to merge dataframes whose rows have a natural key (i.e. have an instance of `Indexable`), 
 then you should take a look at `mergeWithStrategy`. 
 In this function, for each key present in __either__ dataframe, 
-a _merging strategy_ is applied. This strategy encodes how the merge should proceed in three cases:
+a merging strategy is applied. This strategy encodes how the merge should proceed in three cases:
 
 * The key is present in the left dataframe, but not the right;
 * The key is present in the right dataframe, but not the left;

@@ -122,6 +122,7 @@ null :: Frameable t
 null = Data.Vector.null . toRows
 
 
+-- | Access the length of a dataframe, i.e. the number of rows.
 length :: Frameable t
        => Frame t
        -> Int
