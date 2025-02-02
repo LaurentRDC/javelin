@@ -1,15 +1,16 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-inline-rule-shadowing #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Frame
+-- Module      :  $header
 -- Copyright   :  (c) Laurent P. René de Cotret
 -- License     :  MIT
 -- Maintainer  :  laurent.decotret@outlook.com
 -- Portability :  portable
+-- Stability   :  experimental
 --
 -- This is an experimental interface to dataframes.
 --
@@ -49,7 +50,7 @@ module Data.Frame (
     zipRowsWith,
     -- ** Merging using an index
     mergeWithStrategy, mergeWithStrategyOn, matchedStrategy,
-    -- *** Defining your own strategies
+    -- *** Helpers to define your own merge strategies
     These(..),
 ) where
 
@@ -185,7 +186,7 @@ zipRowsWith f xs ys
                           (toRows ys)
 
 
--- | Left-associative fold of a structure but with strict application of the operator.
+-- | Left-associative fold of a structure, with strict application of the operator.
 foldlRows :: Frameable t
           => (b -> Row t -> b) -- ^ Reduction function that takes in individual rows
           -> b                 -- ^ Initial value for the accumulator
@@ -229,18 +230,14 @@ ilookup = iindex
 --                      , studentMathGrade :: Column f Char
 --                      }
 --          deriving (Generic, Frameable)
--- :}
---
--- >>> :{
---     students = fromRows 
---              $ Vector.fromList 
---              [ MkStudent "Erika" 13 'D'
---              , MkStudent "Beatrice" 13 'B'
---              , MkStudent "David" 13 'A'
---              , MkStudent "Albert" 12 'C'
---              , MkStudent "Frank" 11 'C'
---              , MkStudent "Clara" 12 'A'
---              ]
+--      students = fromRows 
+--               [ MkStudent "Erika" 13 'D'
+--               , MkStudent "Beatrice" 13 'B'
+--               , MkStudent "David" 13 'A'
+--               , MkStudent "Albert" 12 'C'
+--               , MkStudent "Frank" 11 'C'
+--               , MkStudent "Clara" 12 'A'
+--               ]
 -- :}
 --
 -- >>> import Data.Function (on)
@@ -287,18 +284,14 @@ sortRowsBy cmp df
 --                      , studentMathGrade :: Column f Char
 --                      }
 --          deriving (Generic, Frameable)
--- :}
---
--- >>> :{
---     students = fromRows 
---              $ Vector.fromList 
---              [ MkStudent "Erika" 13 'D'
---              , MkStudent "Beatrice" 13 'B'
---              , MkStudent "David" 13 'A'
---              , MkStudent "Albert" 12 'C'
---              , MkStudent "Frank" 11 'C'
---              , MkStudent "Clara" 12 'A'
---              ]
+--      students = fromRows 
+--               [ MkStudent "Erika" 13 'D'
+--               , MkStudent "Beatrice" 13 'B'
+--               , MkStudent "David" 13 'A'
+--               , MkStudent "Albert" 12 'C'
+--               , MkStudent "Frank" 11 'C'
+--               , MkStudent "Clara" 12 'A'
+--               ]
 -- :}
 --
 -- >>> import Data.Function (on)
@@ -347,18 +340,14 @@ sortRowsByUnique cmp df
 --      instance Indexable Student where
 --          type Key Student = String
 --          index = studentName
--- :}
---
--- >>> :{
---     students = fromRows 
---              $ Vector.fromList 
---              [ MkStudent "Erika" 13 'D'
---              , MkStudent "Beatrice" 13 'B'
---              , MkStudent "David" 13 'A'
---              , MkStudent "Albert" 12 'C'
---              , MkStudent "Frank" 11 'C'
---              , MkStudent "Clara" 12 'A'
---              ]
+--      students = fromRows 
+--               [ MkStudent "Erika" 13 'D'
+--               , MkStudent "Beatrice" 13 'B'
+--               , MkStudent "David" 13 'A'
+--               , MkStudent "Albert" 12 'C'
+--               , MkStudent "Frank" 11 'C'
+--               , MkStudent "Clara" 12 'A'
+--               ]
 -- :}
 --
 -- >>> import Data.Function (on)
@@ -381,7 +370,7 @@ sortRowsByKey :: (Indexable t)
 sortRowsByKey df =
     -- I had trouble defining a method whereby one could either
     -- build a vector of keys from a `Frame` (without converting to rows), 
-    -- or extract a key from a single `Row`.
+    -- or extract a key from a single `Row`. See "NOTE: Indexable key and index" below
     --
     -- Instead, we extract the index vector, sort it while keeping track
     -- of the initial integer positions, and finally backpermuting.
@@ -643,14 +632,14 @@ mergeWithStrategyOn mapk1 mapk2 strat df1Unsorted df2Unsorted
                     GT -> error "impossible"
 
 
--- | A `MergeStrategy` is a function that describes how to
+-- | A merge strategy is a function that describes how to
 -- merge two rows together.
 --
 -- A merge strategy must handle three cases:
 -- 
--- * Only the left row;
--- * Only the right row;
--- * Both the left and right rows.
+-- * Only the left row (v`This`);
+-- * Only the right row (v`That`);
+-- * Both the left and right rows (v`These`).
 --
 -- The simplest merge strategy is `matchedStrategy`. 
 --
@@ -673,11 +662,20 @@ matchedStrategy _ _ _ = Nothing
 -- | Type family which allows for higher-kinded record types
 -- in two forms:
 --
--- * Single record type using `Identity`, where @`Column` Identity a ~ a@ ;
+-- * Single record type using t`Identity`, where @`Column` Identity a ~ a@ ;
 -- * Record type whose elements are some other functor (usually `Vector`).
 --
 -- Types are created like regular record types, but each element
--- must have the type @`Column` f a@ instead of @a@.
+-- must have the type @`Column` f a@ instead of @a@. For example:
+--
+-- >>> :{
+--      data Student f
+--          = MkStudent { studentName      :: Column f String
+--                      , studentAge       :: Column f Int
+--                      , studentMathGrade :: Column f Char
+--                      }
+--          deriving (Generic, Frameable)
+-- :}
 type family Column (f :: Type -> Type) x where
     Column Identity x = x
     Column f x        = f x
@@ -762,7 +760,17 @@ instance (GFields f, GFields g) => GFields (f :*: g) where
 -- as a dataframe.
 --
 -- Under no circumstances should you write instances for `Frameable`; instead,
--- simply derive an instance of `Generic` for @t@.
+-- simply derive an instance of `Generic` for @t@. For example:
+--
+-- >>> :set -XDeriveAnyClass
+-- >>> :{
+--     data Store f
+--          = MkStore { storeName    :: Column f String
+--                    , storeId      :: Column f Int
+--                    , storeAddress :: Column f String
+--                    }
+--          deriving (Generic, Frameable)
+-- :}
 class Frameable t where
 
     -- | Package single rows of type @t@ into a @`Frame` t@.
@@ -803,7 +811,7 @@ class Frameable t where
     iindex ix = fmap to . gilookup ix . from
 
     -- | Return the field names associated with a row or frame.
-    -- This is useful to display frames
+    -- This is useful to display frames via `display`.
     fields :: Row t -> [(String, String)]
     
     default fields :: ( Generic (Row t)
@@ -832,7 +840,8 @@ class ( Frameable t
     -- This is generally done by using record selectors.
     index :: Frame t -> Vector (Key t)
 
-{-
+{- NOTE: Indexable key and index
+
 Ideally, the `Indexable` class provides two methods:
 
 * key   :: Row t   -> Key t
@@ -875,7 +884,7 @@ class Indexable t where
     index :: t f -> Column f (Key t)
 @
 
-which would work for both f=`Identity` and f=`Vector`. This actually works
+which would work for both f=t`Identity` and f=`Vector`. This actually works
 for simple record selectors, e.g.:
 
 @
@@ -909,7 +918,7 @@ We can unify the signature of `index` in this case with:
                      -> Column f (a, b)
 @
 
-We can create a typeclass to do this (and implement instances for f=`Identity`
+We can create a typeclass to do this (and implement instances for f=t`Identity`
 and f=`Vector`):
 
 @
@@ -953,7 +962,7 @@ data DisplayOptions t
     }
 
 
--- | Default 'Series' display options.
+-- | Default @`Frame` t@ display options.
 defaultDisplayOptions :: Frameable t => DisplayOptions t
 defaultDisplayOptions 
     = DisplayOptions { maximumNumberOfRows  = 6
@@ -961,7 +970,7 @@ defaultDisplayOptions
                      }
 
 
--- | Display a @`Frame` t@ using default 'DisplayOptions'.
+-- | Display a @`Frame` t@ using default t'DisplayOptions'.
 --
 -- Although this is up to you, we strongly recommend that the `Show` 
 -- instance for @`Frame` t@ be:
@@ -994,7 +1003,7 @@ display :: Frameable t
 display = displayWith defaultDisplayOptions
 
 
--- | Display a @`Frame` t@ using custom 'DisplayOptions'.
+-- | Display a @`Frame` t@ using custom t'DisplayOptions'.
 --
 -- Example:
 -- 

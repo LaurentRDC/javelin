@@ -134,7 +134,9 @@ testSortRowsByKey :: TestTree
 testSortRowsByKey 
     = testGroup "sortRowsByKey" 
         [ testSortRowsByKeyUnit
+        , testSortRowsByKeyUniqueOnUnit
         , testSortRowsByKeyIdempotence
+        , testSortRowsByKeyUniqueOnIdempotence
         ]
     
     where
@@ -152,6 +154,21 @@ testSortRowsByKey
                                        ]
             
             assertEqual mempty expectation (sortRowsByKey frame)
+
+        testSortRowsByKeyUniqueOnUnit :: TestTree
+        testSortRowsByKeyUniqueOnUnit = testCase "sorting rows by mapping keys" $ do
+            let frame = fromRows [ MkUser "Clarice" 39
+                                 , MkUser "Bobby" 38
+                                 , MkUser "Davidson" 40
+                                 , MkUser "Abe" 37
+                                 ]
+                expectation = fromRows [ MkUser "Abe" 37
+                                       , MkUser "Bobby" 38
+                                       , MkUser "Clarice" 39
+                                       , MkUser "Davidson" 40
+                                       ]
+            
+            assertEqual mempty expectation (sortRowsByKeyUniqueOn (length) frame)
         
         testSortRowsByKeyIdempotence :: TestTree
         testSortRowsByKeyIdempotence = testProperty "Sorting rows by key is idempotent" $ property $ do
@@ -160,18 +177,28 @@ testSortRowsByKey
                                     (MkUser <$> Gen.string (Range.linear 0 100) Gen.alpha
                                     <*> Gen.integral (Range.linear 10 25)
                                     )
-            
-            -- This property only makes sense for a unique index
-            guard (unique (Vector.map userName users))
 
             let df = fromRows users
                 sorted = sortRowsByKey df
             
             sorted === (sortRowsByKey sorted)
 
-            where
-                unique :: Ord a => Vector.Vector a -> Bool
-                unique vs = length (Set.fromList (Vector.toList vs)) == Vector.length vs
+
+        testSortRowsByKeyUniqueOnIdempotence :: TestTree
+        testSortRowsByKeyUniqueOnIdempotence 
+            = testProperty "Sorting rows by mapping key is idempotent" 
+                $ property 
+                    $ do
+            users <- forAll $ Vector.fromList <$> 
+                                Gen.list (Range.linear 0 100) 
+                                    (MkUser <$> Gen.string (Range.linear 0 100) Gen.alpha
+                                    <*> Gen.integral (Range.linear 10 25)
+                                    )
+
+            let df = fromRows users
+                sorted = sortRowsByKeyUniqueOn length df
+            
+            sorted === (sortRowsByKeyUniqueOn length sorted)
 
 
 testMergeWithStrategy :: TestTree

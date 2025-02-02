@@ -30,10 +30,9 @@ module Data.Frame.Tutorial (
 
 ) where
 
-import Data.Frame as Frame hiding (These(..))
+import Data.Frame as Frame
 import Data.Functor.Identity (Identity)
-import qualified Data.List
-import Data.These (These(..))
+import qualified Data.List (zipWith)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import GHC.Generics (Generic)
@@ -550,13 +549,13 @@ We will first start by merging the dataframes only when we have complete data
 :}
 
 and define our merging strategy. The three row-wise merge cases are handled by the constructor
-fro "Data.These", namely the constructors:
+t`These`, namely the constructors:
 
-* `This`: The key is present in the left dataframe, but not the right;
-* `That`: The key is present in the right dataframe, but not the left;
-* `These`: The key is present in both dataframes (not to be confused with `These` the type).
+* v`This`: The key is present in the left dataframe, but not the right;
+* v`That`: The key is present in the right dataframe, but not the left;
+* v`These`: The key is present in both dataframes (not to be confused with the type constructor t`These`).
 
-In the simplest case, we only care about keys present in both dataframe (`These`)
+In the simplest case, we only care about keys present in both dataframe (v`These`)
 >>> :{
     completeDataStrategy :: Int -> These (Row ContainerOrigin) (Row ContainerDest) -> Maybe (Row ContainerJourney)
     completeDataStrategy containerId (These (MkContainerOrigin _ origin) (MkContainerDest _ dest))

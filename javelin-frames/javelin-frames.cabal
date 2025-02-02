@@ -20,7 +20,7 @@ description:
         
         This package implements data frames, a data structure
         where record types defined by the user can be transformed
-        into records of columns.
+        into records of columns. See ["Data.Frame.Tutorial"] for a user guide.
 
 source-repository head
   type:     git
