@@ -58,7 +58,13 @@ and we need extensions to derive instances automatically:
 >>> :set -XDeriveGeneric
 >>> :set -XDeriveAnyClass
 
-We define
+We want to process simple data having to do with students (name, age)
+and their grade in math class.
+
+== Defining dataframes
+
+All dataframes must be defined as record types with a type parameter @f@, 
+where each field involves the `Column` type family, like so:
 
 >>> :{
     data Student f
@@ -67,16 +73,31 @@ We define
                      , studentMathGrade :: Column f Char
                      }
          deriving (Generic)
-    deriving instance Frameable Student
-    -- We need to derive other instances (Show, Eq, ...)
-    -- separately
-    deriving instance Show (Row Student)
 :}
 
-It is key to derive the instance of @`Frameable` Student@, which unlocks
-almost all of the functionality of this package.
+To use the functionality of this package, we must derive an instance
+of `Frameable` for our type @Student@:
 
-We use `fromRows` to pack individual students into a dataframe:
+>>> deriving instance Frameable Student
+
+Note that the derivation is automatically done for you, through the `Generic` 
+instance for @Student@.
+
+One caveat of this approach is that instances for other typeclasses (e.g. `Show`, `Eq`)
+must be derived separately. Here's the derivation for rendering a single student
+to a string (we'll explain what `Row` shortly):
+
+>>> deriving instance Show (Row Student)
+
+== Constructing dataframes
+
+The type parameter @f@ allows us to represent the data in two separate contexts:
+a single student or a dataframe of students. For a single student, @f@ becomes `Identity`,
+while for a dataframe of students, @f@ becomes `Vector`. To simplify reading the code,
+two type synonyms are provided: @`Row` Student@ for a single student, and @`Frame` Student@
+for a dataframe.
+
+Let's now build a dataframe. We use `fromRows` to pack individual students into a dataframe:
 
 >>> :{
     students = fromRows 
@@ -85,6 +106,9 @@ We use `fromRows` to pack individual students into a dataframe:
              , MkStudent "Clara" 12 'A'
              ]
     :}
+
+Individual students like @MkStudent "Albert" 23 'C'@ are of type @`Row` Student@, but
+the dataframe @students@ has type @`Frame` Student@.
 
 We can render the dataframe @students@ into a nice string using `display` 
 (and print that string using using `putStrLn`):
@@ -218,7 +242,7 @@ and more advanced functionality.
 {- $construction 
 
 To start using the machinery of this package, one must define the appropriate type.
-Types that can be turned into dataframes are non-empty, higher-kinded record types.
+Types that can be turned into dataframes are non-empty, higher-kinded, record types.
 In particular, every field must make use of the `Column` type family.
 
 Let's look at an example:
@@ -251,6 +275,7 @@ must be defined in separate expressions:
 
 >>> deriving instance Show (Row Store)
 >>> deriving instance Eq (Row Store)
+>>> deriving instance Eq (Frame Store)
 
 Let's consider a single @Store@:
 
