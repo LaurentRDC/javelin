@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin
-version:            0.1.4.1
+version:            0.1.4.2
 synopsis:           Labeled one-dimensional arrays
 license:            MIT
 license-file:       LICENSE
@@ -16,20 +16,20 @@ tested-with:        GHC ==9.12.1
                      || ==9.6.4
                      || ==9.4.8
 description:
-        
+
         This package implements 'Series', labeled one-dimensional arrays
         combining properties from maps and arrays.
-        
+
         To get started, the important modules are:
-        
+
         ["Data.Series"] Boxed series of arbitrary types.
-        
+
         ["Data.Series.Unboxed"] Series of unboxed data types for better performance, at the cost of flexibility.
-        
+
         ["Data.Series.Generic"] Generic interface to manipulate any type of 'Series'.
-        
+
         ["Data.Series.Index"] Index containing series keys.
-        
+
         To get started, please take a look at the tutorial ("Data.Series.Tutorial").
 
 source-repository head
@@ -64,7 +64,7 @@ library
                       Data.Series.Generic.Zip
                       Data.Series.Index.Definition
     build-depends:    base                >=4.15.0.0 && <4.22,
-                      containers          >=0.6      && <0.8,
+                      containers          >=0.6      && <0.9,
                       deepseq             >=1.4      && <1.7,
                       foldl               ^>=1.4,
                       indexed-traversable ^>=0.1,
@@ -109,10 +109,10 @@ benchmark comparison-containers
                       foldl,
                       mono-traversable,
                       javelin,
-                      vector, 
-                      criterion, 
-                      deepseq, 
-                      random, 
+                      vector,
+                      criterion,
+                      deepseq,
+                      random,
                       directory
 
 
@@ -137,5 +137,5 @@ executable bench-report
     import:           common
     main-is:          bench-report.hs
     hs-source-dirs:   scripts
-    build-depends:    base >=4.15.0.0 && <4.22, 
+    build-depends:    base >=4.15.0.0 && <4.22,
                       csv ^>=0.1

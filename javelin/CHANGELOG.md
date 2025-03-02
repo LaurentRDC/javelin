@@ -1,5 +1,9 @@
 # Revision history for javelin
 
+## Release 0.1.4.2
+
+* Explicit support for `containers-0.8`.
+
 ## Release 0.1.4.1
 
 * Explicit support for GHC 9.12

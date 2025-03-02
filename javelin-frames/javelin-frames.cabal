@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin-frames
-version:            0.1.0.0
+version:            0.1.0.1
 synopsis:           Type-safe data frames based on higher-kinded types.
 -- description:
 license:            MIT
@@ -17,7 +17,7 @@ tested-with:        GHC ==9.12.1
                      || ==9.4.8
 
 description:
-        
+
         This package implements data frames, a data structure
         where record types defined by the user can be transformed
         into records of columns. See ["Data.Frame.Tutorial"] for a user guide.
@@ -42,7 +42,7 @@ library
     exposed-modules:  Data.Frame
                       Data.Frame.Tutorial
     build-depends:    base >=4.15.0.0 && <4.22,
-                      containers >=0.6 && <0.8,
+                      containers >=0.6 && <0.9,
                       these ^>=1.2,
                       vector >=0.12.3.0 && <0.14,
                       vector-algorithms ^>=0.9

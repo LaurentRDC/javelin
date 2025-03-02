@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin-io
-version:            0.1.1.2
+version:            0.1.1.3
 synopsis:           IO operations for the `javelin` package
 license:            MIT
 license-file:       LICENSE
@@ -16,18 +16,18 @@ tested-with:        GHC ==9.12.1
                      || ==9.6.4
                      || ==9.4.8
 description:
-        
+
         This package implements serialization/deserialization of 'Series', labeled one-dimensional arrays
         combining properties from maps and arrays.
-        
+
         The important modules are:
-        
+
         ["Data.Series.IO"] Serialization/deserialization of series of arbitrary types.
-        
+
         ["Data.Series.Unboxed.IO"] Serialization/deserialization of unboxed series for better performance, at the cost of flexibility.
-        
+
         ["Data.Series.Generic.IO"] Serialization/deserialization of generic series to manipulate any type of 'Series'.
-        
+
         If you don't know where to start, please take a look at the documentation in "Data.Series.IO".
 
 source-repository head
@@ -54,7 +54,7 @@ library
     build-depends:    base >=4.15.0.0 && <4.22,
                       bytestring >=0.11 && <0.13,
                       cassava ^>=0.5,
-                      containers >=0.6 && <0.8,
+                      containers >=0.6 && <0.9,
                       unordered-containers ^>=0.2,
                       javelin ^>=0.1,
                       vector >=0.12.3.0 && <0.14,
