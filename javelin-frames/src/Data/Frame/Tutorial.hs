@@ -14,17 +14,17 @@ module Data.Frame.Tutorial (
 
     -- * Quick start
     -- $quickstart
-    
+
     -- * Defining types
     -- $construction
 
     -- * Advanced indexing
     -- $advindexing
 
-    -- * Merging dataframes    
+    -- * Merging dataframes
     -- ** Zipping
     -- $zipping
-    
+
     -- ** Merging by key
     -- $merging
 
@@ -41,8 +41,8 @@ import GHC.Generics (Generic)
 
 This is a short user guide on how to get started using @javelin-frames@.
 
-The central data structure at the heart of this package is the dataframe. 
-A dataframe, represented by @`Frame` t@ for some record-type @t@, is a 
+The central data structure at the heart of this package is the dataframe.
+A dataframe, represented by @`Frame` t@ for some record-type @t@, is a
 record whose values are arrays representing columns.
 
 -}
@@ -63,7 +63,7 @@ and their grade in math class.
 
 == Defining dataframes
 
-All dataframes must be defined as record types with a type parameter @f@, 
+All dataframes must be defined as record types with a type parameter @f@,
 where each field involves the `Column` type family, like so:
 
 >>> :{
@@ -80,7 +80,7 @@ of `Frameable` for our type @Student@:
 
 >>> deriving instance Frameable Student
 
-Note that the derivation is automatically done for you, through the `Generic` 
+Note that the derivation is automatically done for you, through the `Generic`
 instance for @Student@.
 
 One caveat of this approach is that instances for other typeclasses (e.g. `Show`, `Eq`)
@@ -100,7 +100,7 @@ for a dataframe.
 Let's now build a dataframe. We use `fromRows` to pack individual students into a dataframe:
 
 >>> :{
-    students = fromRows 
+    students = fromRows
              [ MkStudent "Albert" 12 'C'
              , MkStudent "Beatrice" 13 'B'
              , MkStudent "Clara" 12 'A'
@@ -110,13 +110,13 @@ Let's now build a dataframe. We use `fromRows` to pack individual students into 
 Individual students like @MkStudent "Albert" 23 'C'@ are of type @`Row` Student@, but
 the dataframe @students@ has type @`Frame` Student@.
 
-We can render the dataframe @students@ into a nice string using `display` 
+We can render the dataframe @students@ into a nice string using `display`
 (and print that string using using `putStrLn`):
 
 >>> putStrLn (display students)
 studentName | studentAge | studentMathGrade
 ----------- | ---------- | ----------------
-   "Albert" |         12 |              'C' 
+   "Albert" |         12 |              'C'
  "Beatrice" |         13 |              'B'
     "Clara" |         12 |              'A'
 
@@ -145,25 +145,25 @@ of rows are provided.
 There's `mapRows` to map each row to a new structure:
 
 >>> :{
-    putStrLn 
-        $ display 
-            $ mapRows 
-                (\(MkStudent name age grade) -> MkStudent name (2*age) grade) 
+    putStrLn
+        $ display
+            $ mapRows
+                (\(MkStudent name age grade) -> MkStudent name (2*age) grade)
                 students
 :}
 studentName | studentAge | studentMathGrade
 ----------- | ---------- | ----------------
-   "Albert" |         24 |              'C' 
+   "Albert" |         24 |              'C'
  "Beatrice" |         26 |              'B'
     "Clara" |         24 |              'A'
 
 There's `filterRows` to keep specific rows:
 
 >>> :{
-    putStrLn 
-        $ display 
-            $ filterRows 
-                (\(MkStudent _ _ grade) -> grade < 'C') 
+    putStrLn
+        $ display
+            $ filterRows
+                (\(MkStudent _ _ grade) -> grade < 'C')
                 students
 :}
 studentName | studentAge | studentMathGrade
@@ -175,9 +175,9 @@ Finally, there's `foldlRows` to summarize a dataframe by using whole rows:
 
 >>> import Data.Char (ord)
 >>> :{
-    foldlRows 
-        (\acc (MkStudent _ age grade) -> acc + age + ord grade) 
-        (0 :: Int) 
+    foldlRows
+        (\acc (MkStudent _ age grade) -> acc + age + ord grade)
+        (0 :: Int)
         students
 :}
 235
@@ -190,7 +190,7 @@ them in two flavours: querying by integer index, and querying by key.
 === Querying by integer index
 
 Querying by integer index is supported for all dataframes. Use
-the `ilookup` function to retrive a row:
+the `ilookup` function to retrieve a row:
 
 >>> ilookup 0 students
 Just (MkStudent {studentName = "Albert", studentAge = 12, studentMathGrade = 'C'})
@@ -222,8 +222,8 @@ where we want to be able to efficiently search by student name:
         index = studentName
 :}
 
-Now, we can use the functions `Frame.lookup` and `at` (similar to `ilookup` 
-and `iat`, respectively) which take key (in our case, student names) 
+Now, we can use the functions `Frame.lookup` and `at` (similar to `ilookup`
+and `iat`, respectively) which take key (in our case, student names)
 instead of integer indices.
 
 >>> Frame.lookup "Beatrice" students
@@ -239,7 +239,7 @@ And there you have it! This was a quick tour. Read on to learn more details
 and more advanced functionality.
 -}
 
-{- $construction 
+{- $construction
 
 To start using the machinery of this package, one must define the appropriate type.
 Types that can be turned into dataframes are non-empty, higher-kinded, record types.
@@ -259,14 +259,14 @@ Let's look at an example:
         deriving (Generic)
 :}
 
-Here, we define a higher-kinded record type @Store@ with four fields. 
+Here, we define a higher-kinded record type @Store@ with four fields.
 The type parameter @f@ allows the various functions in this package
 to switch between a column-oriented format and single-rows.
 
 In practice the type @f@ can only be `Identity` (for a single row),
 or `Vector` (for a dataframe)
 
-For ergonomics, the type synonym @`Row` t@ is provided to represent a 
+For ergonomics, the type synonym @`Row` t@ is provided to represent a
 single row. The type synonym @`Frame` t@ is provided to represent
 a dataframe.
 
@@ -286,7 +286,7 @@ so @`Row` Store@ is exactly what we would expect from Haskell's regular
 record types.
 
 In order to access dataframe functionality, we need to ask our code
-to generate some boilerplate automatically. We do this by deriving an 
+to generate some boilerplate automatically. We do this by deriving an
 instance of `Frameable`:
 
 >>> :set -XDeriveAnyClass
@@ -296,7 +296,7 @@ Note that deriving an instance of `Frameable` requires that our type @Store@ hav
 a `Generic` instance. This allows @javelin-frames@ to inspect our type @Store@
 and write an implementation of `Frameable` automatically.
 
-** Limitations
+== Limitations
 
 At this time, `Frameable` can only be derived for higher-kinded record types that
 do NOT nest. For example, consider the following hierarchy:
@@ -322,7 +322,7 @@ The following will unfortunately fail with a potentially confusing type error:
 deriving instance Frameable Company
 @
 
-Are you an expert in generics who wants to help us figure it out? Feel free to 
+Are you an expert in generics who wants to help us figure it out? Feel free to
 [raise an issue or open a pull request](https://github.com/LaurentRDC/javelin).
 -}
 
@@ -334,12 +334,12 @@ rows and elements using `ilookup` and `iat` respectively.
 However, many types can naturally be indexed by a subset of the columns, which becomes a key
 This key is similar to primary keys in databases.
 
-We can derive an instance of `Indexable` to allow us to query data from a 
+We can derive an instance of `Indexable` to allow us to query data from a
 dataframe not by the integer index of the rows, but by some key instead.
 
-** Simple keys
+== Simple keys
 
-The simplest example is that of keys derived from a single column. 
+The simplest example is that of keys derived from a single column.
 
 We start with a data definition:
 
@@ -367,7 +367,7 @@ therefore use it as a key. All we need to do is derive an instance of `Indexable
 As an example, let's build a dataframe of stores:
 
 >>> :{
-    stores = fromRows 
+    stores = fromRows
            [ MkStore "Store A" (Addr "8712 1st Avenue") 787123745
            , MkStore "Store B" (Addr "90 2st Street")   188712313
            , MkStore "Store C" (Addr "109 3rd Street")  910823870
@@ -379,7 +379,7 @@ Finally, we can look up @Store A@ by its unique ID using `Frame.lookup`:
 >>> Frame.lookup 787123745 stores
 Just (MkStore {storeName = "Store A", storeAddress = Addr "8712 1st Avenue", storeId = 787123745})
 
-** Compound keys
+== Compound keys
 
 Sometimes, it is preferable to identify rows through multiple columns. Again in
 in analogy with databases, the key is a _compound key_.
@@ -396,7 +396,7 @@ Let's consider another example, that of movie actors:
     deriving instance Show (Row Actor)
 :}
 
-In this case, we can identify actors by their first and last name, 
+In this case, we can identify actors by their first and last name,
 which creates a compound key:
 
 >>> :{
@@ -409,7 +409,7 @@ which creates a compound key:
 We define some data
 
 >>> :{
-    actors = fromRows 
+    actors = fromRows
            [ MkActor "George" "Clooney" 63
            , MkActor "Brad"   "Pitt"    61
            , MkActor "George" "Takei"   87
@@ -472,7 +472,7 @@ Here is an example:
 >>> :{
     putStrLn
         $ display
-            $ zipRowsWith 
+            $ zipRowsWith
                 (\(MkPet name age) (MkPetInfo _ race) -> MkPetSummary name age race)
                 pets
                 petInfos
@@ -486,14 +486,14 @@ petSummaryName | petSummaryAge | petSummaryRace
 
 
 Hmm this doesn't look right, if you manually inspect the two source dataframes.
-This is because rows are combined in order. You may want to sort rows using 
+This is because rows are combined in order. You may want to sort rows using
 `sortRowsBy` or `sortRowsByUnique`, before applying `zipRowsWith`:
 
 >>> import Data.Function (on)
 >>> :{
     putStrLn
         $ display
-            $ zipRowsWith 
+            $ zipRowsWith
                 (\(MkPet name age) (MkPetInfo _ race) -> MkPetSummary name age race)
                 (sortRowsBy (compare `on` petName) pets)
                 (sortRowsBy (compare `on` petInfoName) petInfos)
@@ -511,9 +511,9 @@ key (in the case above, pet names). See below.
 
 {- $merging
 
-If you want to merge dataframes whose rows have a natural key (i.e. have an instance of `Indexable`), 
-then you should take a look at `mergeWithStrategy`. 
-In this function, for each key present in __either__ dataframe, 
+If you want to merge dataframes whose rows have a natural key (i.e. have an instance of `Indexable`),
+then you should take a look at `mergeWithStrategy`.
+In this function, for each key present in __either__ dataframe,
 a merging strategy is applied. This strategy encodes how the merge should proceed in three cases:
 
 * The key is present in the left dataframe, but not the right;
@@ -555,12 +555,12 @@ we will need to make decisions about missing data.
                    [ MkContainerDest 1 "Japan"
                    , MkContainerDest 2 "Canada"
                    , MkContainerDest 3 "USA"
-                   -- missing container destination for #4 
+                   -- missing container destination for #4
                    , MkContainerDest 5 "France"
                    ]
 :}
 
-We will first start by merging the dataframes only when we have complete data 
+We will first start by merging the dataframes only when we have complete data
 (i.e. an inner join). We first define the shape of the resulting dataframe:
 
 >>> :{
@@ -580,7 +580,8 @@ t`These`, namely the constructors:
 * v`That`: The key is present in the right dataframe, but not the left;
 * v`These`: The key is present in both dataframes (not to be confused with the type constructor t`These`).
 
-In the simplest case, we only care about keys present in both dataframe (v`These`)
+In the simplest case, we only care about keys present in both dataframe (`These`)
+
 >>> :{
     completeDataStrategy :: Int -> These (Row ContainerOrigin) (Row ContainerDest) -> Maybe (Row ContainerJourney)
     completeDataStrategy containerId (These (MkContainerOrigin _ origin) (MkContainerDest _ dest))
@@ -589,14 +590,15 @@ In the simplest case, we only care about keys present in both dataframe (v`These
 :}
 
 Sidenote: @completeDataStrategy@ is equivalent to `matchedStrategy`. We re-defined it for illustrative purposes.
+
 >>> :{
     putStrLn
         $ display
-            $ mergeWithStrategy 
+            $ mergeWithStrategy
                 completeDataStrategy
                 containerOrigins
                 containerDests
-:}  
+:}
 containerJourneyId | containerJourneyOrig | containerJourneyDest
 ------------------ | -------------------- | --------------------
                  1 |             "Canada" |              "Japan"
@@ -618,18 +620,18 @@ effectively cancels the merge:
     completeDataStrategy' :: Int -> These (Row ContainerOrigin) (Row ContainerDest) -> Maybe (Row ContainerJourney)
     completeDataStrategy' containerId (These (MkContainerOrigin _ origin) (MkContainerDest _ dest))
         | validCountry origin && validCountry dest = Just $ MkContainerJourney containerId origin dest
-        | otherwise                                = Nothing 
+        | otherwise                                = Nothing
     completeDataStrategy' _ _ = Nothing -- not enough data
 :}
 
 >>> :{
     putStrLn
         $ display
-            $ mergeWithStrategy 
+            $ mergeWithStrategy
                 completeDataStrategy'
                 containerOrigins
                 containerDests
-:}  
+:}
 containerJourneyId | containerJourneyOrig | containerJourneyDest
 ------------------ | -------------------- | --------------------
                  1 |             "Canada" |              "Japan"
@@ -654,7 +656,7 @@ necessarily its origin. Let's redefine our resulting dataframe to take this into
         | validCountry origin && validCountry dest = Just $ MkPartialContainerJourney containerId (Just origin) dest
         | validCountry dest                        = Just $ MkPartialContainerJourney containerId Nothing       dest
         | otherwise                                = Nothing
-    maybeOriginStrategy containerId (That (MkContainerDest _ dest)) 
+    maybeOriginStrategy containerId (That (MkContainerDest _ dest))
                                                    = Just $ MkPartialContainerJourney containerId Nothing       dest
     maybeOriginStrategy _           (This _)       = Nothing -- we require a destination
 :}
@@ -662,7 +664,7 @@ necessarily its origin. Let's redefine our resulting dataframe to take this into
 >>> :{
     putStrLn
         $ display
-            $ mergeWithStrategy 
+            $ mergeWithStrategy
                 maybeOriginStrategy
                 containerOrigins
                 containerDests

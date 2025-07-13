@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               javelin-frames
-version:            0.1.0.1
+version:            0.1.0.2
 synopsis:           Type-safe data frames based on higher-kinded types.
 -- description:
 license:            MIT
